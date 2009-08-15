@@ -1,5 +1,5 @@
 #summary Screen shots of all features
-#sidebar Screen shots
+#sidebar TableOfContents
 
 = Screen shots =
 
