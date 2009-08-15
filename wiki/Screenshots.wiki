@@ -1,4 +1,5 @@
-#screenshots Screen shots of all features
+#summary Screen shots of all features
+#sidebar Screen shots
 
 = Screen shots =
 
