@@ -1,6 +1,0 @@
-#summary Screen shots of all features
-#sidebar TableOfContents
-
-= Screen shots =
-
-bu
