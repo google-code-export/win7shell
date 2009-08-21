@@ -1,6 +1,15 @@
 #summary Plugin changelog
 #labels Featured
 
+
+= 0.31 =
+ * You can display only a selected image with no text on it, by setting all lines to 'Empty'. The image and the frame won't resize in this case
+
+= 0.3 =
+ * Added custom background image option
+ * Thumbnail and frame resizing depending on the number of lines of text selected
+ * Several minor bugs / compatibility issues
+
 = 0.2 =
  * Fixed the messagebox workaround that made Winamp not to process keyboard events
  * Fixed a bug preventing Winamp to be closed via the system menu
