@@ -1,0 +1,25 @@
+#summary Installation notes, configuration and system requirements
+#labels Featured,Phase-Deploy
+
+= System Requirements =
+
+== Operating System ==
+
+First of all, don't even try to use this plug-in, if you don't have <b>Windows 7</b>. 
+That being said, I didn't test it on beta or RC versions of Windows 7, but others have, and it's "working". It's meant to be used with the RTM version, build 7600. 
+
+== Winamp ==
+
+Some of the functions used require Winamp 5.x+, but I did not test it on older versions. I recommend using the latest version.
+
+== Hardware ==
+
+The plug-in itself doesn't require extra resources, but some of the features require Aero Peek enabled, which on it's turn requires a decent GPU. 
+
+= Installation =
+
+The NSIS installer takes care of everything, just run it. It will close Winamp, copy the plug-in to the detected Winamp folder, replaces the old one if necessary, and restarts Winamp. You can delete the installer after it's finished.
+
+= Configuration =
+
+You can access the plug-in configuration via the <b>Winamp Preferences -> Plug-ins -> General Purpose -> Windows 7 Taskbar Integration</b>
