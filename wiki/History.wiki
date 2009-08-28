@@ -1,6 +1,14 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.5 =
+ * Album art support (read main page on how to use it)
+ * Different text drawing mechanism
+ * Small performance tweaks (image and mp3 metadata caching)
+
+= 0.4 =
+ * Added transparent (blurred) background for media info display
+ * Support for all major image formats: BMP, ICON, GIF, JPEG, Exif, PNG, TIFF, WMF, EMF.
 
 = 0.31 =
  * You can display only a selected image with no text on it, by setting all lines to 'Empty'. The image and the frame won't resize in this case
