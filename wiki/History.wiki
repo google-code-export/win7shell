@@ -5,7 +5,7 @@
  * Fixed a minor issue with disabled intermediate progress bar for streaming media. It was showing a tiny 1% green line.
 
 = 0.5 =
- * Album art support (read main page on how to use it)
+ * <b>Album art support</b> (read main page on how to use it)
  * Different text drawing mechanism
  * Small performance tweaks (image and mp3 metadata caching)
 
