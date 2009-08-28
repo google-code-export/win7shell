@@ -10,14 +10,14 @@
  * Small performance tweaks (image and mp3 metadata caching)
 
 = 0.4 =
- * Added transparent (blurred) background for media info display
+ * <b>Added transparent (blurred) background</b> for media info display
  * Support for all major image formats: BMP, ICON, GIF, JPEG, Exif, PNG, TIFF, WMF, EMF.
 
 = 0.31 =
  * You can display only a selected image with no text on it, by setting all lines to 'Empty'. The image and the frame won't resize in this case
 
 = 0.3 =
- * Added custom background image option
+ * <b>Added custom background image option</b>
  * Thumbnail and frame resizing depending on the number of lines of text selected
  * Several minor bugs / compatibility issues
 
