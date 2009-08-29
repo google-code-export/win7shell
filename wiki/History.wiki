@@ -1,6 +1,10 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.53 =
+ * Changed the album art searching mechanism
+ * Added 'album' and 'year' to be available for selection to display on thumbnail
+
 = 0.52 =
  * Fixed memory leak issues
  * Changed text drawing font to 'Segoe UI'
