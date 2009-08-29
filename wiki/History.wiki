@@ -1,6 +1,10 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.54 =
+ * Changed album art searching mechanism again
+ * Fixed album art image scaling (it was stretching in width for some images)
+
 = 0.53 =
  * Changed the album art searching mechanism
  * Added 'album' and 'year' to be available for selection to display on thumbnail
