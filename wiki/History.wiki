@@ -1,6 +1,9 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.52 =
+ * Fixed memory leak issues
+
 = 0.51 =
  * Fixed a minor issue with disabled intermediate progress bar for streaming media. It was showing a tiny 1% green line.
 
