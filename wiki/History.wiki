@@ -3,6 +3,8 @@
 
 = 0.52 =
  * Fixed memory leak issues
+ * Changed text drawing font to 'Segoe UI'
+ * Removed all UI links with Winamp main window
 
 = 0.51 =
  * Fixed a minor issue with disabled intermediate progress bar for streaming media. It was showing a tiny 1% green line.
