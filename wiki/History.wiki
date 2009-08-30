@@ -1,6 +1,11 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.6b =
+ * Remade the whole configuration mechanism
+ * Different album art scaling 
+ * Improved compatibility with some features with eachother
+
 = 0.54 =
  * Changed album art searching mechanism again
  * Fixed album art image scaling (it was stretching in width for some images)
