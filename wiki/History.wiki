@@ -1,6 +1,16 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.62 =
+ * You can force the plug-in to install even if Windows 7 wasn't detected. This can be helpful if you're running Winamp in compatibility mode. No, it won't make it usable on some other OS, which doesn't support the features.
+
+= 0.61 =
+ * Fixed a bug with the thumbnail player control buttons not updating properly
+
+= 0.6 =
+ * Re-wrote the whole plug-in's memory management
+ * Added option to enable / disable custom thumbnail image
+
 = 0.6b =
  * Remade the whole configuration mechanism
  * Different album art scaling 
