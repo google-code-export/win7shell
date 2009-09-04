@@ -1,58 +1,71 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.66 =
+ * Fix: starting Winamp with empty playlist, and opening the thumbnail preview caused it to crash
+
+= 0.65 =
+ * Remake: remade all progressbar and icon overlay coding, which fixed a nasty bug causing visual glitches when Winamp was paused
+
+= 0.64 =
+ * Fix: previous fix prevented displaying information about first song in playlist
+
+= 0.63 =
+ * Fix: a bug preventing the plug-in to detect the correct Windows version
+ * Fix: opening the thumbnail preview with an empty playlist crashed Winamp
+
 = 0.62 =
- * You can force the plug-in to install even if Windows 7 wasn't detected. This can be helpful if you're running Winamp in compatibility mode. No, it won't make it usable on some other OS, which doesn't support the features.
+ * New: uou can force the plug-in to install even if Windows 7 wasn't detected. This can be helpful if you're running Winamp in compatibility mode. No, it won't make it usable on some other OS, which doesn't support the features.
 
 = 0.61 =
- * Fixed a bug with the thumbnail player control buttons not updating properly
+ * Fix: a bug with the thumbnail player control buttons not updating properly
 
 = 0.6 =
- * Re-wrote the whole plug-in's memory management
- * Added option to enable / disable custom thumbnail image
+ * Remake: Re-wrote the whole plug-in's memory management
+ * New: Added option to enable / disable custom thumbnail image
 
 = 0.6b =
- * Remade the whole configuration mechanism
- * Different album art scaling 
- * Improved compatibility with some features with eachother
+ * Remake: the whole configuration mechanism
+ * Improvement: different album art scaling 
+ * Improvement: improved compatibility with some features with eachother
 
 = 0.54 =
- * Changed album art searching mechanism again
- * Fixed album art image scaling (it was stretching in width for some images)
+ * Improvement: changed album art searching mechanism again
+ * Fix: album art image scaling (it was stretching in width for some images)
 
 = 0.53 =
- * Changed the album art searching mechanism
- * Added 'album' and 'year' to be available for selection to display on thumbnail
+ * Improvement: changed the album art searching mechanism
+ * New: added 'album' and 'year' to be available for selection to display on thumbnail
 
 = 0.52 =
- * Fixed memory leak issues
- * Changed text drawing font to 'Segoe UI'
- * Removed all UI links with Winamp main window
+ * Fix: memory leak issues
+ * Improvement: changed text drawing font to 'Segoe UI'
+ * Improvement: removed all UI links with Winamp main window
 
 = 0.51 =
- * Fixed a minor issue with disabled intermediate progress bar for streaming media. It was showing a tiny 1% green line.
+ * Fix: a minor issue with disabled intermediate progress bar for streaming media. It was showing a tiny 1% green line.
 
 = 0.5 =
- * <b>Album art support</b> (read main page on how to use it)
- * Different text drawing mechanism
- * Small performance tweaks (image and mp3 metadata caching)
+ * New: <b>album art support</b> (read main page on how to use it)
+ * Improvement: different text drawing mechanism
+ * Improvement: small performance tweaks (image and mp3 metadata caching)
 
 = 0.4 =
- * <b>Added transparent (blurred) background</b> for media info display
- * Support for all major image formats: BMP, ICON, GIF, JPEG, Exif, PNG, TIFF, WMF, EMF.
+ * New: <b>added transparent (blurred) background</b> for media info display
+ * New: support for all major image formats: BMP, ICON, GIF, JPEG, Exif, PNG, TIFF, WMF, EMF.
 
 = 0.31 =
- * You can display only a selected image with no text on it, by setting all lines to 'Empty'. The image and the frame won't resize in this case
+ * Improvement: you can display only a selected image with no text on it, by setting all lines to 'Empty'. The image and the frame won't resize in this case
 
 = 0.3 =
- * <b>Added custom background image option</b>
- * Thumbnail and frame resizing depending on the number of lines of text selected
- * Several minor bugs / compatibility issues
+ * New: <b>added custom background image option</b>
+ * Improvement: thumbnail and frame resizing depending on the number of lines of text selected
+ * Fix: several minor bugs / compatibility issues
 
 = 0.2 =
- * Fixed the messagebox workaround that made Winamp not to process keyboard events
- * Fixed a bug preventing Winamp to be closed via the system menu
- * Added customizable font size
+ * Fix: the messagebox workaround that made Winamp not to process keyboard events
+ * Fix: a bug preventing Winamp to be closed via the system menu
+ * Improvement: added customizable font size
 
 = 0.1 =
  * Initial release
