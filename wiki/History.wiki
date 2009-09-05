@@ -1,6 +1,9 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.67 =
+ * Fix: previous fix prevented displaying album art for the first song in playlist
+
 = 0.66 =
  * Fix: starting Winamp with empty playlist, and opening the thumbnail preview caused it to crash
 
