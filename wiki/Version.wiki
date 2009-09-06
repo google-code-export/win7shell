@@ -1,4 +1,3 @@
-#labels Deprecated
 0.67
 
 New: testing
