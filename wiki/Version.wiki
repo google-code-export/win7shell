@@ -1,7 +1,5 @@
 #labels Deprecated
-0.67
+0.70
 
-New: testing
-Added: testing
-
-BETA VERSION DO NOT DOWNLOAD !!!
+New: Version control
+Improvements: code optimization
