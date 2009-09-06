@@ -1,5 +1,5 @@
 #labels Deprecated
-0.7
+0.70
 
 New: Version control
 Improvements: code optimization
