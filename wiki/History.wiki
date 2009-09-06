@@ -1,6 +1,11 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.70 =
+ * New: Added version control: it will automatically check for new version on Winamp startup, and you can check current version in the configuration window
+ * Added new metaword %timeleft%, it will show the remaining time from the current song
+ * Code optimization
+
 = 0.67 =
  * Fix: previous fix prevented displaying album art for the first song in playlist
 
@@ -18,7 +23,7 @@
  * Fix: opening the thumbnail preview with an empty playlist crashed Winamp
 
 = 0.62 =
- * New: uou can force the plug-in to install even if Windows 7 wasn't detected. This can be helpful if you're running Winamp in compatibility mode. No, it won't make it usable on some other OS, which doesn't support the features.
+ * New: you can force the plug-in to install even if Windows 7 wasn't detected. This can be helpful if you're running Winamp in compatibility mode. No, it won't make it usable on some other OS, which doesn't support the features.
 
 = 0.61 =
  * Fix: a bug with the thumbnail player control buttons not updating properly
