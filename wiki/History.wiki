@@ -1,6 +1,11 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.71 =
+ * New: <b>Translation support</b> - check the wiki page for more info
+ * New: added metawords %track%, %rating1% and %rating2%. Read help in the configuration window for more info
+ * Fix: previous version didn't save settings
+
 = 0.70 =
  * New: Added version control: it will automatically check for new version on Winamp startup, and you can check current version in the configuration window
  * Added new metaword %timeleft%, it will show the remaining time from the current song
