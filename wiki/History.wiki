@@ -2,7 +2,7 @@
 #labels Featured
 
 = 0.71 =
- * New: <b>Translation support</b> - check the wiki page for more info
+ * New: <b>Translation support</b> - check the [http://code.google.com/p/win7shell/wiki/Translations wiki page] for more info
  * New: added metawords %track%, %rating1% and %rating2%. Read help in the configuration window for more info
  * Fix: previous version didn't save settings
 
