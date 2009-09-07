@@ -1,5 +1,10 @@
-#summary How to translate the plug-in, and how to use translatiobs
+#summary How to translate the plug-in, and how to use translatios
 #labels Featured
+
+= Available Translations =
+
+In progress:
+ * <b>German</b> by keigel2001
 
 = Translating The Plug-In =
 
