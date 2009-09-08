@@ -3,9 +3,8 @@
 
 = Available Translations =
 
-In progress:
- * <b>German</b> by keigel2001
- * <b>French</b> by   psik0tik [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng Downoad] 
+ * <b>German</b> by keigel2001   [http://win7shell.googlecode.com/files/GERMAN_win7shell.lng Download]
+ * <b>French</b> by psik0tik   [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng Downoad] 
 
 = Translating The Plug-In =
 
