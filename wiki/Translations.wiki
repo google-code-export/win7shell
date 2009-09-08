@@ -5,6 +5,7 @@
 
 In progress:
  * <b>German</b> by keigel2001
+ * [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng <b>French</b> by   psik0tik] 
 
 = Translating The Plug-In =
 
