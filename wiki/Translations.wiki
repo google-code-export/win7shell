@@ -4,11 +4,12 @@
 = Available Translations =
 
  * <b>German</b> by keigel2001   [http://win7shell.googlecode.com/files/GERMAN_win7shell.lng Download]
- * <b>French</b> by psik0tik   [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng Downoad] 
+ * <b>French</b> by psik0tik   [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng Download]
+ * <b>Turkish</b> by  MertcanKaya1991   [http://win7shell.googlecode.com/files/TURKISH_win7shell.lng Download]
 
 = Translating The Plug-In =
 
-Download the template translation file [http://win7shell.googlecode.com/files/win7shell.lng Download file]
+Download the template translation file [http://win7shell.googlecode.com/files/ENGLISH_win7shell.lng Download file]
 
 Open it in any Unicode text editor
 
