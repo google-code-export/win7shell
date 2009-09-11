@@ -5,7 +5,7 @@
 
  * <b>German</b> by keigel2001   [http://win7shell.googlecode.com/files/GERMAN_win7shell.lng Download]
  * <b>French</b> by psik0tik   [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng Download]
- * <b>Turkish</b> by  MertcanKaya1991   [http://win7shell.googlecode.com/files/TURKISH_win7shell.lng Download]
+ * <b>Turkish</b> by MertcanKaya1991 [http://win7shell.googlecode.com/files/TURKISH_win7shell.lng Download]
 
 = Translating The Plug-In =
 
