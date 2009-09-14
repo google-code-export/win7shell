@@ -7,6 +7,7 @@
  * <b>French</b> by psik0tik   [http://win7shell.googlecode.com/files/FRENCH_win7shell.lng Download]
  * <b>Turkish</b> by MertcanKaya1991 [http://win7shell.googlecode.com/files/TURKISH_win7shell.lng Download]
  * <b>Polish</b> by Paweł Porwisz aka Pepe [http://win7shell.googlecode.com/files/POLISH_win7shell.lng Download]
+ * <b>Slovak</b> by Mr.Henky [http://win7shell.googlecode.com/files/SLOVAK_win7shell.lng Download]
 
 = Translating The Plug-In =
 
