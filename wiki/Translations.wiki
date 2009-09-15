@@ -1,4 +1,4 @@
-#summary How to translate the plug-in, and how to use translatios
+#summary How to translate the plug-in, and how to use translations
 #labels Featured
 
 = Available Translations =
