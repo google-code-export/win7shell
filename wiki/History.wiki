@@ -1,6 +1,12 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.72 =
+ * Remake: GUI is somewhat larger to make room for more text. 
+ * New: The plug-in doesn't check for Windows version anymore, it's done in the installer. (Removed 3 associated lines from translation file)
+ * Fix: Winamp isn't reporting streaming playback status correctly, added a workaround to detect all streaming medias
+ * New: Added an option to remove Winamp title, making the thumbnail cleaner. This could cause some side-effects, I didn't really try it out. (New line in translation file) 
+
 = 0.71 =
  * New: <b>Translation support</b> - check the [http://code.google.com/p/win7shell/wiki/Translations wiki page] for more info
  * New: added metawords %track%, %rating1% and %rating2%. Read help in the configuration window for more info
