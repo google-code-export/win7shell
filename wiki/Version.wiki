@@ -5,4 +5,4 @@ Remade GUI a bit to fit longer texts in the translations.
 Any file that ends with win7shell.lng in the Plugin folder will be loaded. (e.g. you can use RUSSIAN_win7shell.lng, or any other)
 Added ability to remove Winamp window title, making the thumbnail cleaner.
 
-Please read the wiki page for more information about the changes and future development plants. :)
+Please read the wiki page for more information about the changes and future development plants. Do you want to open the downloads page?
