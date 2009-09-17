@@ -1,0 +1,13 @@
+#summary Future development plans for the plug-in
+
+= What now? =
+
+Well, people still want new features and fixes, and they could be implemented, but I don't really have time for all. I'm doing what I can, but I could use some help. The code is messy, I didn't really organized it form the start, and it's not commented, but if you think you can create a few classes in C++ (for example using an ID3v2 tag reader lib to extract embedded album art), let me now.
+
+<b>
+ * Improving translation support: Winamp has an official way for the translation system, I didn't figure it out yet.
+ * Extracting embedded album art from the ID3v2 tag
+ * Fixing jump list (maybe improve it to have tasks instead of file links)
+ * Re-organizing code?
+ * Implementing tiny features people suggest :<
+</b>
