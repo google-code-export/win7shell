@@ -1,4 +1,5 @@
 #summary Future development plans for the plug-in
+#labels Featured,Phase-Support
 
 = What now? =
 
