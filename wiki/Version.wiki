@@ -1,6 +1,9 @@
 #labels Deprecated
-0.73
+0.74
 
-Fixed a bug that showed new version even if you have updated plug-in.
+Fix: Some lines in the GUI weren't translated correctly.
+New: Fully customizable drawing font. Color is only applied to shadow color. Shadow won't be drawn in transparent background mode.
+New: Support for "Right to Left" languages. You can mirror the GUI by settings a value in the translation file
+Improvement: Re-sized GUI again 
 
-Please read the wiki page for more information about the changes and future development plants. Do you want to open the downloads page?
+Please read the wiki page for more information about the changes and future development plants.
