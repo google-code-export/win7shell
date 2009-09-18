@@ -35,7 +35,9 @@ You can use only one translation at a time. If you want to change it, you replac
 
 To open the folder, navigate to <b>%appdata%\Winamp\Plugins</b>. You can open start menu, select Run (Winkey + R) and type <b>%appdata%\Winamp\Plugins</b> to open it. 
 
-Make sure the file's name is <b>win7shell.lng</b>.
+Make sure the file's name ends in <b>win7shell.lng</b>. (Usually LANGUAGE_win7shell.lng)
+You can use the files downloaded from here directly, make sure you have only one.
+
 Restart Winamp for the changes to take effect.
 
 <i>The translation system might not be perfect, but I didn't have much time to work on it, and I'm out of country for some time.</i>
