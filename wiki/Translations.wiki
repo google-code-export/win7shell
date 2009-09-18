@@ -19,9 +19,6 @@ Open it in any Unicode text editor
 
 Translate the text on the right side of the equal signs ('=')
 
-
-Do not add line breaks in the lines.
-
 Do not change anything else
 
 ANY Unicode character is supported
