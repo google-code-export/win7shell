@@ -1,6 +1,15 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.74 =
+ * Fix: Some lines in the GUI weren't translated correctly.
+ * New: Fully customizable drawing font. Color is only applied to shadow color. Shadow won't be drawn in transparent background mode.
+ * New: Support for "Right to Left" languages. You can mirror the GUI by settings a value in the translation file
+ * Improvement: Re-sized GUI again 
+
+= 0.73 =
+ * Fix: plug-in didn't check online version correctly.
+
 = 0.72 =
  * Remake: GUI is somewhat larger to make room for more text. 
  * New: The plug-in doesn't check for Windows version anymore, it's done in the installer. (Removed 3 associated lines from translation file)
