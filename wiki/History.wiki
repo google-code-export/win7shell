@@ -3,7 +3,7 @@
 
 = 0.74 =
  * Fix: Some lines in the GUI weren't translated correctly.
- * New: Fully customizable drawing font. Color is only applied to shadow color. Shadow won't be drawn in transparent background mode.
+ * New: Fully customizable drawing font. Color is only applied to shadow color. Shadow won't be drawn in transparent background mode. <b>Removed %red% metaword</b>
  * New: Support for "Right to Left" languages. You can mirror the GUI by settings a value in the translation file
  * Improvement: Re-sized GUI again 
 
