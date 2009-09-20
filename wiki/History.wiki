@@ -1,6 +1,13 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.82 =
+ * Improvement: Re-sized config window
+ * Fix: Some texts weren't translated
+
+= 0.81 =
+ * Fix: Ugly bug crashing Winamp when trying to save settings
+
 = 0.80 =
 
  * Improvement: Re-designed all the GUI, it's much smaller now, with <b>tabbed windows</b>
