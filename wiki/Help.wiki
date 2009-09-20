@@ -4,13 +4,26 @@
 
 = Text =
 
+On this page you will find settings that will affect the text drawn on the thumbnail.
+
  <img src..
 
  # Anything you write in this text box will be written on the thumbnail. Some words, let's call them 'metawords' have special meaning, whenever you use one of these, it will be replaced with another value, depending on the type of the metaword. (For example %title% will be replaced with the actual playing song's title)
  # Use this button to view the list with all the metawords you can use to create your text.
  # Here you can customize the font of the text, including, but not limited to font family, styles, effects and color.
  # The plug-in can draw a text for the shadow if you want, you can select the shadow color here. To turn the shadow off, just select a white shadow color (RGB: 255, 255, 255). It won't draw a white shadow.
- # 
+ # By enabling this option, the text will be drawn anti-aliased, having a smoother look.
+
+= Background =
+
+ Here you can select what kind of background you want for your thumbnail. If you enable the <i>iconic image</i> setting on the next page, this background will be used as the icon. (See next page for details)
+
+ # No background will be used, the text will be written on a transparent thumbnail window.
+ # The plug-in will try to find the appropriate album art picture for the currently playing song, and use this as background. The image is scaled according to the maximum thumbnail height allowed, and re-sized preserving aspect ratio.
+ # The default background is a blue gradient image loaded from inside the plug-in.
+ # If you would like to use your own image as background or icon, you can select any image type here. 
+
+ 
  
 Add your content here.
 
