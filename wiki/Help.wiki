@@ -1,4 +1,5 @@
 #summary Documentation about the plug-in's configuration
+#labels Featured,Phase-Deploy
 
 <b>I will write a short description about each control on the plug-in configuration window. </b>
 
@@ -6,15 +7,20 @@
 
 On this page you will find settings that will affect the text drawn on the thumbnail.
 
- <img src..
+ <img src="http://img35.imageshack.us/img35/2584/tab1c.png" border="0" alt="Tab 1">
 
  # Anything you write in this text box will be written on the thumbnail. Some words, let's call them 'metawords' have special meaning, whenever you use one of these, it will be replaced with another value, depending on the type of the metaword. (For example %title% will be replaced with the actual playing song's title)
  # Use this button to view the list with all the metawords you can use to create your text.
  # Here you can customize the font of the text, including, but not limited to font family, styles, effects and color.
  # The plug-in can draw a text for the shadow if you want, you can select the shadow color here. To turn the shadow off, just select a white shadow color (RGB: 255, 255, 255). It won't draw a white shadow.
  # By enabling this option, the text will be drawn anti-aliased, having a smoother look.
+ # Save and apply settings, close window
+ # Close window, without saving or applying
+ # Switch between pages
 
 = Background =
+
+ <img src="http://img35.imageshack.us/img35/9251/tab2w.png" border="0" alt="Tab 1">
 
 Here you can select what kind of background you want for your thumbnail. If you enable the <i>iconic image</i> setting on the next page, this background will be used as the icon. (See next page for details)
 
@@ -27,6 +33,8 @@ Here you can select what kind of background you want for your thumbnail. If you 
 
 = Options =
 
+ <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
+
 This page contains general plug-in settings.
 
  # With this checkbox you can enable or disable the custom thumbnail for Winamp. If you un-check this, nothing will be drawn on the thumbnail. Use this if you don't want to alter the default aero peek thumbnail, and want to use only the rest of the features.
@@ -37,6 +45,8 @@ This page contains general plug-in settings.
 
 = Taskbar Icon =
 
+ <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
+
 You can control the behavior of the taskbar icon from this page. This refers to the progress bar in the background of the icon, and to the icon overlays drawn in the bottom right corner of the icon.
 
  # The progress of the playback is shown using the icon progressbar.
@@ -44,3 +54,22 @@ You can control the behavior of the taskbar icon from this page. This refers to 
  # When the playback is stopped, the icon will turn red, if you enable this option.
  # This is a fun feature, if you enable it, the progressbar will be used to imitate a simple VU meter, showing the signal level of the audio. The progressbar is colored greed, yellow and red, depending on the strength of the signal.
  # If you enable this option, tiny icons will be drawn in the bottom right corner of the taskbar icon, showing the state of the playback (playing, paused, stopped).
+
+= Jump List =
+
+ <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
+
+The jump list can be reach by right clicking on the taskbar icon, or by "dragging it out" with left click.
+
+ # If this checkbox is checked, all files played with Winamp will be shown in this jump list.
+
+= Development =
+
+ <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
+
+On this page you'll find some links to several webpages on this site, and similar features.
+
+ # This link opens up the bugs reporting page
+ # Link to the project's home page
+ # Link to translations
+ # If you do not want the plug-in to check for updates at Winamp star-up, enable this option
