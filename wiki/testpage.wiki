@@ -1,12 +1,2 @@
 #labels Deprecated
-0.80
-
-MAJOR GUI rework, check it out, you'll love it :)
-Customizable text font, text color and shadow color (As a side-effect, the font size is measured in different units)
-Added a new 'Favorite' button on thumbnail
-New feature allowing images to be displayed as icons, so you can have album art on the left, and text on the right
-New feature that uses the taskbar icon progressbar as a VU meter :D
-Lots of other fixes / improvements.
-Translations need to be updated :(
-
-READ WIKI PAGE FOR MORE INFORMATION ABOUT THE NEW FEATURES.
+<div><a href="http://www.downloadatlas.com/freeware-d953c60d.html"><img src="http://www.downloadatlas.com/clean-awards/win7shell-by-atti86.png" style="border:none;" width="160" height="114" alt="Safe free win7shell download!" /></a><br /></div> <div><a href="http://www.downloadroute.com/win7shell-Atti86.html"><img src="http://www.downloadroute.com/images/av-awards/win7shell-Atti86.png" alt="win7shell is Certified by DownloadRoute.com" border="0"></a></div>
