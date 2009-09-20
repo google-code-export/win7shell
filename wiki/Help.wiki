@@ -35,14 +35,12 @@ This page contains general plug-in settings.
  # By popular request I've added a feature to remove the title of the Winamp window, which is by default shown on the thumbnail. So far I didn't notice any side effects, but it's not a healthy thing to do (but it looks cooler), especially if you have scrolling Winamp title.
  # If you enable this option, the background image you've selected won't be drawn as background, but instead it will be rescaled to 50x50 and moved to the left of the thumbnail. This way you can have text next to it on the right. (The text will be drawn near the image automatically). This can be used to imitate the notification window of Winamp's modern skin, just select album art as background, and use title, artist and album as text. If no album art is found, the text is drawn on the left, without any image.
 
- 
- 
-Add your content here.
+= Taskbar Icon =
 
+You can control the behavior of the taskbar icon from this page. This refers to the progress bar in the background of the icon, and to the icon overlays drawn in the bottom right corner of the icon.
 
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+ # The progress of the playback is shown using the icon progressbar.
+ # If you are listening to streaming media, the progress can't be calculated, so an 'indeterminate' progressbar will be shown, if you enable this option. This progressbar is an infinite looping green bar.
+ # When the playback is stopped, the icon will turn red, if you enable this option.
+ # This is a fun feature, if you enable it, the progressbar will be used to imitate a simple VU meter, showing the signal level of the audio. The progressbar is colored greed, yellow and red, depending on the strength of the signal.
+ # If you enable this option, tiny icons will be drawn in the bottom right corner of the taskbar icon, showing the state of the playback (playing, paused, stopped).
