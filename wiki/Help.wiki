@@ -1,0 +1,23 @@
+#summary Documentation about the plug-in's configuration
+
+<b>I will write a short description about each control on the plug-in configuration window. </b>
+
+= Text =
+
+ <img src..
+
+ # Anything you write in this text box will be written on the thumbnail. Some words, let's call them 'metawords' have special meaning, whenever you use one of these, it will be replaced with another value, depending on the type of the metaword. (For example %title% will be replaced with the actual playing song's title)
+ # Use this button to view the list with all the metawords you can use to create your text.
+ # Here you can customize the font of the text, including, but not limited to font family, styles, effects and color.
+ # The plug-in can draw a text for the shadow if you want, you can select the shadow color here. To turn the shadow off, just select a white shadow color (RGB: 255, 255, 255). It won't draw a white shadow.
+ # 
+ 
+Add your content here.
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
