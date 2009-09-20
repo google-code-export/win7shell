@@ -1,6 +1,7 @@
 #labels Deprecated
-0.74
+0.81
 
+Fixed a nasty bug in 0.80, sorry about that :<
 MAJOR GUI rework, check it out, you'll love it :)
 Customizable text font, text color and shadow color (As a side-effect, the font size is measured in different units)
 Added a new 'Favorite' button on thumbnail
