@@ -2,7 +2,7 @@
 0.80
 
 MAJOR GUI rework, check it out, you'll love it :)
-Customizable text font, text color and shadow color
+Customizable text font, text color and shadow color (As a side-effect, the font size is measured in different units)
 Added a new 'Favorite' button on thumbnail
 New feature allowing images to be displayed as icons, so you can have album art on the left, and text on the right
 New feature that uses the taskbar icon progressbar as a VU meter :D
