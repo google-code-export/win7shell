@@ -1,6 +1,11 @@
 #labels Deprecated
 0.80
 
-Fix: Some lines in the GUI weren't translated correctly. New: Fully customizable drawing font. Color is only applied to shadow color. Shadow won't be drawn in transparent background mode. New: Support for "Right to Left" languages. You can mirror the GUI by settings a value in the translation file Improvement: Re-sized GUI again
+MAJOR GUI rework, check it out, you'll love it :)
+Customizable text font, text color and shadow color
+Added a new 'Favorite' button on thumbnail
+New feature allowing images to be displayed as icons, so you can have album art on the left, and text on the right
+New feature that uses the taskbar icon progressbar as a VU meter :D
+Lots of other fixes / improvements.
 
-Please read the wiki page for more information about the changes and future development plants. 
+READ WIKI PAGE FOR MORE INFORMATION ABOUT THE NEW FEATURES.
