@@ -1,6 +1,2 @@
 #labels Deprecated
-[http://www.softpedia.com/progClean/Winamp-integration-with-Windows-7-taskbar-Clean-138682.html http://www.softpedia.com/base_img/softpedia_clean_award_f.gif] <a href="http://www.downloadatlas.com/freeware-d953c60d.html"><img src="http://www.downloadatlas.com/clean-awards/win7shell-by-atti86.png" style="border:none;" width="160" height="114" alt="Safe free win7shell download!" /></a>  <a href="http://www.downloadroute.com/win7shell-Atti86.html"><img src="http://www.downloadroute.com/images/av-awards/win7shell-Atti86.png" alt="win7shell is Certified by DownloadRoute.com" border="0" /></a>
-
-
-
-[http://www.downloadatlas.com/freeware-d953c60d.html http://www.downloadatlas.com/clean-awards/win7shell-by-atti86.png] [http://www.downloadroute.com/win7shell-Atti86.html http://www.downloadroute.com/images/av-awards/win7shell-Atti86.png]
+<a href="http://www.downloadatlas.com/freeware-d953c60d.html"><img src="http://www.downloadatlas.com/clean-awards/win7shell-by-atti86.png" style="border:none;" width="160" height="114" alt="Safe free win7shell download!" /></a>  <a href="http://www.downloadroute.com/win7shell-Atti86.html"><img src="http://www.downloadroute.com/images/av-awards/win7shell-Atti86.png" alt="win7shell is Certified by DownloadRoute.com" border="0" /></a> [http://www.softpedia.com/progClean/Winamp-integration-with-Windows-7-taskbar-Clean-138682.html http://www.softpedia.com/base_img/softpedia_clean_award_f.gif]
