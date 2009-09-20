@@ -3,15 +3,15 @@
 
 = 0.80 =
 
- * Improvement: Re-designed all the GUI, it's much smaller now, with tabbed windows
+ * Improvement: Re-designed all the GUI, it's much smaller now, with <b>tabbed windows</b>
  * New: Customizable text font, text color and shadow color 
   * As a side-effect, the font size is measured in different units
   * To disable the shadow, set the shadow color to white (RGB 255,255,255)
- * New: Added a new 'Favorite' button on thumbnail. It rated the current song with 5 stars.
+ * New: Added a <b>new 'Favorite' button</b> on thumbnail. It rated the current song with 5 stars.
  * New: feature allowing images to be displayed as icons
   * You can display the selected background as a 50x50 image on the left of the thumbnail
   * Select album art as background, and lower the text size to have album art on the left and text on the right (like the Winamp modern skin notifications)
- * New: feature that uses the taskbar icon progressbar as a VU meter
+ * New: feature that uses the taskbar icon progressbar as a <b>VU meter</b>
   * It doesn't really uses more CPU as I've noticed, someone might like it :)
  * Improvement: you can now load images with alpha channel (partial transparency)
  * Lots of other fixes / improvements.
