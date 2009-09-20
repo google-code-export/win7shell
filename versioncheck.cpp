@@ -92,16 +92,16 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
 
 	size_t pos = GET.find(L"\r\n\r\n", 0);
 	if (pos != string::npos)
-		GET.erase(0, pos+23);
+		GET.erase(0, pos+22);
 
-	pos = GET.find(L"\n\n", 0);
+	pos = GET.find(L"\xA\xA", 0);
 	if (pos == string::npos)
 	{
 		closesocket(sockfd);
 		return L"";
 	}
-
-	if (curvers == GET.substr(0, pos))
+	
+	if (curvers == GET.substr(1, pos-1))
 	{
 		closesocket(sockfd);
 		return L"";
