@@ -20,9 +20,9 @@ On this page you will find settings that will affect the text drawn on the thumb
 
 = Background =
 
- <img src="http://img35.imageshack.us/img35/9251/tab2w.png" border="0" alt="Tab 1">
-
 Here you can select what kind of background you want for your thumbnail. If you enable the <i>iconic image</i> setting on the next page, this background will be used as the icon. (See next page for details)
+
+ <img src="http://img35.imageshack.us/img35/9251/tab2w.png" border="0" alt="Tab 1">
 
  # No background will be used, the text will be written on a transparent thumbnail window.
  # The plug-in will try to find the appropriate album art picture for the currently playing song, and use this as background. The image is scaled according to the maximum thumbnail height allowed, and re-sized preserving aspect ratio.
@@ -33,9 +33,9 @@ Here you can select what kind of background you want for your thumbnail. If you 
 
 = Options =
 
- <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
-
 This page contains general plug-in settings.
+
+ <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
 
  # With this checkbox you can enable or disable the custom thumbnail for Winamp. If you un-check this, nothing will be drawn on the thumbnail. Use this if you don't want to alter the default aero peek thumbnail, and want to use only the rest of the features.
  # This feature adds player control buttons (Previous, Play, Pause, Stop, Next) and a Favorite button to the Aero Peek thumbnail. The first five buttons' roles are obvious, the Favorite button rates the currently playing song with 5 stars.
@@ -45,9 +45,9 @@ This page contains general plug-in settings.
 
 = Taskbar Icon =
 
- <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
-
 You can control the behavior of the taskbar icon from this page. This refers to the progress bar in the background of the icon, and to the icon overlays drawn in the bottom right corner of the icon.
+
+ <img src="http://img17.imageshack.us/img17/2558/tab4f.png" border="0" alt="Tab 1">
 
  # The progress of the playback is shown using the icon progressbar.
  # If you are listening to streaming media, the progress can't be calculated, so an 'indeterminate' progressbar will be shown, if you enable this option. This progressbar is an infinite looping green bar.
@@ -57,17 +57,17 @@ You can control the behavior of the taskbar icon from this page. This refers to 
 
 = Jump List =
 
- <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
-
 The jump list can be reach by right clicking on the taskbar icon, or by "dragging it out" with left click.
+
+ <img src="http://img17.imageshack.us/img17/9963/tab5u.png" border="0" alt="Tab 1">
 
  # If this checkbox is checked, all files played with Winamp will be shown in this jump list.
 
 = Development =
 
- <img src="http://img35.imageshack.us/img35/2278/tab3b.png" border="0" alt="Tab 1">
-
 On this page you'll find some links to several webpages on this site, and similar features.
+
+ <img src="http://img17.imageshack.us/img17/9893/tab6.png" border="0" alt="Tab 1">
 
  # This link opens up the bugs reporting page
  # Link to the project's home page
