@@ -1,2 +1,2 @@
 #labels Deprecated
-  <a href="http://www.softpedia.com/progClean/Winamp-integration-with-Windows-7-taskbar-Clean-138682.html"><img src="http://www.softpedia.com/base_img/softpedia_clean_award_f.gif" border="0" alt="Win7shell 0.71 - SOFTPEDIA "100% CLEAN" AWARD" /></a>
+<img src="http://www.softpedia.com/base_img/softpedia_clean_award_f.gif" border="0" alt="Win7shell 0.71 - SOFTPEDIA "100% CLEAN" AWARD" />
