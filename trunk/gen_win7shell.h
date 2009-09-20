@@ -10,7 +10,7 @@
 #define GPPHDR_VER 0x10
  
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration"
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v0.82"
 
 #ifdef _UNICODE
 #define tstring wstring
@@ -41,13 +41,20 @@ struct sSettings {
 	bool Streamstatus;
 	bool Stoppedstatus;
 	bool Overlay;
-	bool Boldfont;
 	bool Add2RecentDocs;
-	int FontSize;
-	bool Antialis;
+	bool Antialias;
 	bool Shrinkframe;
 	bool ForceVersion;
 	bool DisableUpdates;
+	bool RemoveTitle;
+	bool AsIcon;
+	bool VuMeter;
+};
+
+struct sFontEx {
+	LOGFONT font;
+	DWORD color;
+	DWORD bgcolor;
 };
 
  

@@ -1,9 +1,11 @@
 #define WIN32_LEAN_AND_MEAN
+#define ICONSIZEPX 50
 
 #pragma once
 
 #include <windows.h>
 #include <commctrl.h>
+#include <commdlg.h>
 #include <dwmapi.h>
 #include <string>
 #include <vector>
@@ -20,13 +22,14 @@
 #include "gen_win7shell.h"
 #include "gen.h"
 #include "wa_ipc.h"
-#include "resource.h"
+#include "..\resource.h"
 #include "api.h"
 #include "VersionChecker.h"
+#include "tabs.h"
 
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("0.71"));
+const std::tstring cur_version(__T("0.82"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0 ;
@@ -35,10 +38,11 @@ int gCurPos = -2, gTotal = -2;
 std::tstring W_INI;
 sSettings Settings;
 sSettings_strings Settings_strings;
-BOOL cfgopen = false, btaskinited = false, overlaystate = false, gCheckTotal = true;
+sFontEx Settings_font;
+BOOL cfgopen = false, btaskinited = false, overlaystate = false, gCheckTotal = true, RTL = false;
 HWND cfgwindow = 0;
 Bitmap *background;
-bool bgloaded = false;
+bool AAFound = true;
 std::tstring metadatacache;
 std::tstring lastfilename;
 std::tstring metadatatype;
@@ -51,20 +55,20 @@ std::map<std::tstring, std::tstring> STRINGS;
 VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK cfgWndProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK TabHandler(HWND, UINT, WPARAM, LPARAM);
 
 HIMAGELIST prepareIcons();
 void updateToolbar(bool first);
-void LOADSETTINGS();
-void SAVESETTINGS();
-void ENABLECONTROLS(HWND hwnd, BOOL enable, BOOL upper);		
-int INITTASKBAR();
-void SETWINDOWATTR();
-HBITMAP DRAWTHUMBNAIL(int width, int height);
+void ReadSettings();
+void WriteSettings();
+int InitTaskbar();
+void SetWindowAttr();
+HBITMAP DrawThumbnail(int width, int height);
 std::tstring GetWinampInfo(int slot);
 std::tstring GetMetadata(std::tstring metadata);
 std::tstring SearchDir(std::tstring path);
 std::tstring MetaWord(std::tstring word);
-std::tstring GetLine(int linenumber, bool &center, bool &redshadow);
+std::tstring GetLine(int linenumber, bool &center);
 void LoadStrings(std::tstring Path);
 void FillStrings();
 void getinistring(std::tstring what, std::tstring Path);
@@ -96,9 +100,14 @@ int init()
 	MultiByteToWideChar(CP_ACP, MB_COMPOSITE, INI_FILE, -1, &w_inifile[0], size);
 	W_INI = &w_inifile[0];
 	FillStrings();
-	LoadStrings(W_INI + __T("\\plugins\\win7shell.lng"));
-	W_INI += __T("\\plugins\\win7shell.ini");		
 
+	WIN32_FIND_DATA ffd;
+	if (FindFirstFile(std::wstring(W_INI + __T("\\plugins\\*win7shell.lng")).c_str(), &ffd))
+		LoadStrings(W_INI + __T("\\plugins\\") + ffd.cFileName);
+		
+	W_INI += __T("\\plugins\\win7shell.ini");	
+
+	Settings.VuMeter = false;
 	ZeroMemory(&Settings, sizeof(Settings));
 	if (!GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str()))
 	{
@@ -109,17 +118,31 @@ int init()
 		Settings.Overlay = false;
 		Settings.Streamstatus = true;
 		Settings.Stoppedstatus = true;
-		Settings.Boldfont = false;
 		Settings.Add2RecentDocs = true;
-		Settings.FontSize = 14;
 		Settings.Shrinkframe = true;
-		Settings.Antialis = true;
-		Settings.ForceVersion = false;
+		Settings.Antialias = true;
 		Settings.DisableUpdates = false;
+		Settings.RemoveTitle = false;
+		Settings.AsIcon = false;
+		Settings.VuMeter = false;
 
 		std::ofstream of(&w_inifile[0], std::ios_base::out | std::ios_base::binary);	
 		of.write("\xFF\xFE", 2);
 		of.close();
+	}
+
+	ZeroMemory(&Settings_font, sizeof(Settings_font));
+	if (!GetPrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str()))
+	{
+		LOGFONT ft;
+		wcscpy(ft.lfFaceName, L"Segoe UI");
+		ft.lfHeight = 14;
+		ft.lfStrikeOut = 0;
+		ft.lfUnderline = 0;
+
+		Settings_font.color = RGB(255,255,255);
+		Settings_font.bgcolor = RGB(0,0,0);
+		Settings_font.font = ft;
 	}
 
 	TCHAR path[MAX_PATH];
@@ -138,9 +161,11 @@ int init()
 			std::tstring news = vc->IsNewVersion(cur_version);
 			if (news != __T(""))
 			{
+				news.erase(news.length()-1, 1);
 				news = STRINGS.find(__T("newvers"))->second + __T("   ") + news;
 				news += __T("\n\n") + STRINGS.find(__T("disableupdate"))->second + __T("\n");
 				news += STRINGS.find(__T("opendownload"))->second;
+
 				delete vc;
 				if (MessageBoxEx(plugin.hwndParent, news.c_str(), __T("Win7 Taskbar Integration Plugin"), MB_ICONINFORMATION | MB_YESNO, 0) == IDYES)
 					ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/downloads/list", NULL, NULL, SW_SHOW);		
@@ -159,31 +184,16 @@ int init()
 	pVI.dwOSVersionInfoSize = sizeof(pVI);
 	GetVersionEx(&pVI);
 
-	if (!Settings.ForceVersion)
-		if ((pVI.dwMajorVersion != 6) || (pVI.dwMinorVersion != 1))
-		{
-			std::tstring msg = STRINGS.find(__T("wrongwindows"))->second + __T("\n\n") + STRINGS.find(__T("installanyways"))->second;
-			if ( MessageBoxEx(plugin.hwndParent, msg.c_str(), 
-				STRINGS.find(__T("wrongostitle"))->second.c_str(), MB_ICONSTOP | MB_YESNO, 0) == IDYES )
-			{
-				msg = STRINGS.find(__T("uninstall"))->second + __T("\n\n") + STRINGS.find(__T("uninstallhowto"))->second;
-				MessageBoxEx(plugin.hwndParent, msg.c_str(), STRINGS.find(__T("info"))->second.c_str(), MB_ICONINFORMATION, 0);
-				Settings.ForceVersion = true;
-			}
-			else
-				return -1;
-		}	
-
 	theicons = prepareIcons();
 
-	if ( (!INITTASKBAR()) && (Settings.Thumbnailbuttons) )
+	if ( (!InitTaskbar()) && (Settings.Thumbnailbuttons) )
 	{
 		HRESULT hr = pTBL->ThumbBarSetImageList(plugin.hwndParent, theicons);
 		if (SUCCEEDED(hr))
 			updateToolbar(true);
 	}
 
-	SETWINDOWATTR();
+	SetWindowAttr();
 
 	GdiplusStartupInput gdiplusStartupInput;    
 
@@ -194,7 +204,7 @@ int init()
 	else
 		lpWndProcOld = (WNDPROC)SetWindowLongA(plugin.hwndParent,GWL_WNDPROC,(LONG)WndProc);
 
-	SetTimer(plugin.hwndParent, 6667, 100, TimerProc);
+	SetTimer(plugin.hwndParent, 6667, 50, TimerProc);
 
 	return 0;
 }
@@ -206,18 +216,28 @@ void config()
 		SetForegroundWindow(cfgwindow);
 		return;
 	}
-	cfgwindow = CreateDialogParam(plugin.hDllInstance,MAKEINTRESOURCE(IDD_DIALOG1),plugin.hwndParent,cfgWndProc,0);
+	cfgwindow = CreateDialogParam(plugin.hDllInstance,MAKEINTRESOURCE(IID_MAIN),plugin.hwndParent,cfgWndProc,0);
 	SetWindowText(cfgwindow, STRINGS.find(__T("config"))->second.c_str());
+
+	RECT rc;
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	GetWindowRect(cfgwindow, &rc);
+	SetWindowPos(cfgwindow, 0, (screenWidth - rc.right)/2,
+		(screenHeight - rc.bottom)/2, 0, 0, SWP_NOZORDER|SWP_NOSIZE);
+
 	ShowWindow(cfgwindow,SW_SHOW);
 }
  
 void quit() 
 {	
 	WritePrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str());
+	WritePrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str());
 	WritePrivateProfileString(__T("win7shell"), __T("bgpath"), Settings_strings.BGPath.c_str(), W_INI.c_str());	
 	WritePrivateProfileString(__T("win7shell"), __T("text"), Settings_strings.Text.c_str(), W_INI.c_str());	
 
-	delete background;
+	if (background)
+		delete background;
 
 	if( pTBL != 0 )
     {
@@ -362,9 +382,6 @@ std::tstring MetaWord(std::tstring word)
 	if (word == __T("%c%"))
 		return __T("‡center‡");
 
-	if (word == __T("%r%"))
-		return __T("‡red‡");
-
 	if (word == __T("%title%"))
 		return GetMetadata(__T("title"));
 
@@ -428,6 +445,10 @@ std::tstring MetaWord(std::tstring word)
 		return w.str();
 	}
 
+	if (word.substr(0, 4) == __T("%color:"))
+		return __T("‡color‡");
+	
+
 	return __T("");
 }
 
@@ -438,9 +459,9 @@ HIMAGELIST prepareIcons()
 	HIMAGELIST himlIcons;  
     HICON hicon;  
  
-	himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 5, 0); 	
+	himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 6, 0); 	
 		
-	for (int i = 0; i < 5; ++i)
+	for (int i = 0; i < 6; ++i)
 	{
 		hicon = LoadIcon(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON1+i)); 
 
@@ -460,7 +481,7 @@ void updateToolbar(bool first)
 		return;
 
 	THUMBBUTTONMASK dwMask =  THB_BITMAP | THB_TOOLTIP;
-	THUMBBUTTON thbButtons[4];
+	THUMBBUTTON thbButtons[5];
 
 	thbButtons[0].dwMask = dwMask;
 	thbButtons[0].iId = 0;
@@ -493,18 +514,22 @@ void updateToolbar(bool first)
 	thbButtons[3].iBitmap = 3;
 	wcscpy(thbButtons[3].szTip, STRINGS.find(__T("next"))->second.c_str());	
 
+	thbButtons[4].dwMask = dwMask;
+	thbButtons[4].iId = 5;
+	thbButtons[4].iBitmap = 5;
+	wcscpy(thbButtons[4].szTip, STRINGS.find(__T("favorite"))->second.c_str());	
+
 	if (first)
 		pTBL->ThumbBarAddButtons(plugin.hwndParent, ARRAYSIZE(thbButtons), thbButtons);
 	else
 		pTBL->ThumbBarUpdateButtons(plugin.hwndParent, ARRAYSIZE(thbButtons), thbButtons);
 }
 
-std::tstring GetLine(int linenumber, bool &center, bool &redshadow)
+std::tstring GetLine(int linenumber, bool &center)
 {
 	std::tstring::size_type pos = 0, open = -1;
 	std::tstring text, metaword;
 	center = 0;
-	redshadow = 0;
 	int count = 0;
 	if (linenumber == 0)
 		text = Settings_strings.Text.substr(pos, Settings_strings.Text.find_first_of(NEWLINE, pos));
@@ -535,11 +560,6 @@ std::tstring GetLine(int linenumber, bool &center, bool &redshadow)
 					metaword = __T("");
 					center = true;
 				}
-				else if (metaword == __T("‡red‡"))
-				{
-					metaword = __T("");
-					redshadow = true;
-				}
 
 				text.replace(open, pos-open+1, metaword);
 				open = -1;
@@ -555,15 +575,15 @@ std::tstring GetLine(int linenumber, bool &center, bool &redshadow)
 	return text;
 }
 
-HBITMAP DRAWTHUMBNAIL(int width, int height)
+HBITMAP DrawThumbnail(int width, int height)
 {
 	//Create background
-	if (!bgloaded) 
+	if (!background) 
 		switch (Settings.Thumbnailbackground)
 		{
 		case 0: //transparent
 			background = new Bitmap(width, height, PixelFormat32bppARGB);
-			bgloaded = true;
+			AAFound = false;
 			break;
 
 		case 1: //album art
@@ -593,20 +613,44 @@ HBITMAP DRAWTHUMBNAIL(int width, int height)
 						background = new Bitmap(width, height, PixelFormat32bppARGB);
 						Graphics gfx(background);
 						gfx.SetInterpolationMode(InterpolationModeHighQualityBicubic);
-						gfx.DrawImage(&img, RectF((int)(((double)width-(double)ratio)/(double)2), 0, ratio, height));
+						if (Settings.AsIcon)
+						{							
+							gfx.DrawImage(&img, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
+						}
+						else
+							gfx.DrawImage(&img, RectF((int)(((double)width-(double)ratio)/(double)2), 0, ratio, height));
+						AAFound = true;
 					}
+					else
+					{
+						AAFound = false;
+						if (Settings.AsIcon)
+							background = new Bitmap(width, height, PixelFormat32bppARGB);
+						else
+							background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_WINAMP));
+					}
+				}
+				else				
+				{
+					AAFound = false;
+					if (Settings.AsIcon)
+						background = new Bitmap(width, height, PixelFormat32bppARGB);
 					else
 						background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_WINAMP));
 				}
-				else				
-					background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_WINAMP));
-				bgloaded = true;
 			}
 			break;
 
 		case 2: //default
-			background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
-			bgloaded = true;
+			if (Settings.AsIcon)
+			{
+				Bitmap tmp(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
+				background = new Bitmap(width, height, PixelFormat32bppARGB);
+				Graphics gfx(background);
+				gfx.DrawImage(&tmp, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
+			}
+			else
+				background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
 			break;
 
 		case 3: //custom
@@ -615,14 +659,26 @@ HBITMAP DRAWTHUMBNAIL(int width, int height)
 				Image img(Settings_strings.BGPath.c_str(), true);
 				if (img.GetType() != 0)
 				{
-					background = new Bitmap(width, height, PixelFormat32bppRGB);
+					background = new Bitmap(width, height, PixelFormat32bppARGB);
 					Graphics gfx(background);
 					gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
-					gfx.DrawImage(&img, RectF(0, 0, width, height));
+					if (Settings.AsIcon)
+						gfx.DrawImage(&img, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
+					else
+						gfx.DrawImage(&img, RectF(0, 0, width, height));
 				}
 				else
 				{				
-					background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
+					if (Settings.AsIcon)
+					{
+						Bitmap tmp(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
+						background = new Bitmap(width, height, PixelFormat32bppARGB);
+						Graphics gfx(background);
+						gfx.DrawImage(&tmp, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
+					}
+					else
+						background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
+
 					Settings.Thumbnailbackground = 2;
 				}				
 			}
@@ -631,8 +687,10 @@ HBITMAP DRAWTHUMBNAIL(int width, int height)
 				background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
 				Settings.Thumbnailbackground = 2;
 			}
-			bgloaded = true;
 			break;
+
+		default: 
+			background = new Bitmap(width, height, PixelFormat32bppARGB);
 	}
 
 
@@ -640,9 +698,8 @@ HBITMAP DRAWTHUMBNAIL(int width, int height)
 	HBITMAP retbmp;
 	int lines = 1;
 
-	int weight = 0, textheight, lineheight, linespacing = 1;
-	Settings.Boldfont ? weight = FontStyleBold : weight = 0;
-	Font font(L"Segoe UI", Settings.FontSize, weight, UnitPixel);
+	int textheight, lineheight;
+	Font font(GetDC(0), const_cast<LOGFONT*> (&Settings_font.font));
 	StringFormat sf(StringFormatFlagsNoWrap);
 
 	Graphics tmpgfx(background);					
@@ -657,54 +714,60 @@ HBITMAP DRAWTHUMBNAIL(int width, int height)
 
 	if (Settings.Shrinkframe)
 	{
-		textheight = (lines * lineheight) + ((lines-1) * linespacing); 
-		if (textheight > height-5)
-			textheight = height-5;
+		textheight = (lines * lineheight);
+		if (textheight > height-2)
+			textheight = height-2;
 	}
 	else
-		textheight = height-5;
+		textheight = height-2;
 
-	Bitmap bmp(background->GetWidth(), textheight+5, PixelFormat32bppARGB);
+	Bitmap bmp(background->GetWidth(), textheight+2, PixelFormat32bppARGB);
 	Graphics gfx(&bmp);
 	gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
-	gfx.DrawImage(background, RectF(0, 0, background->GetWidth(), textheight+5));
+	if (Settings.AsIcon)
+		gfx.DrawImage(background, RectF(0, 0, background->GetWidth(), background->GetHeight()));
+	else
+		gfx.DrawImage(background, RectF(0, 0, background->GetWidth(), textheight+2));
 
 	gfx.SetSmoothingMode(SmoothingModeAntiAlias);		
 			
 	if ( (Settings.Thumbnailbackground == 0) || (Settings.Thumbnailbackground == 1) )
-		(Settings.Antialis) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
+		(Settings.Antialias) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
 	else	
-		(Settings.Antialis) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintClearTypeGridFit);		
+		(Settings.Antialias) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintClearTypeGridFit);		
 
-	
+	bool drawshadow = true;
+	SolidBrush bgcolor(Color(GetRValue(Settings_font.bgcolor), GetGValue(Settings_font.bgcolor), GetBValue(Settings_font.bgcolor)));
+	SolidBrush fgcolor(Color(GetRValue(Settings_font.color), GetGValue(Settings_font.color), GetBValue(Settings_font.color)));
+	if (GetRValue(Settings_font.bgcolor) == 255 &&
+		GetGValue(Settings_font.bgcolor) == 255 &&
+		GetBValue(Settings_font.bgcolor) == 255)
+		drawshadow = false;
+
+
+	int left = 3;
+	if (Settings.AsIcon && AAFound)
+		left = ICONSIZEPX + 4;
+
 	for (int i=0; i < lines; i++)
 	{
-		bool center, redshadow;
-		std::tstring text = GetLine(i, center, redshadow);
+		bool center;
+		std::tstring text = GetLine(i, center);
 		sf.SetAlignment(static_cast<StringAlignment>(center));
 
-		int yt = i * (lineheight-2) + 5;
-		//yt += (i+1) * linespacing;				
+		int yt = i * (lineheight-2) + 2;					
 		int yb = yt + lineheight-2;
 
-		if (!Settings.Thumbnailbackground == 0)
+		if (drawshadow)
 		{		
-			SolidBrush *textb;
-			if (redshadow) 
-				textb = new SolidBrush(Color::Red);
-			else
-				textb = new SolidBrush(Color::Black);
-
-			RectF rect(5, yt, 197, yb);				
-			gfx.DrawString(text.c_str(), -1, &font, rect, &sf, textb);		
-			delete textb;
+			RectF rect(left+1, yt, 197, yb);				
+			gfx.DrawString(text.c_str(), -1, &font, rect, &sf, &bgcolor);					
 		}
 
-		SolidBrush textb(Color::White);
-		RectF rect(4, yt-1, 196, yb-2);				
-		gfx.DrawString(text.c_str(), -1, &font, rect, &sf, &textb);	
+		RectF rect(left, yt-1, 196, yb-2);				
+		gfx.DrawString(text.c_str(), -1, &font, rect, &sf, &fgcolor);
 	}
-
+	
 	bmp.GetHBITMAP(Color::Black, &retbmp);
 
 	return retbmp;
@@ -796,31 +859,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_DWMSENDICONICTHUMBNAIL:
 		{
-			HBITMAP thumbnail = DRAWTHUMBNAIL(HIWORD(lParam), LOWORD(lParam));			
-			Sleep(50);
+			HBITMAP thumbnail = DrawThumbnail(HIWORD(lParam), LOWORD(lParam));			
+			Sleep(60);
 
 			HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
 			if (FAILED(hr))
 			{
 				MessageBoxEx(plugin.hwndParent, STRINGS.find(__T("errorthumb"))->second.c_str(), NULL, MB_ICONERROR, 0);
-				SETWINDOWATTR();
+				SetWindowAttr();
 			}
 			DeleteObject(thumbnail);
 			return 0;
 		}
 		break;	
 
-	case WM_COMMAND:
+	case WM_COMMAND:		
 		if (HIWORD(wParam) == THBN_CLICKED)
 			switch (LOWORD(wParam))
 			{
 			case 0:
 				SendMessage(plugin.hwndParent, WM_COMMAND, 40044, 0);
-				if (bgloaded)
+				if (background)
 				{
 					delete background;
-					bgloaded = false;
+					background = 0;
 				}
+				if (Settings.RemoveTitle)
+					SetWindowText(plugin.hwndParent, __T(""));
 				DwmInvalidateIconicBitmaps(plugin.hwndParent);				
 				break;
 			case 1:
@@ -845,13 +910,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case 3:
 				SendMessage(plugin.hwndParent, WM_COMMAND, 40048, 0);
-				if (bgloaded)
+				if (background)
 				{
 					delete background;
-					bgloaded = false;
+					background = 0;
 				}
+				if (Settings.RemoveTitle)
+					SetWindowText(plugin.hwndParent, __T(""));
 				DwmInvalidateIconicBitmaps(plugin.hwndParent);
 				break;
+			case 5:
+				SendMessage(plugin.hwndParent,WM_WA_IPC,5,IPC_SETRATING);
 			}
 		break;
 
@@ -874,10 +943,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 
 				if (Settings.Thumbnailbackground == 1)
-					if (bgloaded)
+					if (background)
 					{
 						delete background;
-						bgloaded = false;
+						background = 0;
 					}
 			}
 			break;
@@ -896,6 +965,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
+	if (Settings.VuMeter)
+	{
+		static int (*export_sa_get)(int channel) = (int(__cdecl *)(int)) SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETVUDATAFUNC);
+		int audiodata = export_sa_get(0);
+
+		if (audiodata <= 70)
+			pTBL->SetProgressState(plugin.hwndParent, TBPF_NORMAL);
+		else if (audiodata > 70 && audiodata < 160)
+			pTBL->SetProgressState(plugin.hwndParent, TBPF_PAUSED);
+		else
+			pTBL->SetProgressState(plugin.hwndParent, TBPF_ERROR);
+
+		pTBL->SetProgressValue(plugin.hwndParent, audiodata, 255);
+		progressbarstate = -1;
+	}
+
+	if (Settings.RemoveTitle)					
+		if (GetWindowTextLength(plugin.hwndParent) != 0)
+			SetWindowText(plugin.hwndParent, __T(""));
 	int ps = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
 	if (playstate == ps)
 	{
@@ -931,20 +1019,24 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 
 				if (Settings.Progressbar)
 				{
-					if (gCurPos == -1)
+					if (gCurPos == -1 || gTotal < 0)
 					{ 
 						if (Settings.Streamstatus)
+						{
 							if (progressbarstate != TBPF_INDETERMINATE)
 							{
 								pTBL->SetProgressState(plugin.hwndParent, TBPF_INDETERMINATE);
 								progressbarstate = TBPF_INDETERMINATE;
 							}
+						}
 						else						
+						{
 							if (progressbarstate != TBPF_NOPROGRESS)
 							{
 								pTBL->SetProgressState(plugin.hwndParent, TBPF_NOPROGRESS);
 								progressbarstate = TBPF_NOPROGRESS;
 							}							
+						}
 					}
 					else
 					{
@@ -1013,7 +1105,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	}
 }
 
-void SETWINDOWATTR()
+void SetWindowAttr()
 {
 	DwmInvalidateIconicBitmaps(plugin.hwndParent);
 	if (Settings.Thumbnailenabled)
@@ -1030,7 +1122,7 @@ void SETWINDOWATTR()
 	}
 }
 
-int INITTASKBAR()
+int InitTaskbar()
 {
 	if (btaskinited)
 		return 0;
@@ -1060,7 +1152,7 @@ int INITTASKBAR()
 	return 0;
 }
 
-void READSETTINGS(HWND hwnd)
+void ReadSettings(HWND hwnd)
 {
 	//Aero peek settings
 	switch (Settings.Thumbnailbackground)
@@ -1094,14 +1186,11 @@ void READSETTINGS(HWND hwnd)
 	//Overlay
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK3), (UINT) BM_SETCHECK, Settings.Overlay, 0);
 
-	//bold
-	SendMessage(GetDlgItem(hwnd, IDC_CHECK18), (UINT) BM_SETCHECK, Settings.Boldfont, 0);
-	
 	//recentdocs
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK19), (UINT) BM_SETCHECK, Settings.Add2RecentDocs, 0);
 
 	//antialias
-	SendMessage(GetDlgItem(hwnd, IDC_CHECK8), (UINT) BM_SETCHECK, Settings.Antialis, 0);
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK8), (UINT) BM_SETCHECK, Settings.Antialias, 0);
 	
 	//shrinkframe
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK1), (UINT) BM_SETCHECK, Settings.Shrinkframe, 0);
@@ -1112,10 +1201,14 @@ void READSETTINGS(HWND hwnd)
 	//disable updated
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK9), (UINT) BM_SETCHECK, Settings.DisableUpdates, 0);
 
-	//fontsize
-	std::wstringstream w;
-	w << Settings.FontSize;
-	SetWindowText(GetDlgItem(hwnd, IDC_EDIT1), w.str().c_str());
+	//remove winamp title
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK10), (UINT) BM_SETCHECK, Settings.RemoveTitle, 0);
+
+	//Show image as icon
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK25), (UINT) BM_SETCHECK, Settings.AsIcon, 0);
+
+	//VU Meter
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_SETCHECK, Settings.VuMeter, 0);
 
 	SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings_strings.BGPath.c_str());
 
@@ -1130,91 +1223,78 @@ void READSETTINGS(HWND hwnd)
 	while (pos != std::tstring::npos);
 	
 	SetWindowText(GetDlgItem(hwnd, IDC_EDIT3), tmpbuf.c_str());
-
-	std::tstring cv = STRINGS.find(__T("plugindev"))->second + __T("  ") + cur_version;
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC3), cv.c_str());
+	
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK4), Settings.Progressbar);
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), Settings.Progressbar);
 }
 
-void WRITESETTINGS(HWND hwnd)
+void WriteSettings(HWND hwnd)
 {
 	//Checkboxes
-	Settings.Overlay = SendMessage(GetDlgItem(hwnd, IDC_CHECK3), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Progressbar = SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Streamstatus = SendMessage(GetDlgItem(hwnd, IDC_CHECK4), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Stoppedstatus = SendMessage(GetDlgItem(hwnd, IDC_CHECK5), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Thumbnailbuttons = SendMessage(GetDlgItem(hwnd, IDC_CHECK6), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK3) != NULL)
+		Settings.Overlay = SendMessage(GetDlgItem(hwnd, IDC_CHECK3), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK2) != NULL)
+		Settings.Progressbar = SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK4) != NULL)
+		Settings.Streamstatus = SendMessage(GetDlgItem(hwnd, IDC_CHECK4), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK5) != NULL)
+		Settings.Stoppedstatus = SendMessage(GetDlgItem(hwnd, IDC_CHECK5), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK6) != NULL)
+		Settings.Thumbnailbuttons = SendMessage(GetDlgItem(hwnd, IDC_CHECK6), (UINT) BM_GETCHECK, 0, 0);
 
-	Settings.Thumbnailenabled = SendMessage(GetDlgItem(hwnd, IDC_CHECK7), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Boldfont = SendMessage(GetDlgItem(hwnd, IDC_CHECK18), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Add2RecentDocs = SendMessage(GetDlgItem(hwnd, IDC_CHECK19), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Antialis = SendMessage(GetDlgItem(hwnd, IDC_CHECK8), (UINT) BM_GETCHECK, 0, 0);
-	Settings.Shrinkframe = SendMessage(GetDlgItem(hwnd, IDC_CHECK1), (UINT) BM_GETCHECK, 0, 0);
-	Settings.DisableUpdates = SendMessage(GetDlgItem(hwnd, IDC_CHECK9), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK7) != NULL)
+		Settings.Thumbnailenabled = SendMessage(GetDlgItem(hwnd, IDC_CHECK7), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK19) != NULL)
+		Settings.Add2RecentDocs = SendMessage(GetDlgItem(hwnd, IDC_CHECK19), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK8) != NULL)
+		Settings.Antialias = SendMessage(GetDlgItem(hwnd, IDC_CHECK8), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK1) != NULL)
+		Settings.Shrinkframe = SendMessage(GetDlgItem(hwnd, IDC_CHECK1), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK9) != NULL)
+		Settings.DisableUpdates = SendMessage(GetDlgItem(hwnd, IDC_CHECK9), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK10) != NULL)
+		Settings.RemoveTitle = SendMessage(GetDlgItem(hwnd, IDC_CHECK10), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK25) != NULL)
+		Settings.AsIcon = SendMessage(GetDlgItem(hwnd, IDC_CHECK25), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK26) != NULL)
+		Settings.VuMeter = SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_GETCHECK, 0, 0);
 
 	//Radiobuttons
-	if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO1), (UINT) BM_GETCHECK, 0 , 0) )
-		Settings.Thumbnailbackground = 0;
-	else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO2), (UINT) BM_GETCHECK, 0 , 0) )
-		Settings.Thumbnailbackground = 1;
-	else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO3), (UINT) BM_GETCHECK, 0 , 0) )
-		Settings.Thumbnailbackground = 2;
-	else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO4), (UINT) BM_GETCHECK, 0 , 0) )
-		Settings.Thumbnailbackground = 3;
-
-	wchar_t wc[4];	
-	GetWindowText(GetDlgItem(hwnd, IDC_EDIT1), wc, 3);
-	Settings.FontSize = _wtoi(wc);
-	if (Settings.FontSize == 0)
-		Settings.FontSize = 14;
-
-	int size = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT2));
-	std::vector<TCHAR> buf1(size+1);
-	GetWindowText(GetDlgItem(hwnd, IDC_EDIT2), &buf1[0], size+1);	
-	Settings_strings.BGPath = &buf1[0];
-
-	size = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT3));
-	std::vector<TCHAR> buf2(size+1);
-	GetWindowText(GetDlgItem(hwnd, IDC_EDIT3), &buf2[0], size+1);	
-	Settings_strings.Text = &buf2[0];
-
-	std::tstring::size_type pos = std::tstring::npos;
-	do 
+	if (GetDlgItem(hwnd, IDC_RADIO1) != NULL)
 	{
-		pos = Settings_strings.Text.find(__T("\xD\xA"));
-		if (pos != std::tstring::npos)
-			Settings_strings.Text.replace(pos, 2, __T("‡"));
+		if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO1), (UINT) BM_GETCHECK, 0 , 0) )
+			Settings.Thumbnailbackground = 0;
+		else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO2), (UINT) BM_GETCHECK, 0 , 0) )
+			Settings.Thumbnailbackground = 1;
+		else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO3), (UINT) BM_GETCHECK, 0 , 0) )
+			Settings.Thumbnailbackground = 2;
+		else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO4), (UINT) BM_GETCHECK, 0 , 0) )
+			Settings.Thumbnailbackground = 3;
 	}
-	while (pos != std::tstring::npos);
-}
 
-void ENABLECONTROLS(HWND hwnd, BOOL enable, BOOL upper)
-{
-	if (upper)
-	{			
-		EnableWindow(GetDlgItem(hwnd, IDC_STATIC1), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_STATIC2), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_BUTTON4), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_BUTTON3), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_EDIT1), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_EDIT2), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_EDIT3), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_RADIO1), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_RADIO2), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_RADIO3), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_RADIO4), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_RADIO1), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_STATIC1), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_CHECK8), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_CHECK18), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_CHECK1), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_STATIC2), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_STATIC12), enable);
-
-	}
-	else
+	if (GetDlgItem(hwnd, IDC_EDIT2) != NULL)
 	{
-		EnableWindow(GetDlgItem(hwnd, IDC_CHECK4), enable);
-		EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), enable);		
+		int size = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT2));
+		std::vector<TCHAR> buf1(size+1);
+		GetWindowText(GetDlgItem(hwnd, IDC_EDIT2), &buf1[0], size+1);	
+		Settings_strings.BGPath = &buf1[0];
+	}
+
+	if (GetDlgItem(hwnd, IDC_EDIT3) != NULL)
+	{
+		int size = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT3));
+		std::vector<TCHAR> buf2(size+1);
+		GetWindowText(GetDlgItem(hwnd, IDC_EDIT3), &buf2[0], size+1);	
+		Settings_strings.Text = &buf2[0];
+
+		std::tstring::size_type pos = std::tstring::npos;
+		do 
+		{
+			pos = Settings_strings.Text.find(__T("\xD\xA"));
+			if (pos != std::tstring::npos)
+				Settings_strings.Text.replace(pos, 2, __T("‡"));
+		}
+		while (pos != std::tstring::npos);
 	}
 }
 
@@ -1264,15 +1344,68 @@ std::tstring GetFileName(HWND hwnd)
 
 static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	static HWND TabCtrl;
+	static HWND Tab1, Tab2, Tab3, Tab4, Tab5, Tab6;
+
 	static bool bbutton;
 	switch(msg)
 	{
 	case WM_INITDIALOG:
 		{			
-			READSETTINGS(hwnd);
-			ENABLECONTROLS(hwnd, SendMessage(GetDlgItem(hwnd, IDC_CHECK7), (UINT) BM_GETCHECK, 0 , 0), true);
-			ENABLECONTROLS(hwnd, SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_GETCHECK, 0, 0), false);
-			SetStrings(hwnd);
+			Tab1 = CreateDialog(plugin.hDllInstance, MAKEINTRESOURCE(IID_TAB1), hwnd, &TabHandler);
+			Tab2 = CreateDialog(plugin.hDllInstance, MAKEINTRESOURCE(IID_TAB2), hwnd, &TabHandler);
+			Tab3 = CreateDialog(plugin.hDllInstance, MAKEINTRESOURCE(IID_TAB3), hwnd, &TabHandler);
+			Tab4 = CreateDialog(plugin.hDllInstance, MAKEINTRESOURCE(IID_TAB4), hwnd, &TabHandler);
+			Tab5 = CreateDialog(plugin.hDllInstance, MAKEINTRESOURCE(IID_TAB5), hwnd, &TabHandler);
+			Tab6 = CreateDialog(plugin.hDllInstance, MAKEINTRESOURCE(IID_TAB6), hwnd, &TabHandler);
+
+			TabCtrl = GetDlgItem(hwnd, IDC_TAB);
+
+			if (STRINGS.find(__T("ok"))!= STRINGS.end())
+				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON1), STRINGS.find(__T("ok"))->second.c_str());
+			if (STRINGS.find(__T("cancel"))!= STRINGS.end())
+				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON2), STRINGS.find(__T("cancel"))->second.c_str());
+
+			int Index = 0;
+			if (STRINGS.find(__T("thumbtext"))!= STRINGS.end())
+				Index = AddTab(TabCtrl, Tab1, const_cast<wchar_t*> (STRINGS.find(__T("thumbtext"))->second.c_str()), -1);
+			else
+				Index = AddTab(TabCtrl, Tab1, __T("Text"), -1);
+
+			if (STRINGS.find(__T("background"))!= STRINGS.end())
+				AddTab(TabCtrl, Tab2, const_cast<wchar_t*> (STRINGS.find(__T("background"))->second.c_str()), -1);
+			else
+				AddTab(TabCtrl, Tab2, __T("Background"), -1);
+
+			if (STRINGS.find(__T("thumboptions"))!= STRINGS.end())
+				AddTab(TabCtrl, Tab3, const_cast<wchar_t*> (STRINGS.find(__T("thumboptions"))->second.c_str()), -1);
+			else
+				AddTab(TabCtrl, Tab3, __T("Options"), -1);
+
+			if (STRINGS.find(__T("taskicon"))!= STRINGS.end())
+				AddTab(TabCtrl, Tab4, const_cast<wchar_t*> (STRINGS.find(__T("taskicon"))->second.c_str()), -1);
+			else
+				AddTab(TabCtrl, Tab4, __T("Taskbar Icon"), -1);
+
+			if (STRINGS.find(__T("jumplist"))!= STRINGS.end())
+				AddTab(TabCtrl, Tab5, const_cast<wchar_t*> (STRINGS.find(__T("jumplist"))->second.c_str()), -1);
+			else
+				AddTab(TabCtrl, Tab5, __T("Jump List"), -1);
+
+			std::tstring cv;
+			if (STRINGS.find(__T("plugdev"))!= STRINGS.end())
+			{
+				cv = STRINGS.find(__T("plugdev"))->second + __T(" v") + cur_version;
+				AddTab(TabCtrl, Tab6, const_cast<wchar_t*> (cv.c_str()), -1);
+			}
+			else
+			{
+				cv = __T("Development v") + cur_version;
+				AddTab(TabCtrl, Tab6, &cv[0], -1);
+			}
+
+			TabToFront(TabCtrl, Index);
+
 			cfgopen = TRUE;
 			bbutton = Settings.Thumbnailbuttons;
 		}
@@ -1281,19 +1414,26 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 		switch (LOWORD(wParam))
 		{
 			case IDC_BUTTON1:
+				DwmInvalidateIconicBitmaps(plugin.hwndParent);
+				playstate = -1;
 				cfgopen = FALSE;
-				WRITESETTINGS(hwnd);
-				if (bgloaded)
+				WriteSettings(Tab1);
+				WriteSettings(Tab2);
+				WriteSettings(Tab3);
+				WriteSettings(Tab4);
+				WriteSettings(Tab5);
+				WriteSettings(Tab6);
+				if (background)
 				{
 					delete background;
-					bgloaded = false;
+					background = 0;
 				}
 
 				if (!Settings.Progressbar)
 					pTBL->SetProgressState(plugin.hwndParent, TBPF_NOPROGRESS);
 	
 				if (bbutton != Settings.Thumbnailbuttons )
-					MessageBoxEx(plugin.hwndParent, STRINGS.find(__T("afterrestart"))->second.c_str(),
+					MessageBoxEx(cfgwindow, STRINGS.find(__T("afterrestart"))->second.c_str(),
 					STRINGS.find(__T("applysettings"))->second.c_str(), MB_ICONWARNING, 0);
 
 				if (!Settings.Overlay)
@@ -1302,93 +1442,204 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 					playstate = -1;
 
 
-				SETWINDOWATTR();
-				DwmInvalidateIconicBitmaps(plugin.hwndParent);
+				SetWindowAttr();
 				DestroyWindow(hwnd);
 				break;
 			case IDC_BUTTON2:
 				cfgopen = FALSE;
 				DestroyWindow(hwnd);
-				break;
-			case IDC_BUTTON3:				
-					SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), GetFileName(hwnd).c_str());
-					if (GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT2)) == 0)
-						SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_SETCHECK, 0, 0);
-					else					
-						SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_SETCHECK, 1, 0);				
-				break;
-			case IDC_BUTTON4:
-				{
-					std::tstring msgtext = STRINGS.find(__T("help1"))->second + __T("\n\n");
-					msgtext += STRINGS.find(__T("help2"))->second + __T("\n\n");
-					msgtext += __T("%c%  -  ") + STRINGS.find(__T("help3"))->second + __T("\n");
-					msgtext += __T("%r%  -  ") + STRINGS.find(__T("help4"))->second + __T("\n");
-					msgtext += __T("%title%  -  ") + STRINGS.find(__T("help5"))->second + __T("\n");
-					msgtext += __T("%artist%  -  ") + STRINGS.find(__T("help6"))->second + __T("\n");
-					msgtext += __T("%album%  -    ") + STRINGS.find(__T("help7"))->second + __T("\n");
-					msgtext += __T("%year%  -  ") + STRINGS.find(__T("help8"))->second + __T("\n");
-					msgtext += __T("%track%  -  ") + STRINGS.find(__T("help9"))->second + __T("\n");
-					msgtext += __T("%rating1%  -  ") + STRINGS.find(__T("help10"))->second + __T("\n");
-					msgtext += __T("%rating2%  -  ") + STRINGS.find(__T("help11"))->second + __T("\n");
-					msgtext += __T("%curtime%  -  ") + STRINGS.find(__T("help12"))->second + __T("\n");
-					msgtext += __T("%timeleft%  -  ") + STRINGS.find(__T("help13"))->second + __T("\n");
-					msgtext += __T("%totaltime%  -  ") + STRINGS.find(__T("help14"))->second + __T("\n");
-					msgtext += __T("%curpl%  -  ") + STRINGS.find(__T("help15"))->second + __T("\n");
-					msgtext += __T("%totalpl%  -  ") + STRINGS.find(__T("help16"))->second + __T("\n");
-					msgtext += __T("%kbps%  -  ") + STRINGS.find(__T("help17"))->second + __T("\n");
-					msgtext += __T("%khz%  -  ") + STRINGS.find(__T("help18"))->second + __T("\n");
-					msgtext += __T("%volume%  -  ") + STRINGS.find(__T("help19"))->second + __T("\n");
-					msgtext += __T("%shuffle%  -  ") + STRINGS.find(__T("help20"))->second + __T("\n");
-					msgtext += __T("%repeat%  -  ") + STRINGS.find(__T("help21"))->second + __T("\n");
-						
-					MessageBoxEx(plugin.hwndParent, msgtext.c_str(), STRINGS.find(__T("info"))->second.c_str(), MB_ICONINFORMATION, 0);
-				}
-				break;
-			case IDC_CHECK7:
-				ENABLECONTROLS(hwnd, SendMessage(GetDlgItem(hwnd, IDC_CHECK7), (UINT) BM_GETCHECK, 0 , 0), true);
-				break;
-			case IDC_CHECK2:
-				ENABLECONTROLS(hwnd, SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_GETCHECK, 0, 0), false);
-				break;
-			case IDC_CHECK20:
-				if (SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_GETCHECK, 0, 0))
-					SendMessage(GetDlgItem(hwnd, IDC_CHECK21), (UINT) BM_SETCHECK, 0, 0);				
-				break;
-			case IDC_CHECK21:
-				if (SendMessage(GetDlgItem(hwnd, IDC_CHECK21), (UINT) BM_GETCHECK, 0, 0))
-					SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_SETCHECK, 0, 0);	
-				break;
+				break;		
 		}
-		break;
+	break;
 
 	case WM_NOTIFY:
-		if (wParam == IDC_SYSLINK1)
-			switch (((LPNMHDR)lParam)->code)
-			{
-			case NM_CLICK:
-			case NM_RETURN:
-				{
-					ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/", NULL, NULL, SW_SHOW);
-				}
-			}
-		else
-			switch (((LPNMHDR)lParam)->code)
-			{
-			case NM_CLICK:
-			case NM_RETURN:
-				{
-					ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/issues/entry", NULL, NULL, SW_SHOW);
-				}
-			}
-		break;
+		switch(((NMHDR *)lParam)->code)
+        {
+        case TCN_SELCHANGE: // Get currently selected tab window to front
+                TabToFront(TabCtrl, -1);
+                break;
+        default:
+                return false;
+        }		
+	break;		
 
 	case WM_CLOSE:
 		cfgopen = FALSE;
+		TabCleanup(TabCtrl);
 		DestroyWindow(hwnd);
+		DestroyWindow(Tab1);
+		DestroyWindow(Tab2);
+		DestroyWindow(Tab3);
+		DestroyWindow(Tab4);
+		DestroyWindow(Tab5);
+		DestroyWindow(Tab6);		
 		break;
 	}
 		
 	return 0;
+}
+
+INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
+{
+HWND TabWindow;
+int Index;
+
+	switch(Message)
+	{
+		case WM_INITDIALOG:			
+			SetStrings(hwnd);
+			ReadSettings(hwnd);
+			break;
+
+		case WM_COMMAND:
+			switch(LOWORD(wParam))
+			{
+				case IDC_BUTTON3:				
+						SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), GetFileName(cfgwindow).c_str());
+						if (GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT2)) == 0)
+							SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_SETCHECK, 0, 0);
+						else					
+							SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_SETCHECK, 1, 0);				
+					break;
+				case IDC_BUTTON4:
+					{
+						std::tstring msgtext = STRINGS.find(__T("help1"))->second + __T("\n\n");
+						msgtext += STRINGS.find(__T("help2"))->second + __T("\n\n");
+						msgtext += __T("%c%  -  ") + STRINGS.find(__T("help3"))->second + __T("\n");
+						msgtext += __T("%title%  -  ") + STRINGS.find(__T("help5"))->second + __T("\n");
+						msgtext += __T("%artist%  -  ") + STRINGS.find(__T("help6"))->second + __T("\n");
+						msgtext += __T("%album%  -    ") + STRINGS.find(__T("help7"))->second + __T("\n");
+						msgtext += __T("%year%  -  ") + STRINGS.find(__T("help8"))->second + __T("\n");
+						msgtext += __T("%track%  -  ") + STRINGS.find(__T("help9"))->second + __T("\n");
+						msgtext += __T("%rating1%  -  ") + STRINGS.find(__T("help10"))->second + __T("\n");
+						msgtext += __T("%rating2%  -  ") + STRINGS.find(__T("help11"))->second + __T("\n");
+						msgtext += __T("%curtime%  -  ") + STRINGS.find(__T("help12"))->second + __T("\n");
+						msgtext += __T("%timeleft%  -  ") + STRINGS.find(__T("help13"))->second + __T("\n");
+						msgtext += __T("%totaltime%  -  ") + STRINGS.find(__T("help14"))->second + __T("\n");
+						msgtext += __T("%curpl%  -  ") + STRINGS.find(__T("help15"))->second + __T("\n");
+						msgtext += __T("%totalpl%  -  ") + STRINGS.find(__T("help16"))->second + __T("\n");
+						msgtext += __T("%kbps%  -  ") + STRINGS.find(__T("help17"))->second + __T("\n");
+						msgtext += __T("%khz%  -  ") + STRINGS.find(__T("help18"))->second + __T("\n");
+						msgtext += __T("%volume%  -  ") + STRINGS.find(__T("help19"))->second + __T("\n");
+						msgtext += __T("%shuffle%  -  ") + STRINGS.find(__T("help20"))->second + __T("\n");
+						msgtext += __T("%repeat%  -  ") + STRINGS.find(__T("help21"))->second + __T("\n");
+							
+						MessageBoxEx(cfgwindow, msgtext.c_str(), 
+							STRINGS.find(__T("info"))->second.c_str(), MB_ICONINFORMATION, 0);
+
+					}
+					break;
+				case IDC_BUTTON5:
+					{
+						CHOOSEFONT cf;
+						ZeroMemory(&cf, sizeof(cf));
+						cf.lStructSize = sizeof(cf);
+						cf.hwndOwner = cfgwindow;					
+						cf.rgbColors = Settings_font.color;
+						cf.lpLogFont = &Settings_font.font;
+						cf.Flags = CF_EFFECTS | CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT;
+						
+						if (ChooseFont(&cf))
+						{
+							Settings_font.font = *cf.lpLogFont;
+							Settings_font.color = cf.rgbColors;
+						}
+					}
+					break;
+				case IDC_BUTTON6:
+					{
+						CHOOSECOLOR cc;                 // common dialog box structure 
+						static COLORREF acrCustClr[16]; // array of custom colors 
+
+						// Initialize CHOOSECOLOR 
+						ZeroMemory(&cc, sizeof(cc));
+						cc.lStructSize = sizeof(cc);
+						cc.hwndOwner = cfgwindow;
+						cc.lpCustColors = (LPDWORD) acrCustClr;
+						cc.rgbResult = Settings_font.bgcolor;
+						cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+						 
+						if (ChooseColor(&cc)==TRUE) 
+						{
+							Settings_font.bgcolor = cc.rgbResult;
+						}
+					}
+					break;
+				case IDC_BUTTON7:
+					{
+						
+					}
+				case IDC_CHECK2:
+					{
+						bool checked = SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_GETCHECK, 0, 0);
+						EnableWindow(GetDlgItem(hwnd, IDC_CHECK4), checked);
+						EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), checked);
+						if (SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_GETCHECK, 0, 0))
+							SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_SETCHECK, 0, 0);		
+					}
+					break;
+				case IDC_CHECK20:
+					if (SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_GETCHECK, 0, 0))
+						SendMessage(GetDlgItem(hwnd, IDC_CHECK21), (UINT) BM_SETCHECK, 0, 0);				
+					break;
+				case IDC_CHECK21:
+					if (SendMessage(GetDlgItem(hwnd, IDC_CHECK21), (UINT) BM_GETCHECK, 0, 0))
+						SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_SETCHECK, 0, 0);	
+					break;
+				case IDC_CHECK26:
+					if (SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_GETCHECK, 0, 0))
+					{
+						SendMessage(GetDlgItem(hwnd, IDC_CHECK2), (UINT) BM_SETCHECK, 0, 0);	
+						EnableWindow(GetDlgItem(hwnd, IDC_CHECK4), 0);
+						EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), 0);
+					}
+					break;
+			}
+			break;
+
+		case WM_NOTIFY:
+				switch (wParam)
+				{
+				case IDC_SYSLINK1:
+					switch (((LPNMHDR)lParam)->code)
+					{
+					case NM_CLICK:
+					case NM_RETURN:
+						{
+							ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/", NULL, NULL, SW_SHOW);
+						}
+					}
+					break;
+
+				case IDC_SYSLINK2:
+					switch (((LPNMHDR)lParam)->code)
+					{
+					case NM_CLICK:
+					case NM_RETURN:
+						{
+							ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/issues/entry", NULL, NULL, SW_SHOW);
+						}
+					}
+					break;
+
+				case IDC_SYSLINK3:
+					switch (((LPNMHDR)lParam)->code)
+					{
+					case NM_CLICK:
+					case NM_RETURN:
+						{
+							ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/wiki/Translations", NULL, NULL, SW_SHOW);
+						}
+					}
+					break;
+				}
+				break;
+
+		default:
+			return false;
+	}
+
+	return true;
 }
 
 void FillStrings()
@@ -1396,13 +1647,8 @@ void FillStrings()
 	STRINGS[__T("newvers")] = __T("New version available");
 	STRINGS[__T("disableupdate")] = __T("You can disable checking for updates in the plugin configuration");
 	STRINGS[__T("opendownload")] = __T("Do you want to open the download page?");
-	STRINGS[__T("wrongwindows")] = __T("Wrong Windows™ version detected. This plugin is targeting Windows™ 7 only.");
-	STRINGS[__T("installanyways")] = __T("Do you want to install it anyways?");
-	STRINGS[__T("wrongostitle")] = __T("Wrong OS detected");
-	STRINGS[__T("uninstall")] = __T("You won't see this question again, if you want to uninstall it, go to");
-	STRINGS[__T("uninstallhowto")] = __T("'Winamp Preferences -> Plug-ins -> General Purpose -> Windows 7 Taskbar Integration' and uninstall.");
-	STRINGS[__T("info")] = __T("Information");
 	STRINGS[__T("config")] = __T("Configure Plugin");
+	STRINGS[__T("info")] = __T("Information");
 	STRINGS[__T("on")] = __T("ON");
 	STRINGS[__T("off")] = __T("OFF");
 	STRINGS[__T("previous")] = __T("Previous");
@@ -1427,7 +1673,6 @@ void FillStrings()
 	STRINGS[__T("help2")] = __T("In order to create dynamic text, you can use a set of ");
 		__T("metawords, which if you include in the text, they will be replaced by the actual data taken from Winamp. Here are these words: ");
 	STRINGS[__T("help3")] = __T("The line that contains this is drawn centered");
-	STRINGS[__T("help4")] = __T("The line that contains this is drawn with red shadow");
 	STRINGS[__T("help5")] = __T("Title of currently playing media");
 	STRINGS[__T("help6")] = __T("Artist of currently playing media");
 	STRINGS[__T("help7")] = __T("Name of album, empty if not found");
@@ -1445,6 +1690,7 @@ void FillStrings()
 	STRINGS[__T("help19")] = __T("Current volume in percentage ('%' sign not included)");
 	STRINGS[__T("help20")] = __T("Shuffle state (ON / OFF)");
 	STRINGS[__T("help21")] = __T("Repeat state (ON / OFF)");
+	STRINGS[__T("favorite")] = __T("Favorite");
 }
 
 void getinistring(std::tstring what, std::tstring Path)
@@ -1457,12 +1703,11 @@ void getinistring(std::tstring what, std::tstring Path)
 
 void LoadStrings(std::tstring Path)
 {
+	RTL = GetPrivateProfileInt(__T("win7shell"), __T("RTL"), 0, Path.c_str());
+
 	getinistring(__T("newvers"), Path);
 	getinistring(__T("disableupdate"), Path);
 	getinistring(__T("opendownload"), Path);
-	getinistring(__T("wrongwindows"), Path);
-	getinistring(__T("installanyways"), Path);
-	getinistring(__T("wrongostitle"), Path);
 	getinistring(__T("uninstall"), Path);
 	getinistring(__T("uninstallhowto"), Path);
 	getinistring(__T("info"), Path);
@@ -1488,7 +1733,6 @@ void LoadStrings(std::tstring Path)
 	getinistring(__T("help1"), Path);
 	getinistring(__T("help2"), Path);
 	getinistring(__T("help3"), Path);
-	getinistring(__T("help4"), Path);
 	getinistring(__T("help5"), Path);
 	getinistring(__T("help6"), Path);
 	getinistring(__T("help7"), Path);
@@ -1508,8 +1752,6 @@ void LoadStrings(std::tstring Path)
 	getinistring(__T("help21"), Path);	
 
 	//GUI
-	getinistring(__T("aerothumb"), Path);
-	getinistring(__T("textonthumb"), Path);
 	getinistring(__T("help"), Path);
 	getinistring(__T("thumbbg"), Path);
 	getinistring(__T("transparent"), Path);
@@ -1517,8 +1759,6 @@ void LoadStrings(std::tstring Path)
 	getinistring(__T("defbg"), Path);
 	getinistring(__T("custombg"), Path);
 	getinistring(__T("browse"), Path);
-	getinistring(__T("fontsz"), Path);
-	getinistring(__T("bold"), Path);
 	getinistring(__T("aa"), Path);
 	getinistring(__T("buttons"), Path);
 	getinistring(__T("shrink"), Path);
@@ -1536,18 +1776,32 @@ void LoadStrings(std::tstring Path)
 	getinistring(__T("noupdate"), Path);
 	getinistring(__T("ok"), Path);
 	getinistring(__T("cancel"), Path);	
+	getinistring(__T("removetitle"), Path);
+	getinistring(__T("selectfont"), Path);
+	getinistring(__T("selectshadow"), Path);
+	getinistring(__T("enable"), Path);
+	getinistring(__T("plugdev"), Path);
+	getinistring(__T("thumboptions"), Path);
+	getinistring(__T("thumbtext"), Path);
+	getinistring(__T("translink"), Path);
+	getinistring(__T("transtext"), Path);
+	getinistring(__T("favorite"), Path);
+	getinistring(__T("vumeter"), Path);
+	getinistring(__T("iconic"), Path);
+	getinistring(__T("background"), Path);
 }
 
+BOOL CALLBACK EnumChildProc(HWND hwndChild, LPARAM lParam) 
+{ 
+	SetWindowLong(hwndChild, GWL_EXSTYLE, 0x00400000);
+	return TRUE;
+}
 
 void SetStrings(HWND hwnd)
 {
-	if (STRINGS.find(__T("aerothumb")) != STRINGS.end() )
-	{
-		std::tstring tmp = __T("       ") + STRINGS.find(__T("aerothumb"))->second;
-		SetWindowText(GetDlgItem(hwnd, IDC_STATIC4), tmp.c_str());
-	}
-	if (STRINGS.find(__T("textonthumb")) != STRINGS.end())
-		SetWindowText(GetDlgItem(hwnd, IDC_STATIC1), STRINGS.find(__T("textonthumb"))->second.c_str());
+	if (RTL)
+		EnumChildWindows(hwnd, EnumChildProc, 0);
+
 	if (STRINGS.find(__T("help"))!= STRINGS.end())
 		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON4), STRINGS.find(__T("help"))->second.c_str());
 	if (STRINGS.find(__T("thumbbg"))!= STRINGS.end())
@@ -1561,11 +1815,7 @@ void SetStrings(HWND hwnd)
 	if (STRINGS.find(__T("custombg"))!= STRINGS.end())
 		SetWindowText(GetDlgItem(hwnd, IDC_RADIO4), STRINGS.find(__T("custombg"))->second.c_str());
 	if (STRINGS.find(__T("browse"))!= STRINGS.end())
-		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON3), STRINGS.find(__T("browse"))->second.c_str());
-	if (STRINGS.find(__T("fontsz"))!= STRINGS.end())
-		SetWindowText(GetDlgItem(hwnd, IDC_STATIC12), STRINGS.find(__T("fontsz"))->second.c_str());
-	if (STRINGS.find(__T("bold"))!= STRINGS.end())
-		SetWindowText(GetDlgItem(hwnd, IDC_CHECK18), STRINGS.find(__T("bold"))->second.c_str());
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON3), STRINGS.find(__T("browse"))->second.c_str());	
 	if (STRINGS.find(__T("aa"))!= STRINGS.end())
 		SetWindowText(GetDlgItem(hwnd, IDC_CHECK8), STRINGS.find(__T("aa"))->second.c_str());
 	if (STRINGS.find(__T("buttons"))!= STRINGS.end())
@@ -1598,12 +1848,27 @@ void SetStrings(HWND hwnd)
 		tmp += __T(" - ") + STRINGS.find(__T("sitetext"))->second;
 		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK1), tmp.c_str());
 	}
+	if (STRINGS.find(__T("translink"))!= STRINGS.end() && STRINGS.find(__T("transtext"))!= STRINGS.end() )
+	{
+		std::tstring tmp = __T("<a>") + STRINGS.find(__T("translink"))->second + __T("</a>");
+		tmp += __T(" - ") + STRINGS.find(__T("transtext"))->second;
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK3), tmp.c_str());
+	}
 	if (STRINGS.find(__T("noupdate"))!= STRINGS.end())
 		SetWindowText(GetDlgItem(hwnd, IDC_CHECK9), STRINGS.find(__T("noupdate"))->second.c_str());
-	if (STRINGS.find(__T("ok"))!= STRINGS.end())
-		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON1), STRINGS.find(__T("ok"))->second.c_str());
-	if (STRINGS.find(__T("cancel"))!= STRINGS.end())
-		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON2), STRINGS.find(__T("cancel"))->second.c_str());
+	
+	if (STRINGS.find(__T("removetitle"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK10), STRINGS.find(__T("removetitle"))->second.c_str());
+	if (STRINGS.find(__T("selectfont"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON5), STRINGS.find(__T("selectfont"))->second.c_str());
+	if (STRINGS.find(__T("enable"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK7), STRINGS.find(__T("enable"))->second.c_str());
+	if (STRINGS.find(__T("selectshadow"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON6), STRINGS.find(__T("selectshadow"))->second.c_str());
+	if (STRINGS.find(__T("iconic"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK25), STRINGS.find(__T("iconic"))->second.c_str());
+	if (STRINGS.find(__T("vumeter"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK26), STRINGS.find(__T("vumeter"))->second.c_str());
 
 
 }
