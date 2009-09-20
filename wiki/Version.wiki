@@ -1,5 +1,5 @@
 #labels Deprecated
-0.80
+0.74
 
 MAJOR GUI rework, check it out, you'll love it :)
 Customizable text font, text color and shadow color (As a side-effect, the font size is measured in different units)
