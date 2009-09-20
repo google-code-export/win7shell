@@ -7,5 +7,6 @@ Added a new 'Favorite' button on thumbnail
 New feature allowing images to be displayed as icons, so you can have album art on the left, and text on the right
 New feature that uses the taskbar icon progressbar as a VU meter :D
 Lots of other fixes / improvements.
+Translations need to be updated :(
 
 READ WIKI PAGE FOR MORE INFORMATION ABOUT THE NEW FEATURES.
