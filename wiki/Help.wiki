@@ -16,12 +16,24 @@ On this page you will find settings that will affect the text drawn on the thumb
 
 = Background =
 
- Here you can select what kind of background you want for your thumbnail. If you enable the <i>iconic image</i> setting on the next page, this background will be used as the icon. (See next page for details)
+Here you can select what kind of background you want for your thumbnail. If you enable the <i>iconic image</i> setting on the next page, this background will be used as the icon. (See next page for details)
 
  # No background will be used, the text will be written on a transparent thumbnail window.
  # The plug-in will try to find the appropriate album art picture for the currently playing song, and use this as background. The image is scaled according to the maximum thumbnail height allowed, and re-sized preserving aspect ratio.
  # The default background is a blue gradient image loaded from inside the plug-in.
- # If you would like to use your own image as background or icon, you can select any image type here. 
+ # If you would like to use your own image as background or icon, you can load an image from your hard drive (or removable, network, anything you want). Supported image types are: BMP, ICON, GIF, JPEG, Exif, PNG, TIFF, WMF, EMF. Images with alpha channel (32bpp, partial transparency) are supported and will be drawn accordingly. 
+ # This text box contains the path to the custom image.
+ # You can browse for your image to find it easier.
+
+= Options =
+
+This page contains general plug-in settings.
+
+ # With this checkbox you can enable or disable the custom thumbnail for Winamp. If you un-check this, nothing will be drawn on the thumbnail. Use this if you don't want to alter the default aero peek thumbnail, and want to use only the rest of the features.
+ # This feature adds player control buttons (Previous, Play, Pause, Stop, Next) and a Favorite button to the Aero Peek thumbnail. The first five buttons' roles are obvious, the Favorite button rates the currently playing song with 5 stars.
+ # You can re-size the thumbnail if your text is smaller than the whole thumbnail window. Enabling this option will cause the thumbnail window to be scaled just to fit the text. It is recommended to enable this if you are using the <i>iconic image</i> feature.
+ # By popular request I've added a feature to remove the title of the Winamp window, which is by default shown on the thumbnail. So far I didn't notice any side effects, but it's not a healthy thing to do (but it looks cooler), especially if you have scrolling Winamp title.
+ # If you enable this option, the background image you've selected won't be drawn as background, but instead it will be rescaled to 50x50 and moved to the left of the thumbnail. This way you can have text next to it on the right. (The text will be drawn near the image automatically). This can be used to imitate the notification window of Winamp's modern skin, just select album art as background, and use title, artist and album as text. If no album art is found, the text is drawn on the left, without any image.
 
  
  
