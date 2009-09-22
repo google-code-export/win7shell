@@ -1,6 +1,11 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.83 =
+ * New: The plug-in is now compiled as pure native code. File size is half of the previous size, and it should be more robust. 
+ * Improvement: 'Favorite' button is now optional, and it's semi-last button on the thumbnail. 
+ * Improvement: Some minor GUI adjustments
+
 = 0.82 =
  * Improvement: Re-sized config window
  * Fix: Some texts weren't translated
