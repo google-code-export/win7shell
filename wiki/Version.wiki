@@ -1,14 +1,8 @@
 #labels Deprecated
-0.82
+0.83
 
-Fixed a nasty bug in 0.80, and some translation issues in 0.81, sorry about that :<
-MAJOR GUI rework, check it out, you'll love it :)
-Customizable text font, text color and shadow color (As a side-effect, the font size is measured in different units)
-Added a new 'Favorite' button on thumbnail
-New feature allowing images to be displayed as icons, so you can have album art on the left, and text on the right
-New feature that uses the taskbar icon progressbar as a VU meter :D
-Support for images with alpha channel (partial transparency)
-Lots of other fixes / improvements.
-Translations need to be updated :(
+The plug-in is now compiled as pure native code. File size is half of the previous size, and it should be more robust... and better!
+'Favorite' button is now optional, and it's semi-last button on the thumbnail.
+Some minor GUI adjustments
 
 READ WIKI PAGE FOR MORE INFORMATION ABOUT THE NEW FEATURES.
