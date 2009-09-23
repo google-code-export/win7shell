@@ -2,14 +2,23 @@
 // Microsoft Visual C++ generated include file.
 // Used by app.rc
 //
+#define LWS_USEVISUALSTYLE              0x0008
+#define LWS_RIGHT						0x0020
 #define IDI_ICON1                       123
 #define IDI_ICON2                       124
 #define IDI_ICON3                       125
 #define IDI_ICON4                       126
 #define IDI_ICON5                       127
-#define IDB_WINAMP                      139
+#define IDI_ICON6                       128
 #define IDD_DIALOG1                     140
+#define IID_MAIN                        140
 #define IDB_BACKGROUND                  142
+#define IID_TAB1                        176
+#define IID_TAB2                        177
+#define IID_TAB3                        178
+#define IID_TAB4                        179
+#define IID_TAB5                        180
+#define IID_TAB6                        181
 #define IDC_BUTTON1                     1002
 #define IDC_BUTTON2                     1003
 #define IDC_CHECK2                      1015
@@ -43,6 +52,7 @@
 #define IDC_SYSLINK1                    1043
 #define IDC_SYSLINK2                    1044
 #define IDC_SPIN1                       1045
+#define IDC_SYSLINK3                    1045
 #define IDC_EDIT1                       1046
 #define IDC_STATIC12                    1047
 #define IDC_CHECK20                     1048
@@ -61,14 +71,22 @@
 #define IDC_RADIO3                      1058
 #define IDC_EDIT4                       1059
 #define IDC_RADIO7                      1060
+#define IDC_BUTTON5                     1063
+#define IDC_TAB                         1064
+#define IDC_BUTTON6                     1069
+#define IDC_CHECK25                     1070
+#define IDC_CHECK26                     1071
+#define IDC_BUTTON7                     1072
+#define IDC_CHECK27                     1073
+#define IDC_SYSLINK4                    1074
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        174
+#define _APS_NEXT_RESOURCE_VALUE        179
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1061
+#define _APS_NEXT_CONTROL_VALUE         1075
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
