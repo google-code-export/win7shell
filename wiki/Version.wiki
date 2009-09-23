@@ -1,8 +1,9 @@
 #labels Deprecated
-0.83
+0.84
 
-The plug-in is now compiled as pure native code. File size is half of the previous size, and it should be more robust... and better!
-'Favorite' button is now optional, and it's semi-last button on the thumbnail.
-Some minor GUI adjustments
+Fixed bug that crashed Winamp on saving settings
+Lots of code optimization, hopefully fixing some of the reported bugs (file size under 200kb!!!)
+Removed Winamp logo, if no album art is found, transparent background is used
+"Author" is translatable
 
-READ WIKI PAGE FOR MORE INFORMATION ABOUT THE NEW FEATURES.
+IF YOU'RE USING 0.7x VERSION OF THE PLUG-IN, PLEASE UPDATE
