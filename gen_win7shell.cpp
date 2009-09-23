@@ -1,4 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
+#define _SECURE_SCL 0
+#define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_NONSTDC_NO_DEPRECATE 1
 #define ICONSIZEPX 50
 
 #pragma once
@@ -22,18 +25,18 @@
 #include "gen_win7shell.h"
 #include "gen.h"
 #include "wa_ipc.h"
-#include "..\resource.h"
+#include "resource.h"
 #include "api.h"
 #include "VersionChecker.h"
 #include "tabs.h"
 
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("0.82"));
+const std::tstring cur_version(__T("0.84"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0 ;
-char playstate = -1, progressbarstate = -1;
+char playstate = -1;
 int gCurPos = -2, gTotal = -2;
 std::tstring W_INI;
 sSettings Settings;
@@ -73,6 +76,7 @@ void LoadStrings(std::tstring Path);
 void FillStrings();
 void getinistring(std::tstring what, std::tstring Path);
 void SetStrings(HWND hwnd);
+inline void SetProgressState(TBPFLAG newstate);
 
 int  init(void);
 void config(void);
@@ -107,8 +111,11 @@ int init()
 		
 	W_INI += __T("\\plugins\\win7shell.ini");	
 
-	Settings.VuMeter = false;
 	ZeroMemory(&Settings, sizeof(Settings));
+
+	Settings.VuMeter = false;
+	Settings.FavButton = true;
+
 	if (!GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str()))
 	{
 		Settings.Thumbnailbackground = 1;
@@ -165,11 +172,11 @@ int init()
 				news = STRINGS.find(__T("newvers"))->second + __T("   ") + news;
 				news += __T("\n\n") + STRINGS.find(__T("disableupdate"))->second + __T("\n");
 				news += STRINGS.find(__T("opendownload"))->second;
-
-				delete vc;
+			
 				if (MessageBoxEx(plugin.hwndParent, news.c_str(), __T("Win7 Taskbar Integration Plugin"), MB_ICONINFORMATION | MB_YESNO, 0) == IDYES)
-					ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/downloads/list", NULL, NULL, SW_SHOW);		
+					ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/", NULL, NULL, SW_SHOW);		
 			}
+			delete vc;
 		}
 
 	MSG msg;
@@ -461,7 +468,11 @@ HIMAGELIST prepareIcons()
  
 	himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 6, 0); 	
 		
-	for (int i = 0; i < 6; ++i)
+	int nricons=5;
+	if (Settings.FavButton)
+		nricons++;
+	
+	for (int i = 0; i < nricons; ++i)
 	{
 		hicon = LoadIcon(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON1+i)); 
 
@@ -481,6 +492,7 @@ void updateToolbar(bool first)
 		return;
 
 	THUMBBUTTONMASK dwMask =  THB_BITMAP | THB_TOOLTIP;
+
 	THUMBBUTTON thbButtons[5];
 
 	thbButtons[0].dwMask = dwMask;
@@ -490,7 +502,7 @@ void updateToolbar(bool first)
 
 
 	thbButtons[1].dwMask = dwMask;
-	thbButtons[1].iId = 1;
+	thbButtons[1].iId = 1;	
 
 	int res = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
 	if (res == 1)
@@ -509,25 +521,37 @@ void updateToolbar(bool first)
 	thbButtons[2].iBitmap = 2;
 	wcscpy(thbButtons[2].szTip, STRINGS.find(__T("stop"))->second.c_str());	
 
-	thbButtons[3].dwMask = dwMask;
-	thbButtons[3].iId = 3;
-	thbButtons[3].iBitmap = 3;
-	wcscpy(thbButtons[3].szTip, STRINGS.find(__T("next"))->second.c_str());	
+	int nrbuttons = 4;	
+	if (Settings.FavButton)
+	{
+		nrbuttons++;
+		thbButtons[3].dwMask = dwMask;
+		thbButtons[3].iId = 5;
+		thbButtons[3].iBitmap = 5;
+		wcscpy(thbButtons[3].szTip, STRINGS.find(__T("favorite"))->second.c_str());	
 
-	thbButtons[4].dwMask = dwMask;
-	thbButtons[4].iId = 5;
-	thbButtons[4].iBitmap = 5;
-	wcscpy(thbButtons[4].szTip, STRINGS.find(__T("favorite"))->second.c_str());	
+		thbButtons[4].dwMask = dwMask;
+		thbButtons[4].iId = 3;
+		thbButtons[4].iBitmap = 3;
+		wcscpy(thbButtons[4].szTip, STRINGS.find(__T("next"))->second.c_str());	
+	}
+	else
+	{
+		thbButtons[3].dwMask = dwMask;
+		thbButtons[3].iId = 3;
+		thbButtons[3].iBitmap = 3;
+		wcscpy(thbButtons[3].szTip, STRINGS.find(__T("next"))->second.c_str());	
+	}
 
 	if (first)
-		pTBL->ThumbBarAddButtons(plugin.hwndParent, ARRAYSIZE(thbButtons), thbButtons);
+		pTBL->ThumbBarAddButtons(plugin.hwndParent, nrbuttons, thbButtons);
 	else
-		pTBL->ThumbBarUpdateButtons(plugin.hwndParent, ARRAYSIZE(thbButtons), thbButtons);
+		pTBL->ThumbBarUpdateButtons(plugin.hwndParent, nrbuttons, thbButtons);
 }
 
 std::tstring GetLine(int linenumber, bool &center)
 {
-	std::tstring::size_type pos = 0, open = -1;
+	std::tstring::size_type pos = 0, open = std::tstring::npos;
 	std::tstring text, metaword;
 	center = 0;
 	int count = 0;
@@ -552,7 +576,7 @@ std::tstring GetLine(int linenumber, bool &center)
 		pos = text.find_first_of('%', pos);		
 		if (pos != std::tstring::npos)
 		{
-			if (open != -1)
+			if (open != std::tstring::npos)
 			{
 				metaword = MetaWord(text.substr(open, pos-open+1));
 				if (metaword == __T("‡center‡"))
@@ -562,8 +586,8 @@ std::tstring GetLine(int linenumber, bool &center)
 				}
 
 				text.replace(open, pos-open+1, metaword);
-				open = -1;
-				pos = -1;
+				open = std::tstring::npos;
+				pos = std::tstring::npos;
 			}
 			else
 				open = pos;
@@ -624,19 +648,13 @@ HBITMAP DrawThumbnail(int width, int height)
 					else
 					{
 						AAFound = false;
-						if (Settings.AsIcon)
-							background = new Bitmap(width, height, PixelFormat32bppARGB);
-						else
-							background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_WINAMP));
+						background = new Bitmap(width, height, PixelFormat32bppARGB);
 					}
 				}
 				else				
 				{
 					AAFound = false;
-					if (Settings.AsIcon)
-						background = new Bitmap(width, height, PixelFormat32bppARGB);
-					else
-						background = new Bitmap(plugin.hDllInstance, MAKEINTRESOURCE(IDB_WINAMP));
+					background = new Bitmap(width, height, PixelFormat32bppARGB);					
 				}
 			}
 			break;
@@ -860,12 +878,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_DWMSENDICONICTHUMBNAIL:
 		{
 			HBITMAP thumbnail = DrawThumbnail(HIWORD(lParam), LOWORD(lParam));			
-			Sleep(60);
+			Sleep(50);
 
 			HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
 			if (FAILED(hr))
 			{
 				MessageBoxEx(plugin.hwndParent, STRINGS.find(__T("errorthumb"))->second.c_str(), NULL, MB_ICONERROR, 0);
+				Settings.Thumbnailenabled = false;
 				SetWindowAttr();
 			}
 			DeleteObject(thumbnail);
@@ -892,21 +911,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					int res = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
 					if (res == 1)
-					{
-						SendMessage(plugin.hwndParent, WM_COMMAND, 40046, 0);			
-						updateToolbar(false);
-					}
-					else
-					{
-						SendMessage(plugin.hwndParent, WM_COMMAND, 40045, 0);
-						updateToolbar(false);
-					}
+						SendMessage(plugin.hwndParent, WM_COMMAND, 40046, 0);									
+					else					
+						SendMessage(plugin.hwndParent, WM_COMMAND, 40045, 0);					
+					updateToolbar(false);
+					playstate = res;
 				}
 				break;
 			case 2:
 				SendMessage(plugin.hwndParent, WM_COMMAND, 40047, 0);
 				playstate = 3; //stopped
-				updateToolbar(false);
 				break;
 			case 3:
 				SendMessage(plugin.hwndParent, WM_COMMAND, 40048, 0);
@@ -921,6 +935,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case 5:
 				SendMessage(plugin.hwndParent,WM_WA_IPC,5,IPC_SETRATING);
+				DwmInvalidateIconicBitmaps(plugin.hwndParent);
 			}
 		break;
 
@@ -934,6 +949,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					pTBL->SetOverlayIcon(plugin.hwndParent, ImageList_GetIcon(theicons, 1, 0), __T("Playing"));
 				DwmInvalidateIconicBitmaps(plugin.hwndParent);
 				updateToolbar(false);
+				playstate = 1;
 
 				if (Settings.Add2RecentDocs)
 				{
@@ -963,6 +979,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return CallWindowProc(lpWndProcOld,hwnd,message,wParam,lParam);	 
 }
 
+inline void SetProgressState(TBPFLAG newstate)
+{
+	static TBPFLAG progressbarstate = TBPF_NOPROGRESS;
+	if (newstate != progressbarstate)
+	{
+		pTBL->SetProgressState(plugin.hwndParent, newstate);
+		progressbarstate = newstate;
+	}
+}
+
 VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
 	if (Settings.VuMeter)
@@ -970,20 +996,36 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 		static int (*export_sa_get)(int channel) = (int(__cdecl *)(int)) SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETVUDATAFUNC);
 		int audiodata = export_sa_get(0);
 
-		if (audiodata <= 70)
-			pTBL->SetProgressState(plugin.hwndParent, TBPF_NORMAL);
-		else if (audiodata > 70 && audiodata < 160)
-			pTBL->SetProgressState(plugin.hwndParent, TBPF_PAUSED);
+		if (playstate != 1 || audiodata == -1)
+		{
+			SetProgressState(TBPF_NOPROGRESS);
+		}
 		else
-			pTBL->SetProgressState(plugin.hwndParent, TBPF_ERROR);
+		{
+			if (audiodata <= 150)
+				SetProgressState(TBPF_NORMAL);
+			else if (audiodata > 150 && audiodata < 210)
+				SetProgressState(TBPF_PAUSED);
+			else
+				SetProgressState(TBPF_ERROR);		
 
-		pTBL->SetProgressValue(plugin.hwndParent, audiodata, 255);
-		progressbarstate = -1;
+			pTBL->SetProgressValue(plugin.hwndParent, audiodata, 255);
+		}
 	}
 
 	if (Settings.RemoveTitle)					
 		if (GetWindowTextLength(plugin.hwndParent) != 0)
 			SetWindowText(plugin.hwndParent, __T(""));
+
+	if (!(Settings.Progressbar || Settings.VuMeter))
+		SetProgressState(TBPF_NOPROGRESS);
+
+	if (!Settings.Overlay && overlaystate)
+	{
+		pTBL->SetOverlayIcon(plugin.hwndParent, NULL, NULL);
+		overlaystate = false;
+	}
+
 	int ps = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
 	if (playstate == ps)
 	{
@@ -994,6 +1036,8 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 		}
 		gCurPos = cp;
 	}
+	else
+		updateToolbar(false);
 
 	if (gCheckTotal || gTotal <= 0)
 	{
@@ -1002,6 +1046,9 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	}
 
 	playstate = ps;
+
+	if (!(Settings.Progressbar || Settings.Overlay))
+		return;
 
 	switch (playstate)
 	{
@@ -1015,45 +1062,25 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 						STRINGS.find(__T("playing"))->second.c_str());
 					overlaystate = true;
 				}					
-				updateToolbar(false);
 
 				if (Settings.Progressbar)
 				{
 					if (gCurPos == -1 || gTotal < 0)
 					{ 
 						if (Settings.Streamstatus)
-						{
-							if (progressbarstate != TBPF_INDETERMINATE)
-							{
-								pTBL->SetProgressState(plugin.hwndParent, TBPF_INDETERMINATE);
-								progressbarstate = TBPF_INDETERMINATE;
-							}
-						}
+							SetProgressState(TBPF_INDETERMINATE);
 						else						
-						{
-							if (progressbarstate != TBPF_NOPROGRESS)
-							{
-								pTBL->SetProgressState(plugin.hwndParent, TBPF_NOPROGRESS);
-								progressbarstate = TBPF_NOPROGRESS;
-							}							
-						}
+							SetProgressState(TBPF_NOPROGRESS);
 					}
 					else
 					{
-						if (progressbarstate != TBPF_NORMAL)
-						{
-							pTBL->SetProgressState(plugin.hwndParent, TBPF_NORMAL);
-							progressbarstate = TBPF_NORMAL;
-						}
-						
+						SetProgressState(TBPF_NORMAL);
 						pTBL->SetProgressValue(plugin.hwndParent, gCurPos, gTotal);	
 					}
 				}
 			break;
 
 		case 3: 
-				updateToolbar(false);
-
 				if (Settings.Overlay)
 					pTBL->SetOverlayIcon(plugin.hwndParent, ImageList_GetIcon(theicons, 4, 0), 
 					STRINGS.find(__T("paused"))->second.c_str());
@@ -1061,12 +1088,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 
 				if (Settings.Progressbar)
 				{
-					if (progressbarstate != TBPF_PAUSED)
-					{
-						pTBL->SetProgressState(plugin.hwndParent, TBPF_PAUSED);
-						progressbarstate = TBPF_PAUSED;
-					}
-
+					SetProgressState(TBPF_PAUSED);
 					pTBL->SetProgressValue(plugin.hwndParent, gCurPos, gTotal);	
 
 					if (SendMessage(plugin.hwndParent,WM_WA_IPC,1,IPC_GETOUTPUTTIME) == -1)
@@ -1081,25 +1103,15 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 				STRINGS.find(__T("stopped"))->second.c_str());
 			overlaystate = false;
 
-			updateToolbar(false);
-
 			if (Settings.Progressbar) 
 			{
 				if (Settings.Stoppedstatus)
 				{
-					if (progressbarstate != TBPF_ERROR)
-					{
-						pTBL->SetProgressState(plugin.hwndParent, TBPF_ERROR);
-						progressbarstate = TBPF_ERROR;
-					}
+					SetProgressState(TBPF_ERROR);
 					pTBL->SetProgressValue(plugin.hwndParent, 100, 100);
 				}
 				else
-					if (progressbarstate != TBPF_NOPROGRESS)
-					{
-						pTBL->SetProgressState(plugin.hwndParent, TBPF_NOPROGRESS);
-						progressbarstate = TBPF_NOPROGRESS;
-					}
+					SetProgressState(TBPF_NOPROGRESS);
 			}
 			break;
 	}
@@ -1108,18 +1120,10 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 void SetWindowAttr()
 {
 	DwmInvalidateIconicBitmaps(plugin.hwndParent);
-	if (Settings.Thumbnailenabled)
-	{
-		BOOL b = TRUE;
-		DwmSetWindowAttribute(plugin.hwndParent, DWMWA_HAS_ICONIC_BITMAP, &b, sizeof(b));
-		DwmSetWindowAttribute(plugin.hwndParent, DWMWA_FORCE_ICONIC_REPRESENTATION, &b, sizeof(b));
-	}
-	else
-	{
-		BOOL b = FALSE;
-		DwmSetWindowAttribute(plugin.hwndParent, DWMWA_HAS_ICONIC_BITMAP, &b, sizeof(b));
-		DwmSetWindowAttribute(plugin.hwndParent, DWMWA_FORCE_ICONIC_REPRESENTATION, &b, sizeof(b));
-	}
+	BOOL b = Settings.Thumbnailenabled;	
+		
+	DwmSetWindowAttribute(plugin.hwndParent, DWMWA_HAS_ICONIC_BITMAP, &b, sizeof(b));
+	DwmSetWindowAttribute(plugin.hwndParent, DWMWA_FORCE_ICONIC_REPRESENTATION, &b, sizeof(b));	
 }
 
 int InitTaskbar()
@@ -1210,6 +1214,9 @@ void ReadSettings(HWND hwnd)
 	//VU Meter
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_SETCHECK, Settings.VuMeter, 0);
 
+	//Favorite button
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK27), (UINT) BM_SETCHECK, Settings.FavButton, 0);
+
 	SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings_strings.BGPath.c_str());
 
 	std::tstring tmpbuf = Settings_strings.Text;
@@ -1226,6 +1233,7 @@ void ReadSettings(HWND hwnd)
 	
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK4), Settings.Progressbar);
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), Settings.Progressbar);
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK27), Settings.Thumbnailbuttons);
 }
 
 void WriteSettings(HWND hwnd)
@@ -1258,6 +1266,8 @@ void WriteSettings(HWND hwnd)
 		Settings.AsIcon = SendMessage(GetDlgItem(hwnd, IDC_CHECK25), (UINT) BM_GETCHECK, 0, 0);
 	if (GetDlgItem(hwnd, IDC_CHECK26) != NULL)
 		Settings.VuMeter = SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK27) != NULL)
+		Settings.FavButton = SendMessage(GetDlgItem(hwnd, IDC_CHECK27), (UINT) BM_GETCHECK, 0, 0);
 
 	//Radiobuttons
 	if (GetDlgItem(hwnd, IDC_RADIO1) != NULL)
@@ -1347,7 +1357,6 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 	static HWND TabCtrl;
 	static HWND Tab1, Tab2, Tab3, Tab4, Tab5, Tab6;
 
-	static bool bbutton;
 	switch(msg)
 	{
 	case WM_INITDIALOG:
@@ -1407,43 +1416,42 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 			TabToFront(TabCtrl, Index);
 
 			cfgopen = TRUE;
-			bbutton = Settings.Thumbnailbuttons;
 		}
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
 			case IDC_BUTTON1:
-				DwmInvalidateIconicBitmaps(plugin.hwndParent);
-				playstate = -1;
-				cfgopen = FALSE;
-				WriteSettings(Tab1);
-				WriteSettings(Tab2);
-				WriteSettings(Tab3);
-				WriteSettings(Tab4);
-				WriteSettings(Tab5);
-				WriteSettings(Tab6);
-				if (background)
 				{
-					delete background;
-					background = 0;
-				}
+					playstate = -1;
+					cfgopen = FALSE;
+					bool b1 = Settings.Thumbnailbuttons, b2 = Settings.FavButton;
+					
+					WriteSettings(Tab1);
+					WriteSettings(Tab2);
+					WriteSettings(Tab3);
+					WriteSettings(Tab4);
+					WriteSettings(Tab5);
+					WriteSettings(Tab6);
+									
+					SetWindowAttr();
 
-				if (!Settings.Progressbar)
-					pTBL->SetProgressState(plugin.hwndParent, TBPF_NOPROGRESS);
-	
-				if (bbutton != Settings.Thumbnailbuttons )
-					MessageBoxEx(cfgwindow, STRINGS.find(__T("afterrestart"))->second.c_str(),
-					STRINGS.find(__T("applysettings"))->second.c_str(), MB_ICONWARNING, 0);
+					if (background)
+					{
+						delete background;
+						background = 0;
+					}
 
-				if (!Settings.Overlay)
-					pTBL->SetOverlayIcon(plugin.hwndParent, NULL, NULL);
-				else
+					if (b1 != Settings.Thumbnailbuttons || b2 != Settings.FavButton)
+					{
+						MessageBoxEx(cfgwindow, STRINGS.find(__T("afterrestart"))->second.c_str(),
+							STRINGS.find(__T("applysettings"))->second.c_str(), MB_ICONWARNING, 0);					
+					}
+
 					playstate = -1;
 
-
-				SetWindowAttr();
-				DestroyWindow(hwnd);
+					DestroyWindow(hwnd);
+				}
 				break;
 			case IDC_BUTTON2:
 				cfgopen = FALSE;
@@ -1481,9 +1489,6 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
 INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-HWND TabWindow;
-int Index;
-
 	switch(Message)
 	{
 		case WM_INITDIALOG:			
@@ -1578,6 +1583,9 @@ int Index;
 							SendMessage(GetDlgItem(hwnd, IDC_CHECK26), (UINT) BM_SETCHECK, 0, 0);		
 					}
 					break;
+				case IDC_CHECK6:
+					EnableWindow(GetDlgItem(hwnd, IDC_CHECK27), SendMessage(GetDlgItem(hwnd, IDC_CHECK6), 
+						(UINT) BM_GETCHECK, 0, 0));
 				case IDC_CHECK20:
 					if (SendMessage(GetDlgItem(hwnd, IDC_CHECK20), (UINT) BM_GETCHECK, 0, 0))
 						SendMessage(GetDlgItem(hwnd, IDC_CHECK21), (UINT) BM_SETCHECK, 0, 0);				
@@ -1632,6 +1640,18 @@ int Index;
 						}
 					}
 					break;
+
+				case IDC_SYSLINK4:
+					switch (((LPNMHDR)lParam)->code)
+					{
+					case NM_CLICK:
+					case NM_RETURN:
+						{
+							ShellExecute(NULL, L"open", L"mailto:atti86@gmail.com", NULL, NULL, SW_SHOW);
+						}
+					}
+					break;
+
 				}
 				break;
 
@@ -1789,6 +1809,8 @@ void LoadStrings(std::tstring Path)
 	getinistring(__T("vumeter"), Path);
 	getinistring(__T("iconic"), Path);
 	getinistring(__T("background"), Path);
+	getinistring(__T("addfav"), Path);
+	getinistring(__T("author"), Path);
 }
 
 BOOL CALLBACK EnumChildProc(HWND hwndChild, LPARAM lParam) 
@@ -1869,12 +1891,24 @@ void SetStrings(HWND hwnd)
 		SetWindowText(GetDlgItem(hwnd, IDC_CHECK25), STRINGS.find(__T("iconic"))->second.c_str());
 	if (STRINGS.find(__T("vumeter"))!= STRINGS.end())
 		SetWindowText(GetDlgItem(hwnd, IDC_CHECK26), STRINGS.find(__T("vumeter"))->second.c_str());
-
-
+	if (STRINGS.find(__T("addfav"))!= STRINGS.end())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK27), STRINGS.find(__T("addfav"))->second.c_str());
+	if (STRINGS.find(__T("author"))!= STRINGS.end())
+	{
+		std::tstring tmp = STRINGS.find(__T("author"))->second + __T(": Magyari Attila <a>atti86@gmail.com</a>");
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK4), tmp.c_str());
+	}
 }
 
 // This is an export function called by winamp which returns this plugin info.
 // We wrap the code in 'extern "C"' to ensure the export isn't mangled if used in a CPP file.
 extern "C" __declspec(dllexport) winampGeneralPurposePlugin * winampGetGeneralPurposePlugin() {
   return &plugin;
+}
+
+extern "C" __declspec(dllexport) int __stdcall foo(int nr) {	
+	std::stringstream ss;
+	ss << nr;
+	MessageBoxA(0, ss.str().c_str() , "hy", MB_ICONINFORMATION | MB_OK);
+	return 0;
 }

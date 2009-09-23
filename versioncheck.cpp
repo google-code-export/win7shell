@@ -2,6 +2,7 @@
 #include <ws2tcpip.h>
 #include <string>
 #include <vector>
+#include <sstream>
 #include "VersionChecker.h"
 
 using namespace std;
@@ -77,13 +78,18 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
 		return L"";
 	}
 
-	string tmp(buf.begin(), buf.begin()+numbytes); 
-	int size = MultiByteToWideChar(CP_ACP, MB_COMPOSITE, tmp.c_str(), -1, NULL, 0);
-	std::vector<TCHAR> buf2(size+1);
-	MultiByteToWideChar(CP_ACP, MB_COMPOSITE, tmp.c_str(), -1, &buf2[0], size);
+	wstring GET;
+	try 
+	{
+		GET.assign(buf.begin(), buf.begin()+numbytes);
+	}
+	catch (std::exception e)
+	{
+		MessageBoxA(0, e.what(), "Error", MB_ICONSTOP);
+		closesocket(sockfd);
+		return L"";
+	}
 
-
-	wstring GET(buf2.begin(), buf2.begin()+size);
 	if (GET.substr(0, 15) != L"HTTP/1.1 200 OK")
 	{
 		closesocket(sockfd);

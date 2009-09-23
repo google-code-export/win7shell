@@ -10,7 +10,7 @@
 #define GPPHDR_VER 0x10
  
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration v0.82"
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v0.84"
 
 #ifdef _UNICODE
 #define tstring wstring
@@ -49,6 +49,7 @@ struct sSettings {
 	bool RemoveTitle;
 	bool AsIcon;
 	bool VuMeter;
+	bool FavButton;
 };
 
 struct sFontEx {
