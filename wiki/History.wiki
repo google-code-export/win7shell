@@ -1,6 +1,12 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.84 =
+ * Fix: a bug that crashed Winamp on saving settings
+ * Improvement: Lots of code optimization, hopefully fixing some of the reported bugs (file size under 200kb!!!)
+ * Remake: Removed Winamp logo, if no album art is found, transparent background is used
+ * Translation: "Author" is translatable
+
 = 0.83 =
  * New: The plug-in is now compiled as pure native code. File size is half of the previous size, and it should be more robust. 
  * Improvement: 'Favorite' button is now optional, and it's semi-last button on the thumbnail. 
@@ -27,12 +33,12 @@
   * It doesn't really uses more CPU as I've noticed, someone might like it :)
  * Improvement: you can now load images with alpha channel (partial transparency)
  * Lots of other fixes / improvements.
- * Translations texts changed, 12 lines added, please update if you can
+ * Translation: changed, 12 lines added, please update if you can
 
 = 0.74 =
  * Fix: Some lines in the GUI weren't translated correctly.
  * New: Fully customizable drawing font. Color is only applied to shadow color. Shadow won't be drawn in transparent background mode. <b>Removed %red% metaword</b>
- * New: Support for "Right to Left" languages. You can mirror the GUI by settings a value in the translation file
+ * Translation: Support for "Right to Left" languages. You can mirror the GUI by settings a value in the translation file
  * Improvement: Re-sized GUI again 
 
 = 0.73 =
