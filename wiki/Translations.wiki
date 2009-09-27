@@ -17,6 +17,8 @@
  * <b>Czech</b> by Dlouhan [http://win7shell.googlecode.com/files/CZECH_win7shell.lng Download]
  * <b>Dutch</b> by Kay S [http://win7shell.googlecode.com/files/DUTCH_win7shell.lng Download]
 
+---- 
+
 = Translating The Plug-In =
 
 Download the template translation file [http://win7shell.googlecode.com/files/ENGLISH_win7shell.lng Download file]
@@ -35,6 +37,8 @@ Make sure the text fits the GUI in the configuration window
 = Using Translations =
 
 From version <b>0.90</b> I will include the language files in the installer, and it will automatically copy it in the right directory. If you however want to do it manually, here is how:
+
+---- 
 
 You can use only one translation at a time. If you want to change it, you replace the translation file with the new one. The file is located in the Winamp settings folder.
 
