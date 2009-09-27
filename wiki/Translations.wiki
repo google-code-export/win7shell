@@ -15,6 +15,7 @@
  * <b>Swedish</b> translation by eson [http://win7shell.googlecode.com/files/SWEDISH_win7shell.lng Download]
  * <b>Portuguese (Brazilian)</b> by Paulo Tolentino [http://win7shell.googlecode.com/files/PT_BR_win7shell.lng Download]
  * <b>Czech</b> by Dlouhan [http://win7shell.googlecode.com/files/CZECH_win7shell.lng Download]
+ * <b>Dutch</b> by Kay S [http://win7shell.googlecode.com/files/DUTCH_win7shell.lng Download]
 
 = Translating The Plug-In =
 
