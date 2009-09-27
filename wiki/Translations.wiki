@@ -34,6 +34,8 @@ Make sure the text fits the GUI in the configuration window
 
 = Using Translations =
 
+From version <b>0.90</b> I will include the language files in the installer, and it will automatically copy it in the right directory. If you however want to do it manually, here is how:
+
 You can use only one translation at a time. If you want to change it, you replace the translation file with the new one. The file is located in the Winamp settings folder.
 
 To open the folder, navigate to <b>%appdata%\Winamp\Plugins</b>. You can open start menu, select Run (Winkey + R) and type <b>%appdata%\Winamp\Plugins</b> to open it. 
