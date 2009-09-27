@@ -17,7 +17,7 @@
  * <b>Czech</b> by Dlouhan [http://win7shell.googlecode.com/files/CZECH_win7shell.lng Download]
  * <b>Dutch</b> by Kay S [http://win7shell.googlecode.com/files/DUTCH_win7shell.lng Download]
 
----- 
+----
 
 = Translating The Plug-In =
 
