@@ -2,7 +2,7 @@
 #labels Featured
 
 = 0.90 =
- * Improvement: Re-wrote a large part of the code; significantly reduced CPU usage (If you have performance drops while using some features of this plug-in, they should be gone now)
+ * Improvement: Re-wrote a large part of the code; significantly reduced CPU usage (If you had performance drops while using some features of this plug-in, they should be gone now)
  * Improvement: You can now customize thumbnail buttons, enable and disable them one by one
  * Improvement: Any ID3 tag (text only) can be used as metaword, just surround the tag with '%' (percent) characters. e.g. %comment%
  * New: Added 3 new thumbnail buttons: Volume Up, Volume Down and Open File
