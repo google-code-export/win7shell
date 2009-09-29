@@ -1,6 +1,16 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.91 =
+ * Fix: LOTS of important fixes, reported bugs
+ * Fix: Fixed and improved jump list, added Recent, Frequent and Tasks category.
+ * Improvement: Re-designed thumbnail progressbar.
+ * Improvement: Added notice about the thumbnail buttons taking effect only after restart.
+ * New: Added application ID 'Winamp', for the taskbar control. It "should" fix lots of related issues, including the dual monitor one. 
+ * Translation: 3 new lines in translation.
+
+IF YOU HAD WINAMP PINNED TO TASKBAR, REMOVE THE OLD ICON AND PIN THE NEW ONE.
+
 = 0.90 =
  * Improvement: Re-wrote a large part of the code; significantly reduced CPU usage (If you had performance drops while using some features of this plug-in, they should be gone now)
  * Improvement: You can now customize thumbnail buttons, enable and disable them one by one
