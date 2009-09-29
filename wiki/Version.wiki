@@ -1,10 +1,9 @@
 #labels Deprecated
-0.90
+0.91
 
-Re-wrote a large part of the code; significantly reduced CPU usage (If you had performance drops while using some features of this plug-in, they should be gone now)
-You can now customize thumbnail buttons, enable and disable them one by one
-Any ID3 tag (text only) can be read and used as metaword
-Added 3 new thumbnail buttons: Volume Up, Volume Down and Open File
-Added feature to show playback progress on thumbnail
-Installer now contains all language files, and will copy the selected one into the destination folder.
-Translation: Added 4 lines, removed 'addfav'
+LOTS of important fixes and improvements. It's a must have after the rather buggy 0.90.
+Fixed and improved jump list, added Recent, Frequent and Tasks category.
+Re-designed thumbnail progressbar.
+Added notice about the thumbnail buttons taking effect only after restart.
+Added application ID 'Winamp', for the taskbar control. It "should" fix lots of related issues, including the dual monitor one. 
+3 new lines in translation.
