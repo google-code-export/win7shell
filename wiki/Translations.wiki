@@ -21,7 +21,7 @@
 
 = Translating The Plug-In =
 
-Download the template translation file [http://win7shell.googlecode.com/files/ENGLISH_win7shell.lng Download file]
+Download the template translation file [http://win7shell.googlecode.com/files/ENG_win7shell.lng Download file]
 
 Open it in any Unicode text editor
 
