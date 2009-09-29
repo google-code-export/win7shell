@@ -7,3 +7,4 @@ Re-designed thumbnail progressbar.
 Added notice about the thumbnail buttons taking effect only after restart.
 Added application ID 'Winamp', for the taskbar control. It "should" fix lots of related issues, including the dual monitor one. 
 3 new lines in translation.
+IF YOU HAD INAMP PINNED ON TASKBAR, REMOVE THE OLD ICON AND PIN THE NEW ONE.
