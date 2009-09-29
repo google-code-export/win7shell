@@ -8,3 +8,4 @@ Added notice about the thumbnail buttons taking effect only after restart.
 Added application ID 'Winamp', for the taskbar control. It "should" fix lots of related issues, including the dual monitor one. 
 3 new lines in translation.
 IF YOU HAD WINAMP PINNED TO TASKBAR, REMOVE THE OLD ICON AND PIN THE NEW ONE.
+There are some known bugs with this release, I'll try to figure them out soon :(
