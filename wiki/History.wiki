@@ -1,6 +1,9 @@
 #summary Plugin changelog
 #labels Featured
 
+= 0.92 =
+ * Fix: Several huge bugs from 0.91
+
 = 0.91 =
  * Fix: LOTS of important fixes, reported bugs
  * Fix: Fixed and improved jump list, added Recent, Frequent and Tasks category.
