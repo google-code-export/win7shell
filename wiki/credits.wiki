@@ -1,3 +1,0 @@
-#summary People worth mentioning who helped with this plug-in
-
-= Work in progress =
