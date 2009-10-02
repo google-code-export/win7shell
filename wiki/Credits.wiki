@@ -14,21 +14,23 @@ Next I'd like to thank some people / group of people who helped me with various 
 <b>NSIS installer</b> - [http://nsis.sourceforge.net/License Licenses]
 
 <b>Translators</b>
+ * AKLP
+ * AlexP
+ * Alexpd
  * Dlouhan
+ * Eson
+ * Iatanku
  * Psik0tik
  * Keigel2001
- * Pawel Porwisz
- * Paulo Augusto Tolentino
- * Iatanku
- * AlexP
- * Mr.Henky
- * Seven
- * Pedro00pedro00pedro
- * Eson
- * Mertcan Kaya
  * Kay S
- * alexpd
- * AKLP
+ * Mertcan Kaya
+ * Mr.Henky
+ * Paulo Augusto Tolentino
+ * Pawel Porwisz
+ * Pedro00pedro00pedro
+ * Seven
+ * Suffo
+
 
 
 <b>BD-Calvin, Ensiferum, Silex, TinoDidriksen and others</b> - Lots of help with coding in the #c++ IRC channel on Quakenet [irc://irc.quakenet.org/C++ irc://irc.quakenet.org/C++]
