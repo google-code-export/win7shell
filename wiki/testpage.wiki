@@ -1,2 +1,13 @@
 #labels Deprecated
-<a href="http://www.downloadatlas.com/freeware-d953c60d.html"><img src="http://www.downloadatlas.com/clean-awards/win7shell-by-atti86.png" style="border:none;" width="160" height="114" alt="Safe free win7shell download!" /></a>  <a href="http://www.downloadroute.com/win7shell-Atti86.html"><img src="http://www.downloadroute.com/images/av-awards/win7shell-Atti86.png" alt="win7shell is Certified by DownloadRoute.com" border="0" /></a> [http://www.softpedia.com/progClean/Winamp-integration-with-Windows-7-taskbar-Clean-138682.html http://www.softpedia.com/base_img/softpedia_clean_award_f.gif]
+1.00
+
+PLEASE, FUCKING READ THIS: IF YOU HAD WINAMP PINNED TO TASKBAR, REMOVE THE OLD ICON AND PIN THE NEW ONE (PIN THE ICON NOT THE .EXE)
+WINAMP NEEDS TO BE SET TO HANDLE YOUR MUSIC/VIDEO FILES IN ORDER TO MAKE USE OF THE RECENT AND FREQUENT CATEGORIES IN JUMP LIST.
+
+0.91 had some severe bugs, they should be fixed now.
+LOTS of important fixes and improvements. It's a must have after the rather buggy 0.90.
+Fixed and improved jump list, added Recent, Frequent and Tasks category.
+Re-designed thumbnail progressbar.
+Added notice about the thumbnail buttons taking effect only after restart.
+Added application ID 'Winamp', for the taskbar control. It "should" fix lots of related issues, including the dual monitor one. 
+3 new lines in translation.
