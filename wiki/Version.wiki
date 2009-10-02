@@ -1,13 +1,16 @@
 #labels Deprecated
-0.92
+1.00
 
-PLEASE, FUCKING READ THIS: IF YOU HAD WINAMP PINNED TO TASKBAR, REMOVE THE OLD ICON AND PIN THE NEW ONE (PIN THE ICON NOT THE .EXE)
-WINAMP NEEDS TO BE SET TO HANDLE YOUR MUSIC/VIDEO FILES IN ORDER TO MAKE USE OF THE RECENT AND FREQUENT CATEGORIES IN JUMP LIST.
+Album art is read from embedded picture from ID3v2 tag
+Album art is drawn with clearly noticeable MUCH higher quality
+You can select what to use as background, if selected is not available
+Jump list is configurable by categories
+Bugfix: Didn't update title and artist while stream was playing
+6 new lines in translations
 
-0.91 had some severe bugs, they should be fixed now.
-LOTS of important fixes and improvements. It's a must have after the rather buggy 0.90.
-Fixed and improved jump list, added Recent, Frequent and Tasks category.
-Re-designed thumbnail progressbar.
-Added notice about the thumbnail buttons taking effect only after restart.
-Added application ID 'Winamp', for the taskbar control. It "should" fix lots of related issues, including the dual monitor one. 
-3 new lines in translation.
+!!! PLEASE, READ THESE: !!! 
+
+If you had Winamp pinned to the taskbar, remove the old icon, and pin the new one (pin the icon, not the .exe), otherwise you will have 2 icons on the taskbar
+Winamp needs to be set to handle your music/video files in order to make use of the recent and frequent categories of the jump list. It doesn't have to be the default player.
+
+I need more translations, if you think you can help, and your language isn't available yet, you can create a translation, for the plug-in or the installer.
