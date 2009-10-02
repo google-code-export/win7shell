@@ -11,7 +11,7 @@ Next I'd like to thank some people / group of people who helped me with various 
 
 <b>TagLib Audio Meta-Data Library</b> - [http://developer.kde.org/~wheeler/taglib.html Website] | [http://www.gnu.org/licenses/lgpl.html GNU license] | [http://www.mozilla.org/MPL/MPL-1.1.html MPL license]
 
-<b>NSIS installer<b> - [http://nsis.sourceforge.net/License Licenses]
+<b>NSIS installer</b> - [http://nsis.sourceforge.net/License Licenses]
 
 <b>Translators</b>
  * Dlouhan
