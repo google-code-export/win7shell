@@ -1,6 +1,15 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.00 =
+
+ * Improvement: Album art is read from embedded picture from ID3v2 tag
+ * Improvement: Album art is drawn with  higher quality
+ * New: You can select what to use as background, if selected is not available
+ * New: Jump list is configurable by categories
+ * Fix: Previous version didn't update title and artist while stream was playing
+ * Translation: 6 new lines in translations, 1 removed
+
 = 0.92 =
  * Fix: Several huge bugs from 0.91
 
