@@ -2,6 +2,7 @@
 #define _SECURE_SCL 0
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define _CRT_NONSTDC_NO_DEPRECATE 1
+#define TAGLIB_STATIC
 
 #define ICONSIZEPX 50
 #define APPID L"Winamp"
@@ -33,10 +34,11 @@
 #include "tabs.h"
 #include "metadata.h"
 #include "jumplist.h"
+#include "albumart.h"
 
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("0.92"));
+const std::tstring cur_version(__T("1.00"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0 ;
@@ -606,45 +608,23 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 
 		case 1: //album art
 			{
-				std::tstring name = __T("");
-				int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTLENGTH);
-				if (index != 0)
-				{
-					index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
-					name = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
-								
-					std::tstring::size_type pos = name.find_last_of('\\');			
-					name = SearchDir(name.substr(0, pos));
-				}
-			
-				bool b = false;
-				if (!name.empty())
-				{
-					Image img(name.c_str(), true);
-					if (img.GetType() != 0)
-					{				
-						double ratio = (double)img.GetHeight() / (double)(height);
-						if (ratio == 0)
-							ratio = 1;
-						ratio = (double)img.GetWidth() / ratio;
-						if (ratio > width)
-							ratio = width;
-						background = new Bitmap(width, height, PixelFormat32bppARGB);
-						Graphics gfx(background);
-						gfx.SetInterpolationMode(InterpolationModeHighQualityBicubic);
-						if (Settings.AsIcon)
-						{							
-							gfx.DrawImage(&img, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
-						}
-						else
-							gfx.DrawImage(&img, RectF(static_cast<REAL>(((double)width-(double)ratio)/(double)2),
-							0,static_cast<REAL>(ratio),static_cast<REAL>(height)));	
-						b = true;
-						totheleft = false;
+				AlbumArt AA;
+				Bitmap tmpbmp(height, height, PixelFormat32bppARGB);
+				if (AA.getAA(metadata.getFileName(), metadata.getMetadata(L"album"), tmpbmp, height))
+				{					
+					background = new Bitmap(width, height, PixelFormat32bppARGB);
+					Graphics gfx(background);
+					gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
+					if (Settings.AsIcon)
+					{							
+						gfx.DrawImage(&tmpbmp, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
 					}
-				}
-				
-				if (!b)
+					else
+						gfx.DrawImage(&tmpbmp, RectF(static_cast<REAL>(((double)width-(double)height)/(double)2),
+						0,static_cast<REAL>(height),static_cast<REAL>(height)));	
+					totheleft = false;
+				}			
+				else							
 				{
 					if (force != -1)
 					{
@@ -762,7 +742,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	else
 		gfx.DrawImage(background, RectF(0, 0, static_cast<REAL>(background->GetWidth()), static_cast<REAL>(textheight+2)));
 
-	gfx.SetSmoothingMode(SmoothingModeAntiAlias);		
+	gfx.SetSmoothingMode(SmoothingModeNone);		
 			
 	if ( (Settings.Thumbnailbackground == 0) || (Settings.Thumbnailbackground == 1) )
 		(Settings.Antialias) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
@@ -830,83 +810,6 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 
 	return retbmp;
 }
-
-std::tstring SearchDir(std::tstring path)
-{
-	WIN32_FIND_DATA ffd;
-
-	std::tstring defpath = path + __T("\\");
-	defpath = metadata.getMetadata(__T("album"));
-	if (!defpath.empty())
-	{
-		defpath = path + __T("\\") + defpath + __T(".jpg");
-		if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
-			return defpath.c_str();
-	}
-
-	defpath = path + __T("\\AlbumArtSmall.jpg");
-	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
-		return path + __T("\\AlbumArtSmall.jpg");
-
-	defpath = path + __T("\\AlbumArt*");
-	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
-		return path + __T("\\") + ffd.cFileName;
-
-	defpath = path + __T("\\folder.jpg");
-	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
-		return path + __T("\\folder.jpg");
-
-	defpath = path + __T("\\cover.jpg");
-	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
-		return path + __T("\\cover.jpg");
-
-	defpath = path + __T("\\front.jpg");
-	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
-		return path + __T("\\front.jpg");	
-	
-	HANDLE file;
-
-	file = FindFirstFile((path + L"\\*.*").c_str(), &ffd);
-	path += L"\\";
-
-	std::list<std::tstring> extensions;
-	extensions.push_back(L".bmp");
-	extensions.push_back(L".jpg");
-	extensions.push_back(L".jpeg");
-	extensions.push_back(L".png");
-	extensions.push_back(L".gif");
-	extensions.push_back(L".ico");
-	extensions.push_back(L".exif");
-	extensions.push_back(L".tiff");
-	extensions.push_back(L".tif");
-	extensions.push_back(L".wmf");
-	extensions.push_back(L".emf");
-
-	do
-	{
-		if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-		{
-			std::tstring::size_type pos;
-			std::tstring filename = ffd.cFileName;
-
-			for (std::list<std::tstring>::iterator it = extensions.begin(); it != extensions.end(); it++)
-			{
-				pos =  filename.rfind(static_cast<std::tstring>(*it));
-				
-				if (pos != std::tstring::npos) 
-				{					
-					std::tstring::size_type sz = pos + (*it).length();
-					if (filename.length() == sz)
-						return path + filename;
-				}
-			}
-		}
-	}
-	while (FindNextFile(file, &ffd) != 0);
-
-	return L"";
-}
-
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -1281,9 +1184,6 @@ void ReadSettings(HWND hwnd)
 	//Overlay
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK3), (UINT) BM_SETCHECK, Settings.Overlay, 0);
 
-	//recentdocs
-	SendMessage(GetDlgItem(hwnd, IDC_CHECK19), (UINT) BM_SETCHECK, Settings.Add2RecentDocs, 0);
-
 	//antialias
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK8), (UINT) BM_SETCHECK, Settings.Antialias, 0);
 	
@@ -1348,9 +1248,7 @@ void WriteSettings(HWND hwnd)
 	if (GetDlgItem(hwnd, IDC_CHECK6) != NULL)
 		Settings.Thumbnailbuttons = SendMessage(GetDlgItem(hwnd, IDC_CHECK6), (UINT) BM_GETCHECK, 0, 0);
 	if (GetDlgItem(hwnd, IDC_CHECK7) != NULL)
-		Settings.Thumbnailenabled = SendMessage(GetDlgItem(hwnd, IDC_CHECK7), (UINT) BM_GETCHECK, 0, 0);
-	if (GetDlgItem(hwnd, IDC_CHECK19) != NULL)
-		Settings.Add2RecentDocs = SendMessage(GetDlgItem(hwnd, IDC_CHECK19), (UINT) BM_GETCHECK, 0, 0);
+		Settings.Thumbnailenabled = SendMessage(GetDlgItem(hwnd, IDC_CHECK7), (UINT) BM_GETCHECK, 0, 0);	
 	if (GetDlgItem(hwnd, IDC_CHECK8) != NULL)
 		Settings.Antialias = SendMessage(GetDlgItem(hwnd, IDC_CHECK8), (UINT) BM_GETCHECK, 0, 0);
 	if (GetDlgItem(hwnd, IDC_CHECK1) != NULL)
@@ -1783,6 +1681,18 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 					}
 					break;
 
+				case IDC_SYSLINK5:
+					switch (((LPNMHDR)lParam)->code)
+					{
+					case NM_CLICK:
+					case NM_RETURN:
+						{
+							ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/wiki/Credits", NULL, NULL, SW_SHOW);
+						}
+					}
+					break;
+
+
 				case IDC_PCB1:
 					if ((((LPNMHDR)lParam)->code) == BCN_HOTITEMCHANGE)
 						SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getToolTip(1).c_str());
@@ -1993,6 +1903,14 @@ void LoadStrings(std::tstring Path)
 	getinistring(__T("wapref"), Path);
 	getinistring(__T("startwa"), Path);
 	getinistring(__T("jumplisterror"), Path);
+	getinistring(__T("revert"), Path);
+	getinistring(__T("jlchoice"), Path);
+	getinistring(__T("jlrecent"), Path);
+	getinistring(__T("jlfrequent"), Path);
+	getinistring(__T("jltasks"), Path);
+	getinistring(__T("jlnote"), Path);
+	getinistring(__T("creditslink"), Path);
+	getinistring(__T("creditstext"), Path);
 }
 
 BOOL CALLBACK EnumChildProc(HWND hwndChild, LPARAM lParam) 
@@ -2028,13 +1946,14 @@ void SetStrings(HWND hwnd)
 	SetWindowText(GetDlgItem(hwnd, IDC_CHECK5), getString(__T("error")).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_CHECK3), getString(__T("overlays")).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_STATIC6), getString(__T("jumplist")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK19), getString(__T("addtorecent")).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK2), 
 		std::wstring(__T("<a>") + getString(__T("bugslink")) + __T("</a> ") + getString(__T("bugstext"))).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK1), 
 		std::wstring(__T("<a>") + getString(__T("sitelink")) + __T("</a>  ") + getString(__T("sitetext"))).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK3), 
 		std::wstring(__T("<a>") + getString(__T("translink")) + __T("</a>  ") + getString(__T("transtext"))).c_str());
+	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK5), 
+		std::wstring(__T("<a>") + getString(__T("creditslink")) + __T("</a>  ") + getString(__T("creditstext"))).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_CHECK9), getString(__T("noupdate")).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_CHECK10), getString(__T("removetitle")).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_BUTTON5), getString(__T("selectfont")).c_str());
@@ -2046,6 +1965,13 @@ void SetStrings(HWND hwnd)
 	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK4), 
 		std::wstring(getString(__T("author")) + __T(": Magyari Attila <a>atti86@gmail.com</a>")).c_str());
 	SetWindowText(GetDlgItem(hwnd, IDC_CHECK29), getString(__T("thumbpb")).c_str());
+
+	SetWindowText(GetDlgItem(hwnd, IDC_CHECK30), getString(__T("jlrecent")).c_str());
+	SetWindowText(GetDlgItem(hwnd, IDC_CHECK31), getString(__T("jlfrequent")).c_str());
+	SetWindowText(GetDlgItem(hwnd, IDC_CHECK32), getString(__T("jltasks")).c_str());
+	SetWindowText(GetDlgItem(hwnd, IDC_STATIC30), getString(__T("revert")).c_str());
+	SetWindowText(GetDlgItem(hwnd, IDC_STATIC31), getString(__T("jlnote")).c_str());
+	SetWindowText(GetDlgItem(hwnd, IDC_STATIC32), getString(__T("jlchoice")).c_str());
 }
 
 inline std::wstring getString(std::wstring keyword, std::wstring def)

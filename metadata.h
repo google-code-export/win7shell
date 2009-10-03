@@ -8,6 +8,7 @@ public:
 	void setWinampWindow(HWND winampwindow);
 	bool reset(std::wstring, bool);
 	std::wstring getMetadata(std::wstring tag);
+	std::wstring getFileName();
 
 private:
 	HWND mhwnd;
