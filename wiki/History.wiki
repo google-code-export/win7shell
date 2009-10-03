@@ -22,6 +22,7 @@
  * Translation: 3 new lines in translation.
 
 IF YOU HAD WINAMP PINNED TO TASKBAR, REMOVE THE OLD ICON AND PIN THE NEW ONE.
+IN ORDER TO USE THE JUMP LIST, YOU MUST HAVE WINAMP REGISTERED TO HANDLE YOUR AUDIO/VIDEO FILES.
 
 = 0.90 =
  * Improvement: Re-wrote a large part of the code; significantly reduced CPU usage (If you had performance drops while using some features of this plug-in, they should be gone now)
