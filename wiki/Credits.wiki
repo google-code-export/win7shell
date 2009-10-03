@@ -1,4 +1,5 @@
 #summary People worth mentioning who helped creating this plug-in
+#labels Featured
 
 = Credits =
 
