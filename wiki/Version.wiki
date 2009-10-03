@@ -1,16 +1,18 @@
 #labels Deprecated
-1.00
+1.02
 
+Fixed some reported bugs, updated translations.
+Settings are now read correctly if you have Unicode characters in your Windows user name.
+Jump list tasks won't open other players when Winamp is closed.
+Added new task: "Resume Playback". When Winamp is closed, use this to resume playing the last song, from the same position as when you closed it.
+
+1.00:
 Album art is read from embedded picture from ID3v2 tag
-Album art is drawn with clearly noticeable MUCH higher quality
+Album art is drawn with MUCH higher quality
 You can select what to use as background, if selected is not available
 Jump list is configurable by categories
-Bugfix: Didn't update title and artist while stream was playing
-6 new lines in translations
 
 !!! PLEASE, READ THESE: !!! 
-
-If you had Winamp pinned to the taskbar, remove the old icon, and pin the new one (pin the icon, not the .exe), otherwise you will have 2 icons on the taskbar
-Winamp needs to be set to handle your music/video files in order to make use of the recent and frequent categories of the jump list. It doesn't have to be the default player.
-
+If you had Winamp pinned to the taskbar, remove the old icon, and pin the new one 
+Winamp needs to be set to handle your music/video files in order to make use of the recent and frequent categories of the jump list.
 I need more translations! :)
