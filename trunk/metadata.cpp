@@ -53,16 +53,20 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 		if (tag == L"title" || tag == L"artist") 
 		{
 			ret = (wchar_t*) SendMessage(mhwnd,WM_WA_IPC,0,IPC_GET_PLAYING_TITLE);
-			size_t pos = ret.find_first_of('-');
-			if (pos == std::wstring::npos)
+			if (ret.length() == 0)
 				return std::wstring(L"");
-			else
+
+			size_t pos = ret.find_first_of('-');
+			if (pos != std::wstring::npos)							
 			{		
 				if (tag == L"title")
 					ret = std::wstring(ret, pos+2, ret.length()-(pos-2));
 				else if (tag == L"artist")
 					ret = std::wstring(ret, 0, pos-1);
 			}
+			else
+				if (tag == L"artist")
+					return std::wstring(L"");
 		}
 		else
 			return L"";
@@ -77,4 +81,9 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 
 	cache[tag] = ret;
 	return ret;
+}
+
+std::wstring MetaData::getFileName()
+{
+	return mfilename;
 }
