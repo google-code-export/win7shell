@@ -1,6 +1,13 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.01 - 1.03 =
+ * New: Added "Resume Playback" task to the jump list. It starts Winamp playing the last song before it was shut down, from the same position.
+ * Fix: Settings are saved correctly for users who have Unicode characters in their Windows user name
+ * Fix: Media info wasn't updated when stream was playing
+ * Fix: Jump list tasks do not open other players settings when Winamp is closed
+ * Fix: Some other minor reported bugs
+
 = 1.00 =
 
  * Improvement: Album art is read from embedded picture from ID3v2 tag
