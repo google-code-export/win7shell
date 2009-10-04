@@ -1,10 +1,9 @@
 #labels Deprecated
-1.02
+1.03
 
-Fixed some reported bugs, updated translations.
-Settings are now read correctly if you have Unicode characters in your Windows user name.
-Jump list tasks won't open other players when Winamp is closed.
-Added new task: "Resume Playback". When Winamp is closed, use this to resume playing the last song, from the same position as when you closed it.
+Added new task: 'Play from beginning' - It will start Winamp if needed, and play the current playlist from the start
+Fixed SHITLOADS of reported and recently discovered bugs (lazy to write details)
+2 new lines in translations 
 
 1.00:
 Album art is read from embedded picture from ID3v2 tag
