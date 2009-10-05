@@ -10,7 +10,7 @@ On this page you will find settings that will affect the text drawn on the thumb
  <img src="http://img35.imageshack.us/img35/2584/tab1c.png" border="0" alt="Tab 1">
 
  # Anything you write in this text box will be written on the thumbnail. Some words, let's call them 'metawords' have special meaning, whenever you use one of these, it will be replaced with another value, depending on the type of the metaword. (For example %title% will be replaced with the actual playing song's title)
-  Some text alignment metawords (they apply to the line that contains them):
+Some text alignment metawords (they apply to the line that contains them):
   * %c% - centers the line in its allocated space
   * %l% - uses larger font than the one selected for the current line
   * %f% - aligns the text on the left of the thumbnail, even if there is an album art in iconic form
