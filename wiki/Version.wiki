@@ -2,6 +2,7 @@
 1.03
 
 Added new task: 'Play from beginning' - It will start Winamp if needed, and play the current playlist from the start
+Added 2 more text formatting tags: %l% to draw the text with +44 larger font than the one selected, and %f% to draw the text on the left of the thumbnail, even if there is iconic album art there. Both tags are per text line. 
 Fixed SHITLOADS of reported and recently discovered bugs (lazy to write details)
 2 new lines in translations 
 
