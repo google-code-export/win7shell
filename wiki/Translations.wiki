@@ -19,6 +19,7 @@
  * <b>Dutch</b> by Kay S [http://win7shell.googlecode.com/files/DUTCH_win7shell.lng Download]
  * <b>Greek</b> by AKLP [http://win7shell.googlecode.com/files/GR_win7shell.lng Download]
  * <b>Italian</b> by pdalex [http://win7shell.googlecode.com/files/ITA_win7shell.lng Download]
+ * <b>Ukrainian</b> by Michael Glubokyi [http://win7shell.googlecode.com/files/UKR_win7shell.lng Download]
 
 ----
 
