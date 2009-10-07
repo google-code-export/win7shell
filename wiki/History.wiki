@@ -1,6 +1,15 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.04 =
+ * New: Added Media Library bookmarks to the jump list
+ * New: Added "Mute" button on the aero peek thumbnail
+ * Fix: A bug that prevented empty lines on the thumbnail text
+ * Improvement: Added vertical scrollbar to the text editor
+ * Fixed some more bugs with the settings file
+ * Fix: Several other bugfixes
+ * Translation: Updated some translations and template file
+
 = 1.01 - 1.03 =
  * New: Added "Play from beginning task to the jump list. It plays the current playlist from the start
  * New: Added "Resume Playback" task to the jump list. It starts Winamp playing the last song before it was shut down, from the same position.
