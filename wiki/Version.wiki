@@ -1,16 +1,18 @@
 #labels Deprecated
-1.03
+1.04
 
-Added new task: 'Play from beginning' - It will start Winamp if needed, and play the current playlist from the start
-Added 2 more text formatting tags: %l% to draw the text with +44 larger font than the one selected, and %f% to draw the text on the left of the thumbnail, even if there is iconic album art there. Both tags are per text line. 
-Fixed SHITLOADS of reported and recently discovered bugs (lazy to write details)
-2 new lines in translations 
+Added Media Library bookmarks to the jump list
+Added "Mute" button on the aero peek thumbnail
+Fixed a bug that prevented empty lines on the thumbnail text
+Added vertical scrollbar to the text editor
+Fixed some more bugs with the settings file
+Several other bugfixes
+Updated some translations and template file
 
 1.00:
 Album art is read from embedded picture from ID3v2 tag
 Album art is drawn with MUCH higher quality
-You can select what to use as background, if selected is not available
-Jump list is configurable by categories
+Jump list features: Recent, Frequent, Tasks, Bookmarks
 
 !!! PLEASE, READ THESE: !!! 
 If you had Winamp pinned to the taskbar, remove the old icon, and pin the new one 
