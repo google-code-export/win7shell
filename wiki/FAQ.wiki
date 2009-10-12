@@ -33,7 +33,7 @@
 
 ----
 
-===Q: I have unreadable font on the aero peek thumbnail (Windings font)===
+===Q: I have unreadable font on the aero peek thumbnail (Wingdings font)===
 ===A: Select a "new" font. It can be the same as the old one, just re-save it===
 
 ----
