@@ -32,3 +32,6 @@
 ===A: If the "Remove Winamp window title" option (on the Options tab) is enabled, other applications won't be able to get the information.===
 
 ----
+
+===Q: I have unreadable font on the aero peek thumbnail (Windings font)===
+===A: Select a "new" font. It can be the same as the old one, just re-save it===
