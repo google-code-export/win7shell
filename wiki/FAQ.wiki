@@ -1,0 +1,4 @@
+#summary FAQ / Common issues and miss-uses
+
+===Q: I had Winamp pinned to the task bar, and this plug-in creates another icon when starting Winamp.===
+===A: Start Winamp, unpin the old icon, and pin the new one. Use the newly pinned icon from now on.===
