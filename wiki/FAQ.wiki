@@ -1,4 +1,5 @@
 #summary FAQ / Common issues and miss-uses
+#labels Featured
 
 ===Q: I had Winamp pinned to the taskbar, and this plug-in creates another icon when starting Winamp.===
 ===A: Start Winamp, unpin the old icon, and pin the new one. Use the newly pinned icon from now on.===
@@ -6,6 +7,8 @@
 ----
 
 ===Q: I minimize Winamp to the system tray (clock area), and after restoring it, the taskbar icon's features won't work anymore.===
+
+----
 ===A: Most of the features are initialized at Winamp start-up. If you somehow remove the taskbar icon, you will need to restart Winamp to use its features again.===
 
 ----
@@ -27,3 +30,5 @@
 
 ===Q: Why some of my other applications stopped getting the Winamp song info after installing this plug-in?===
 ===A: If the "Remove Winamp window title" option (on the Options tab) is enabled, other applications won't be able to get the information.===
+
+----
