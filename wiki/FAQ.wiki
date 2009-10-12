@@ -35,3 +35,10 @@
 
 ===Q: I have unreadable font on the aero peek thumbnail (Windings font)===
 ===A: Select a "new" font. It can be the same as the old one, just re-save it===
+
+----
+
+===Q: How can I read other tags from the playing media?===
+===A: You can use any metaword in the text, if that text-formatted tag exists, it will be read and used. E.g.: %comment% reads the comment field, %genre% reads the genre field, etc.
+
+----
