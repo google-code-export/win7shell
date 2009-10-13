@@ -101,6 +101,14 @@ std::wstring AlbumArt::SearchDir(std::wstring path, std::wstring album)
 	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
 		return path + L"\\folder.jpg";
 
+	defpath = path + L"\\folder.gif";
+	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
+		return path + L"\\folder.gif";
+
+	defpath = path + L"\\folder.png";
+	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
+		return path + L"\\folder.png";
+
 	defpath = path + L"\\cover.jpg";
 	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
 		return path + L"\\cover.jpg";
@@ -108,6 +116,22 @@ std::wstring AlbumArt::SearchDir(std::wstring path, std::wstring album)
 	defpath = path + L"\\front.jpg";
 	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
 		return path + L"\\front.jpg";	
+
+	defpath = path + L"\\cover.gif";
+	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
+		return path + L"\\cover.gif";
+
+	defpath = path + L"\\front.gif";
+	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
+		return path + L"\\front.gif";
+
+	defpath = path + L"\\cover.png";
+	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
+		return path + L"\\cover.png";
+
+	defpath = path + L"\\front.png";
+	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
+		return path + L"\\front.png";
 
 	defpath = path + L"\\AlbumArtSmall.jpg";
 	if ((FindFirstFile(defpath.c_str() , &ffd) != INVALID_HANDLE_VALUE))
