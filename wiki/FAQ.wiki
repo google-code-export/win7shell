@@ -4,7 +4,7 @@
 ----
 
 ===Q: Some of the features of the plug-in aren't working===
-===A: First, check if you're running Winamp as administrator. *DO NOT RUN WINAMP AS ADMINISTRATOR*===
+===A: First, check if you're running Winamp as administrator. _DO NOT RUN WINAMP AS ADMINISTRATOR_===
 
 ----
 
