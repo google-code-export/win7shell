@@ -3,8 +3,8 @@
 
 ----
 
-===Q: Some of the features of the plug-in aren't working
-===A: First, check if you're running Winamp as administrator. *DO NOT RUN WINAMP AS ADMINISTRATOR*
+===Q: Some of the features of the plug-in aren't working===
+===A: First, check if you're running Winamp as administrator. *DO NOT RUN WINAMP AS ADMINISTRATOR*===
 
 ----
 
