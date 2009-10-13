@@ -1,18 +1,10 @@
 #labels Deprecated
-1.04
+1.05
 
-Added Media Library bookmarks to the jump list
-Added "Mute" button on the aero peek thumbnail
-Fixed a bug that prevented empty lines on the thumbnail text
-Added vertical scrollbar to the text editor
-Fixed some more bugs with the settings file
-Several other bugfixes
-Updated some translations and template file
-
-1.00:
-Album art is read from embedded picture from ID3v2 tag
-Album art is drawn with MUCH higher quality
-Jump list features: Recent, Frequent, Tasks, Bookmarks
+Fixed settings not saving issue
+Version checker is multithreaded
+Many other reported bugs fixed (Resume playback is working)
+Updated translations (Chinese available)
 
 !!! PLEASE, READ THESE: !!! 
 If you had Winamp pinned to the taskbar, remove the old icon, and pin the new one 
