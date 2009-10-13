@@ -40,6 +40,7 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
         return L"";
     }
 
+
     for(p = servinfo; p != NULL; p = p->ai_next) 
 	{
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) 
@@ -62,7 +63,7 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
     freeaddrinfo(servinfo); 
 
 	struct timeval tv;
-	tv.tv_sec = 400;
+	tv.tv_sec = 25000;
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,  sizeof tv);
 
 	if (send(sockfd, "GET http://win7shell.googlecode.com/svn/wiki/Version.wiki HTTP/1.1\n\n", 

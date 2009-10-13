@@ -10,7 +10,7 @@
 #define GPPHDR_VER 0x10
  
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.00"
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.05"
 
 #ifdef _UNICODE
 #define tstring wstring
@@ -54,7 +54,13 @@ struct sSettings {
 	bool JLrecent;
 	bool JLfrequent;
 	bool JLtasks;
+	bool JLbms;
 	char Revertto;
+};
+
+struct sResumeSettings {
+	int ResumeTime;
+	int ResumePosition;
 };
 
 struct sFontEx {

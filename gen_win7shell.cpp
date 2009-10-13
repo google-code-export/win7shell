@@ -22,6 +22,7 @@
 #include <strsafe.h>
 #include <shobjidl.h>
 #include <gdiplus.h>
+#include <process.h>
 #include <cctype>
 #include <fstream>
 #include <map>
@@ -38,12 +39,12 @@
 
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("1.00"));
+const std::tstring cur_version(__T("1.05"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0 ;
 char playstate = -1;
-int gCurPos = -2, gTotal = -2, volume = 0;
+int gCurPos = -2, gTotal = -2, volume = 0, gPlayListPos = 0;
 std::tstring W_INI;
 sSettings Settings;
 sSettings_strings Settings_strings;
@@ -63,6 +64,7 @@ VOID CALLBACK VUMeterProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK cfgWndProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK TabHandler(HWND, UINT, WPARAM, LPARAM);
+void CheckVersion( void *dummy );
 
 HIMAGELIST prepareIcons();
 void updateToolbar(bool first);
@@ -73,7 +75,7 @@ void SetWindowAttr();
 HBITMAP DrawThumbnail(int width, int height, int force);
 std::tstring SearchDir(std::tstring path);
 std::tstring MetaWord(std::tstring word);
-std::tstring GetLine(int linenumber, bool &center);
+std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forceleft);
 void LoadStrings(std::tstring Path);
 void FillStrings();
 void getinistring(std::tstring what, std::tstring Path);
@@ -83,6 +85,9 @@ std::wstring getToolTip(int button);
 std::wstring getString(std::wstring keyword, std::wstring def = L"");
 std::wstring getInstallPath();
 HWND getWinampWindow();
+std::wstring getWinampINIPath();
+std::wstring getBMS();
+void DoJl();
 
 int  init(void);
 void config(void);
@@ -116,30 +121,18 @@ int init()
 	GetShortPathName(pluginpath.c_str(), &pluginpath[0], pluginpath.length());
 	pluginpath.resize(wcslen(pluginpath.c_str()));
 
-	char* INI_FILE = (char*)SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETINIDIRECTORY);	
-	int size = MultiByteToWideChar(CP_ACP, MB_COMPOSITE, INI_FILE, -1, NULL, 0);
-	std::vector<TCHAR> w_inifile(size+22);
-	MultiByteToWideChar(CP_ACP, MB_COMPOSITE, INI_FILE, -1, &w_inifile[0], size);
-	W_INI = &w_inifile[0];
+	W_INI = getWinampINIPath() + L"\\Plugins\\";
+	
 	FillStrings();
 
 	WIN32_FIND_DATA ffd;
-	if (FindFirstFile(std::wstring(W_INI + __T("\\plugins\\*win7shell.lng")).c_str(), &ffd) != INVALID_HANDLE_VALUE)
+	if (FindFirstFile(std::wstring(W_INI + __T("*win7shell.lng")).c_str(), &ffd) != INVALID_HANDLE_VALUE)
 	{
-		LoadStrings(W_INI + __T("\\plugins\\") + ffd.cFileName);
+		LoadStrings(W_INI + ffd.cFileName);
 		translationfound = true;
 	}
 
-	if (Settings.JLrecent || Settings.JLfrequent || Settings.JLtasks)
-	{
-		JumpList jl;
-		if (!jl.CreateJumpList(pluginpath, getString(__T("wapref"), __T("Winamp Preferences")), getString(__T("openfile"), __T("Open File")),
-			Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks) )
-				MessageBoxEx(plugin.hwndParent, getString(__T("jumplisterror"), __T("Error creating jump list.")).c_str(), 0, MB_ICONWARNING | MB_OK, 0);
-	}
-	
-		
-	W_INI += __T("\\plugins\\win7shell.ini");	
+	W_INI += __T("win7shell.ini");	
 
 	ZeroMemory(&Settings, sizeof(Settings));
 
@@ -173,10 +166,24 @@ int init()
 		Settings.JLfrequent = true;
 		Settings.JLrecent = true;
 		Settings.JLtasks = true;
+		Settings.JLbms = true;
 
-		std::ofstream of(&w_inifile[0], std::ios_base::out | std::ios_base::binary);	
+		std::ofstream of(W_INI.c_str(), std::ios_base::out | std::ios_base::binary);	
 		of.write("\xFF\xFE", 2);
 		of.close();
+	}
+
+	if (Settings.JLrecent || Settings.JLfrequent || Settings.JLtasks || Settings.JLbms)
+	{
+		std::wstring bms;
+		bms = getBMS();		
+
+		JumpList jl;
+		if (!jl.CreateJumpList(pluginpath, getString(__T("wapref"), __T("Winamp preferences")), 
+			getString(__T("fromstart"), __T("Play from beginning")), getString(__T("resumeplay"), __T("Resume playback")), 
+			getString(__T("openfile"), __T("Open file")), getString(__T("bookmark"), __T("Bookmarks")),
+			Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks, Settings.JLbms, bms) )
+			MessageBoxEx(plugin.hwndParent, getString(__T("jumplisterror"), __T("Error creating jump list.")).c_str(), 0, MB_ICONWARNING | MB_OK, 0);
 	}
 
 	ZeroMemory(&Settings_font, sizeof(Settings_font));
@@ -204,22 +211,7 @@ int init()
 
 	if (!Settings.DisableUpdates)
 		if (SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_INETAVAILABLE))
-		{
-			VersionChecker *vc = new VersionChecker();
-			std::tstring news = vc->IsNewVersion(cur_version);
-			if (news != __T(""))
-			{
-				news.erase(news.length()-1, 1);
-				news = STRINGS.find(__T("newvers"))->second + __T("   ") + news;
-				news += __T("\n\n") + STRINGS.find(__T("disableupdate"))->second + __T("\n");
-				news += STRINGS.find(__T("opendownload"))->second;
-			
-				if (MessageBoxEx(plugin.hwndParent, news.c_str(), __T("Win7 Taskbar Integration Plugin"), 
-					MB_ICONINFORMATION | MB_YESNO | MB_SETFOREGROUND, 0) == IDYES)
-					ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/", NULL, NULL, SW_SHOW);		
-			}
-			delete vc;
-		}
+			_beginthread(CheckVersion, 0, NULL);
 
 	MSG msg;
 	while (PeekMessage(&msg, 0,0,0, PM_REMOVE))
@@ -228,11 +220,6 @@ int init()
 	DispatchMessage(&msg);
 	}
 	
-	OSVERSIONINFOW pVI;
-	ZeroMemory(&pVI, sizeof(pVI));
-	pVI.dwOSVersionInfoSize = sizeof(pVI);
-	GetVersionEx(&pVI);
-
 	theicons = prepareIcons();
 
 	if ( (!InitTaskbar()) && (Settings.Thumbnailbuttons) )
@@ -256,14 +243,16 @@ int init()
 	metadata.setWinampWindow(plugin.hwndParent);
 
 	if (Settings.VuMeter)
-		SetTimer(plugin.hwndParent, 6668, 100, VUMeterProc);
+		SetTimer(plugin.hwndParent, 6668, 50, VUMeterProc);
 
-	SetTimer(plugin.hwndParent, 6667, 300, TimerProc);
+	SetTimer(plugin.hwndParent, 6667, 300, TimerProc);		
+
+	volume = IPC_GETVOLUME(plugin.hwndParent);
 
 	return 0;
 }
 
-void config() 
+void config()
 {
 	if ((cfgopen) && (cfgwindow != NULL))
 	{
@@ -285,8 +274,15 @@ void config()
  
 void quit() 
 {	
+	sResumeSettings sResume;
+	sResume.ResumePosition = gPlayListPos;
+	sResume.ResumeTime = gCurPos;
+
+	DoJl();
+
 	WritePrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str());
 	WritePrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str());
+	WritePrivateProfileStruct(__T("win7shell"), __T("resume"), &sResume, sizeof(sResume), W_INI.c_str());
 	WritePrivateProfileString(__T("win7shell"), __T("bgpath"), Settings_strings.BGPath.c_str(), W_INI.c_str());	
 	WritePrivateProfileString(__T("win7shell"), __T("text"), Settings_strings.Text.c_str(), W_INI.c_str());	
 
@@ -306,6 +302,24 @@ void quit()
 	
 	GdiplusShutdown(gdiplusToken);
 } 
+
+void CheckVersion( void *dummy )
+{
+	VersionChecker *vc = new VersionChecker();
+	std::tstring news = vc->IsNewVersion(cur_version);
+	if (news != __T(""))
+	{
+		news.erase(news.length()-1, 1);
+		news = STRINGS.find(__T("newvers"))->second + __T("   ") + news;
+		news += __T("\n\n") + STRINGS.find(__T("disableupdate"))->second + __T("\n");
+		news += STRINGS.find(__T("opendownload"))->second;
+
+		if (MessageBoxEx(plugin.hwndParent, news.c_str(), __T("Win7 Taskbar Integration Plugin"), 
+			MB_ICONINFORMATION | MB_YESNO | MB_SETFOREGROUND, 0) == IDYES)
+			ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/", NULL, NULL, SW_SHOW);		
+	}
+	delete vc;
+}
 
 std::tstring SecToTime(int sec)
 {	
@@ -385,6 +399,12 @@ std::tstring MetaWord(std::tstring word)
 	if (word == __T("%c%"))
 		return __T("‡center‡");
 
+	if (word == __T("%l%"))
+		return __T("‡largefont‡");
+
+	if (word == __T("%f%"))
+		return __T("‡forceleft‡");
+
 	if (word == __T("%volume%"))
 	{
 		std::wstringstream w;
@@ -409,7 +429,7 @@ std::tstring MetaWord(std::tstring word)
 	if (word == __T("%curpl%"))
 	{
 		std::wstringstream w;
-		w << SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS)+1;
+		w << gPlayListPos+1;
 		return w.str();
 	}
 
@@ -433,9 +453,6 @@ std::tstring MetaWord(std::tstring word)
 		return w.str();
 	}
 
-	if (word.substr(0, 4) == __T("%color:"))
-		return __T("‡color‡");
-
 	word.erase(0, 1);
 	word.erase(word.length()-1, 1);
 	return metadata.getMetadata(word);
@@ -450,7 +467,7 @@ HIMAGELIST prepareIcons()
  
 	himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 9, 0); 	
 		
-	for (int i = 0; i < 9; ++i)
+	for (int i = 0; i < 10; ++i)
 	{
 		hicon = LoadIcon(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON1+i)); 
 
@@ -495,6 +512,8 @@ std::wstring getToolTip(int button)
 	case 8:
 		return getString(__T("openfile"), __T("Open File"));
 		break;
+	case 9:
+		return getString(__T("mute"), __T("Mute"));
 	default:
 		return L"";
 	}
@@ -542,7 +561,7 @@ void updateToolbar(bool first)
 		pTBL->ThumbBarUpdateButtons(plugin.hwndParent, thbButtons.size(), &thbButtons[0]);
 }
 
-std::tstring GetLine(int linenumber, bool &center)
+std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forceleft)
 {
 	std::tstring::size_type pos = 0, open = std::tstring::npos;
 	std::tstring text, metaword;
@@ -576,6 +595,16 @@ std::tstring GetLine(int linenumber, bool &center)
 				{
 					metaword = __T("");
 					center = true;
+				}
+				if (metaword == __T("‡largefont‡"))
+				{
+					metaword = __T("");
+					largefont = true;
+				}
+				if (metaword == __T("‡forceleft‡"))
+				{
+					metaword = __T("");
+					forceleft = true;
 				}
 
 				text.replace(open, pos-open+1, metaword);
@@ -701,9 +730,14 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	HBITMAP retbmp;
 	int lines = 1;
 
-
-	int textheight, lineheight;
+	int textheight=0;
 	Font font(GetDC(0), const_cast<LOGFONT*> (&Settings_font.font));
+	LONG oldsize = Settings_font.font.lfHeight;
+	int x = -((Settings_font.font.lfHeight * 72) / GetDeviceCaps(GetDC(0), LOGPIXELSY));
+	x += 4;
+	Settings_font.font.lfHeight = -MulDiv(x, GetDeviceCaps(GetDC(0), LOGPIXELSY), 72);
+	Font largefont(GetDC(0), const_cast<LOGFONT*> (&Settings_font.font));
+	Settings_font.font.lfHeight = oldsize;
 	StringFormat sf(StringFormatFlagsNoWrap);
 
 	Graphics tmpgfx(background);		
@@ -711,23 +745,42 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	Pen p(Color::MakeARGB(1, 255, 255, 255), 1);
 	tmpgfx.DrawLine(&p, 0, 0, 1, 1);
 
-	RectF rect;
-	tmpgfx.MeasureString(__T("gytTFjKQ"), -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);
-	lineheight = static_cast<int>(rect.GetBottom());
+	struct texts {
+		std::wstring text;
+		int height;
+		bool center;
+		bool largefont;
+		bool forceleft;
+	};
 
 	for (std::tstring::size_type i = 0; i < Settings_strings.Text.length(); i++)
 		if (Settings_strings.Text[i] == NEWLINE)
 			lines++;
 
-	if (Settings.Shrinkframe)
-	{
-		textheight = (lines * lineheight);
-		if (textheight > height-2)
-			textheight = height-2;
-	}
-	else
-		textheight = height-2;
+	std::vector<texts> TX;
 
+	for (int i=0; i<lines; i++)
+	{
+		texts tx;
+		ZeroMemory(&tx, sizeof(tx));
+		tx.text = GetLine(i, tx.center, tx.largefont, tx.forceleft);
+		RectF rect;
+		if (tx.largefont)
+			tmpgfx.MeasureString(tx.text.c_str(), -1, &largefont, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);
+		else
+			tmpgfx.MeasureString(tx.text.c_str(), -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);
+
+		if (rect.GetBottom() == 0)
+			tmpgfx.MeasureString(L"QWEXCyjM", -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);			
+		
+		tx.height = static_cast<int>(rect.GetBottom());
+		textheight += tx.height;
+		TX.push_back(tx);
+	}	
+
+	if (!Settings.Shrinkframe)	
+		textheight = height-2;
+		
 	if (Settings.Thumbnailpb)
 		textheight += 25;
 
@@ -757,40 +810,45 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 		GetBValue(Settings_font.bgcolor) == 255)
 		drawshadow = false;
 
-	int left = 3;
-	if (Settings.AsIcon && !totheleft)
-		left = ICONSIZEPX + 4;
-
+	int heightsofar=0;
 	for (int i=0; i < lines; i++)
 	{
-		bool center;
-		std::tstring text = GetLine(i, center);
-		sf.SetAlignment(static_cast<StringAlignment>(center));
+		sf.SetAlignment(static_cast<StringAlignment>(TX[i].center));
 
-		int yt = i * (lineheight-2) + 2;					
-		int yb = yt + lineheight-2;
+		int left = 3;
+		if (Settings.AsIcon && !totheleft && !TX[i].forceleft)
+			left = ICONSIZEPX + 4;
+
+		if (i)
+			heightsofar += TX[i-1].height;		
 
 		if (drawshadow)
 		{		
-			RectF rect(static_cast<REAL>(left+1), static_cast<REAL>(yt), 197, static_cast<REAL>(yb));				
-			gfx.DrawString(text.c_str(), -1, &font, rect, &sf, &bgcolor);					
+			RectF rect(static_cast<REAL>(left+1), static_cast<REAL>(heightsofar), 197, static_cast<REAL>(heightsofar+TX[i].height));		
+			if (TX[i].largefont)
+				gfx.DrawString(TX[i].text.c_str(), -1, &largefont, rect, &sf, &bgcolor);					
+			else
+				gfx.DrawString(TX[i].text.c_str(), -1, &font, rect, &sf, &bgcolor);					
 		}
 
-		RectF rect(static_cast<REAL>(left), static_cast<REAL>(yt-1), 196, static_cast<REAL>(yb-2));				
-		gfx.DrawString(text.c_str(), -1, &font, rect, &sf, &fgcolor);
+		RectF rect(static_cast<REAL>(left), static_cast<REAL>(heightsofar-1), 196, static_cast<REAL>(heightsofar+TX[i].height-2));				
+		if (TX[i].largefont)
+			gfx.DrawString(TX[i].text.c_str(), -1, &largefont, rect, &sf, &fgcolor);
+		else
+			gfx.DrawString(TX[i].text.c_str(), -1, &font, rect, &sf, &fgcolor);
 	}
 
 	if (gTotal > 0 && gCurPos >0 && Settings.Thumbnailpb)
 	{
 		gfx.SetSmoothingMode(SmoothingModeAntiAlias);		
-		int X, Y = bmp.GetHeight()-15;
+		int Y = bmp.GetHeight()-15;
 		Pen p1(Color::White, 1);
 		Pen p2(Color::MakeARGB(80, 0, 0, 0), 1);
 
 		SolidBrush b1(Color::MakeARGB(150, 0, 0, 0));	
 		SolidBrush b2(Color::MakeARGB(220, 255, 255, 255));
-		RectF R1(44, Y, 10, 9);
-		RectF R2(width - 56, Y, 10, 9);
+		RectF R1(44, (REAL)Y, 10, 9);
+		RectF R2((REAL)width - 56, (REAL)Y, 10, 9);
 
 		gfx.FillRectangle(&b1, 46, Y, width-94, 9);
 		gfx.DrawLine(&p2, 46, Y+2, 46, Y+6);
@@ -889,6 +947,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case 7:
 				SendMessage(plugin.hwndParent,WM_WA_IPC,(WPARAM)(HWND)0,IPC_OPENFILEBOX);
 				break;
+			case 8:
+				static int lastvolume;
+				if (volume == 0)
+				{					
+					volume = lastvolume;
+					SendMessage(plugin.hwndParent,WM_WA_IPC,volume,IPC_SETVOLUME);
+				}
+				else
+				{
+					lastvolume = volume;
+					SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_SETVOLUME);
+				}
+				break;
+
 			}
 		break;
 
@@ -906,6 +978,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					
 					metadata.reset(filename.c_str(), false);
 
+					gPlayListPos = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
+
 					gTotal = SendMessage(plugin.hwndParent,WM_WA_IPC,2,IPC_GETOUTPUTTIME);
 					gCurPos = 0;
 
@@ -913,8 +987,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					
 					playstate = 1;
 
-					if (Settings.Add2RecentDocs)
+					if ( (Settings.JLrecent || Settings.JLfrequent) && metadata.isFile )
+					{
+						
 						SHAddToRecentDocs(SHARD_PATHW, filename.c_str());
+					}
 
 					if (Settings.Thumbnailbackground == 1)
 						if (background)
@@ -1028,7 +1105,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	gCurPos = cp;
 
 	if (playstate == 1 || Settings.Thumbnailpb)
-		if (gTotal < 0)
+		if (gTotal <= 0)
 			gTotal = SendMessage(plugin.hwndParent,WM_WA_IPC,2,IPC_GETOUTPUTTIME);
 
 	static unsigned char count1=0;
@@ -1040,20 +1117,17 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	else
 		count1++;
 
-	if (!Settings.Progressbar)
-		return;
-
 	switch (playstate)
 	{
 		case 1: 
 
-			if (gCurPos == -1 || gTotal < 0)
+			if (gCurPos == -1 || gTotal <= 0)
 			{ 
 				static unsigned char count2=0;
 				if (count2 == 8)
-				{
-					metadata.reset(L"", true);
+				{					
 					count2 = 0;
+					metadata.reset(L"", true);					
 				}
 				else
 					count2++;
@@ -1061,7 +1135,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 
 				if (Settings.Progressbar)
 				{					
-					if (gCurPos == -1 || gTotal < 0)
+					if (gCurPos == -1 || gTotal <= 0)
 					{ 
 						if (Settings.Streamstatus)
 							SetProgressState(TBPF_INDETERMINATE);
@@ -1211,6 +1285,7 @@ void ReadSettings(HWND hwnd)
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK30), (UINT) BM_SETCHECK, Settings.JLrecent, 0);
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK31), (UINT) BM_SETCHECK, Settings.JLfrequent, 0);
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK32), (UINT) BM_SETCHECK, Settings.JLtasks, 0);
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK33), (UINT) BM_SETCHECK, Settings.JLbms, 0);
 
 	SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings_strings.BGPath.c_str());
 
@@ -1230,7 +1305,7 @@ void ReadSettings(HWND hwnd)
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), Settings.Progressbar);
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK27), Settings.Thumbnailbuttons);
 
-	for (int i = IDC_PCB1; i <= IDC_PCB8; i++)
+	for (int i = IDC_PCB1; i <= IDC_PCB9; i++)
 		SendMessage(GetDlgItem(hwnd, i), (UINT) BM_SETCHECK, Settings.Buttons[i-IDC_PCB1], 0);		
 }
 
@@ -1269,6 +1344,8 @@ void WriteSettings(HWND hwnd)
 		Settings.JLfrequent = SendMessage(GetDlgItem(hwnd, IDC_CHECK31), (UINT) BM_GETCHECK, 0, 0);
 	if (GetDlgItem(hwnd, IDC_CHECK32) != NULL)
 		Settings.JLtasks = SendMessage(GetDlgItem(hwnd, IDC_CHECK32), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK33) != NULL)
+		Settings.JLbms = SendMessage(GetDlgItem(hwnd, IDC_CHECK33), (UINT) BM_GETCHECK, 0, 0);
 
 	//Radiobuttons
 	if (GetDlgItem(hwnd, IDC_RADIO1) != NULL)
@@ -1313,7 +1390,7 @@ void WriteSettings(HWND hwnd)
 
 	if (GetDlgItem(hwnd, IDC_PCB1) != NULL)
 	{
-		for (int i = IDC_PCB1; i <= IDC_PCB8; i++)
+		for (int i = IDC_PCB1; i <= IDC_PCB9; i++)
 			Settings.Buttons[i-IDC_PCB1] = SendMessage(GetDlgItem(hwnd, i), (UINT) BM_GETCHECK, 0 , 0);
 	}
 }
@@ -1401,7 +1478,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
 			TabToFront(TabCtrl, Index);
 
-			for (int i=0; i<8; i++)
+			for (int i=0; i<9; i++)
 			{
 				SendMessage(GetDlgItem(Tab3, IDC_PCB1+i), BM_SETIMAGE, IMAGE_ICON, (LPARAM)ImageList_GetIcon(theicons, i+1, 0));
 			}
@@ -1421,6 +1498,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 					bool recent = Settings.JLrecent;
 					bool frequent = Settings.JLfrequent;
 					bool tasks = Settings.JLtasks;
+					bool bms = Settings.JLbms;
 					
 					WriteSettings(Tab1);
 					WriteSettings(Tab2);
@@ -1431,31 +1509,16 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
 					if (recent != Settings.JLrecent ||
 						frequent != Settings.JLfrequent ||
-						tasks != Settings.JLtasks)
+						tasks != Settings.JLtasks ||
+						bms != Settings.JLbms)
 					{
-						JumpList jl;
-						if (jl.DeleteJumpList())
-						{
-							std::wstring pluginpath;
-							pluginpath.reserve(MAX_PATH);
-							pluginpath.resize(MAX_PATH, '\0');
-							GetModuleFileName(plugin.hDllInstance, &pluginpath[0], MAX_PATH);
-							pluginpath.resize(wcslen(pluginpath.c_str()));
-
-							GetShortPathName(pluginpath.c_str(), &pluginpath[0], pluginpath.length());
-							pluginpath.resize(wcslen(pluginpath.c_str()));
-
-							if (!jl.CreateJumpList(pluginpath, getString(__T("wapref"), __T("Winamp Preferences")), getString(__T("openfile"), __T("Open File")),
-								Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks) )
-								MessageBoxEx(plugin.hwndParent, getString(__T("jumplisterror"), __T("Error creating jump list.")).c_str(), 0, MB_ICONWARNING | MB_OK, 0);
-						}						
+						DoJl();					
 					}
-
 
 					SetWindowAttr();
 
 					if (Settings.VuMeter)
-						SetTimer(plugin.hwndParent, 6668, 100, VUMeterProc);
+						SetTimer(plugin.hwndParent, 6668, 50, VUMeterProc);
 					else
 						KillTimer(plugin.hwndParent, 6668);
 
@@ -1544,6 +1607,8 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 						std::tstring msgtext = STRINGS.find(__T("help1"))->second + __T("\n\n");
 						msgtext += STRINGS.find(__T("help2"))->second + __T("\n\n");
 						msgtext += __T("%c%  -  ") + STRINGS.find(__T("help3"))->second + __T("\n");
+						msgtext += __T("%l%  -  ") + STRINGS.find(__T("help22"))->second + __T("\n");
+						msgtext += __T("%f%  -  ") + STRINGS.find(__T("help23"))->second + __T("\n");
 						msgtext += __T("%title%  -  ") + STRINGS.find(__T("help5"))->second + __T("\n");
 						msgtext += __T("%artist%  -  ") + STRINGS.find(__T("help6"))->second + __T("\n");
 						msgtext += __T("%album%  -    ") + STRINGS.find(__T("help7"))->second + __T("\n");
@@ -1733,6 +1798,12 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 					if ((((LPNMHDR)lParam)->code) == BCN_HOTITEMCHANGE)
 						SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getToolTip(8).c_str());
 					break;
+
+				case IDC_PCB9:
+					if ((((LPNMHDR)lParam)->code) == BCN_HOTITEMCHANGE)
+						SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getToolTip(9).c_str());
+					break;
+
 				}
 				break;
 
@@ -1795,6 +1866,8 @@ void FillStrings()
 	STRINGS[__T("help19")] = __T("Current volume in percentage ('%' sign not included)");
 	STRINGS[__T("help20")] = __T("Shuffle state (ON / OFF)");
 	STRINGS[__T("help21")] = __T("Repeat state (ON / OFF)");
+	STRINGS[__T("help22")] = __T("The line that contains this will be drawn with larger font");
+	STRINGS[__T("help23")] = __T("The line that contains this will be drawn to the left of the thumbnail");
 	STRINGS[__T("favorite")] = __T("Favorite");
 }
 
@@ -1810,107 +1883,28 @@ void LoadStrings(std::tstring Path)
 {
 	RTL = GetPrivateProfileInt(__T("win7shell"), __T("RTL"), 0, Path.c_str());
 
-	getinistring(__T("newvers"), Path);
-	getinistring(__T("disableupdate"), Path);
-	getinistring(__T("opendownload"), Path);
-	getinistring(__T("uninstall"), Path);
-	getinistring(__T("uninstallhowto"), Path);
-	getinistring(__T("info"), Path);
-	getinistring(__T("config"), Path);
-	getinistring(__T("on"), Path);
-	getinistring(__T("off"), Path);
-	getinistring(__T("previous"), Path);
-	getinistring(__T("pause"), Path);
-	getinistring(__T("play"), Path);
-	getinistring(__T("stop"), Path);
-	getinistring(__T("next"), Path);
-	getinistring(__T("errorthumb"), Path);
-	getinistring(__T("playing"), Path);
-	getinistring(__T("paused"), Path);
-	getinistring(__T("stopped"), Path);
-	getinistring(__T("taskinitfail"), Path);
-	getinistring(__T("plugindev"), Path);
-	getinistring(__T("images"), Path);
-	getinistring(__T("usethumbbg"), Path);
-	getinistring(__T("selectimage"), Path);
-	getinistring(__T("afterrestart"), Path);
-	getinistring(__T("applysettings"), Path);
-	getinistring(__T("help1"), Path);
-	getinistring(__T("help2"), Path);
-	getinistring(__T("help3"), Path);
-	getinistring(__T("help5"), Path);
-	getinistring(__T("help6"), Path);
-	getinistring(__T("help7"), Path);
-	getinistring(__T("help8"), Path);
-	getinistring(__T("help9"), Path);
-	getinistring(__T("help10"), Path);
-	getinistring(__T("help11"), Path);
-	getinistring(__T("help12"), Path);
-	getinistring(__T("help13"), Path);
-	getinistring(__T("help14"), Path);
-	getinistring(__T("help15"), Path);
-	getinistring(__T("help16"), Path);
-	getinistring(__T("help17"), Path);
-	getinistring(__T("help18"), Path);
-	getinistring(__T("help19"), Path);
-	getinistring(__T("help20"), Path);
-	getinistring(__T("help21"), Path);	
+	std::wstring values;
+	values.reserve(10000);
+	values.resize(10000);
+	int sz = GetPrivateProfileSection(L"win7shell", &values[0], 10000, Path.c_str());
+	values.resize(sz);
+	
+	std::wstring::size_type pos = 0;
+	while (pos != std::wstring::npos)
+	{
+		pos = values.find_first_of(L'\0');
+		if (pos != std::wstring::npos)
+		{
+			std::wstring kvpair = values.substr(0, pos);
+			values.erase(0, pos+1);
 
-	//GUI
-	getinistring(__T("help"), Path);
-	getinistring(__T("thumbbg"), Path);
-	getinistring(__T("transparent"), Path);
-	getinistring(__T("albumart"), Path);
-	getinistring(__T("defbg"), Path);
-	getinistring(__T("custombg"), Path);
-	getinistring(__T("browse"), Path);
-	getinistring(__T("aa"), Path);
-	getinistring(__T("buttons"), Path);
-	getinistring(__T("shrink"), Path);
-	getinistring(__T("taskicon"), Path);
-	getinistring(__T("progressbar"), Path);
-	getinistring(__T("streaming"), Path);
-	getinistring(__T("error"), Path);
-	getinistring(__T("overlays"), Path);
-	getinistring(__T("jumplist"), Path);
-	getinistring(__T("addtorecent"), Path);
-	getinistring(__T("bugslink"), Path);
-	getinistring(__T("bugstext"), Path);
-	getinistring(__T("sitelink"), Path);
-	getinistring(__T("sitetext"), Path);
-	getinistring(__T("noupdate"), Path);
-	getinistring(__T("ok"), Path);
-	getinistring(__T("cancel"), Path);	
-	getinistring(__T("removetitle"), Path);
-	getinistring(__T("selectfont"), Path);
-	getinistring(__T("selectshadow"), Path);
-	getinistring(__T("enable"), Path);
-	getinistring(__T("plugdev"), Path);
-	getinistring(__T("thumboptions"), Path);
-	getinistring(__T("thumbtext"), Path);
-	getinistring(__T("translink"), Path);
-	getinistring(__T("transtext"), Path);
-	getinistring(__T("favorite"), Path);
-	getinistring(__T("vumeter"), Path);
-	getinistring(__T("iconic"), Path);
-	getinistring(__T("background"), Path);
-	getinistring(__T("addfav"), Path);
-	getinistring(__T("author"), Path);
-	getinistring(__T("volup"), Path);
-	getinistring(__T("voldown"), Path);
-	getinistring(__T("openfile"), Path);
-	getinistring(__T("thumbpb"), Path);
-	getinistring(__T("wapref"), Path);
-	getinistring(__T("startwa"), Path);
-	getinistring(__T("jumplisterror"), Path);
-	getinistring(__T("revert"), Path);
-	getinistring(__T("jlchoice"), Path);
-	getinistring(__T("jlrecent"), Path);
-	getinistring(__T("jlfrequent"), Path);
-	getinistring(__T("jltasks"), Path);
-	getinistring(__T("jlnote"), Path);
-	getinistring(__T("creditslink"), Path);
-	getinistring(__T("creditstext"), Path);
+			std::wstring::size_type separator = kvpair.find_first_of('=');
+			if (separator != std::wstring::npos)
+			{
+				STRINGS[kvpair.substr(0, separator)] = kvpair.substr(separator+1);
+			}
+		}
+	}
 }
 
 BOOL CALLBACK EnumChildProc(HWND hwndChild, LPARAM lParam) 
@@ -1930,48 +1924,86 @@ void SetStrings(HWND hwnd)
 	if (RTL)
 		EnumChildWindows(hwnd, EnumChildProc, 0);
 
-	SetWindowText(GetDlgItem(hwnd, IDC_BUTTON4), getString(__T("help")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC2), getString(__T("thumbbg")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_RADIO1), getString(__T("transparent")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_RADIO2), getString(__T("albumart")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_RADIO3), getString(__T("defbg")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_RADIO4), getString(__T("custombg")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_BUTTON3), getString(__T("browse")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK8), getString(__T("aa")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK6), getString(__T("buttons")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK1), getString(__T("shrink")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC5), getString(__T("taskicon")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK2), getString(__T("progressbar")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK4), getString(__T("streaming")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK5), getString(__T("error")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK3), getString(__T("overlays")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC6), getString(__T("jumplist")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK2), 
-		std::wstring(__T("<a>") + getString(__T("bugslink")) + __T("</a> ") + getString(__T("bugstext"))).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK1), 
-		std::wstring(__T("<a>") + getString(__T("sitelink")) + __T("</a>  ") + getString(__T("sitetext"))).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK3), 
-		std::wstring(__T("<a>") + getString(__T("translink")) + __T("</a>  ") + getString(__T("transtext"))).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK5), 
-		std::wstring(__T("<a>") + getString(__T("creditslink")) + __T("</a>  ") + getString(__T("creditstext"))).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK9), getString(__T("noupdate")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK10), getString(__T("removetitle")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_BUTTON5), getString(__T("selectfont")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK7), getString(__T("enable")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_BUTTON6), getString(__T("selectshadow")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK25), getString(__T("iconic")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK26), getString(__T("vumeter")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK27), getString(__T("addfav")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK4), 
-		std::wstring(getString(__T("author")) + __T(": Magyari Attila <a>atti86@gmail.com</a>")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK29), getString(__T("thumbpb")).c_str());
+	if (!getString(__T("help")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON4), getString(__T("help")).c_str());
+	if (!getString(__T("thumbbg")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC2), getString(__T("thumbbg")).c_str());
+	if (!getString(__T("transparent")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_RADIO1), getString(__T("transparent")).c_str());
+	if (!getString(__T("albumart")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_RADIO2), getString(__T("albumart")).c_str());
+	if (!getString(__T("defbg")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_RADIO3), getString(__T("defbg")).c_str());
+	if (!getString(__T("custombg")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_RADIO4), getString(__T("custombg")).c_str());
+	if (!getString(__T("browse")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON3), getString(__T("browse")).c_str());
+	if (!getString(__T("aa")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK8), getString(__T("aa")).c_str());
+	if (!getString(__T("buttons")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK6), getString(__T("buttons")).c_str());
+	if (!getString(__T("shrink")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK1), getString(__T("shrink")).c_str());
+	if (!getString(__T("taskicon")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC5), getString(__T("taskicon")).c_str());
+	if (!getString(__T("progressbar")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK2), getString(__T("progressbar")).c_str());
+	if (!getString(__T("streaming")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK4), getString(__T("streaming")).c_str());
+	if (!getString(__T("error")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK5), getString(__T("error")).c_str());
+	if (!getString(__T("overlays")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK3), getString(__T("overlays")).c_str());
+	if (!getString(__T("jumplist")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC6), getString(__T("jumplist")).c_str());
+	if (!getString(__T("bugslink")).empty() && !getString(__T("bugstext")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK2), 
+			std::wstring(__T("<a>") + getString(__T("bugslink")) + __T("</a> ") + getString(__T("bugstext"))).c_str());
+	if (!getString(__T("sitelink")).empty() && !getString(__T("sitetext")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK1), 
+			std::wstring(__T("<a>") + getString(__T("sitelink")) + __T("</a>  ") + getString(__T("sitetext"))).c_str());
+	if (!getString(__T("translink")).empty() && !getString(__T("transtext")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK3), 
+			std::wstring(__T("<a>") + getString(__T("translink")) + __T("</a>  ") + getString(__T("transtext"))).c_str());
+	if (!getString(__T("creditslink")).empty() && !getString(__T("creditstext")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK5), 
+			std::wstring(__T("<a>") + getString(__T("creditslink")) + __T("</a>  ") + getString(__T("creditstext"))).c_str());
+	if (!getString(__T("noupdate")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK9), getString(__T("noupdate")).c_str());
+	if (!getString(__T("removetitle")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK10), getString(__T("removetitle")).c_str());
+	if (!getString(__T("selectfont")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON5), getString(__T("selectfont")).c_str());
+	if (!getString(__T("enable")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK7), getString(__T("enable")).c_str());
+	if (!getString(__T("selectshadow")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_BUTTON6), getString(__T("selectshadow")).c_str());
+	if (!getString(__T("iconic")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK25), getString(__T("iconic")).c_str());
+	if (!getString(__T("vumeter")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK26), getString(__T("vumeter")).c_str());
+	if (!getString(__T("addfav")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK27), getString(__T("addfav")).c_str());
+	if (!getString(__T("author")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_SYSLINK4), 
+			std::wstring(getString(__T("author")) + __T(": Magyari Attila <a>atti86@gmail.com</a>")).c_str());
+	if (!getString(__T("thumbpb")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK29), getString(__T("thumbpb")).c_str());
 
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK30), getString(__T("jlrecent")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK31), getString(__T("jlfrequent")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_CHECK32), getString(__T("jltasks")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC30), getString(__T("revert")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC31), getString(__T("jlnote")).c_str());
-	SetWindowText(GetDlgItem(hwnd, IDC_STATIC32), getString(__T("jlchoice")).c_str());
+	if (!getString(__T("jlrecent")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK30), getString(__T("jlrecent")).c_str());
+	if (!getString(__T("jlfrequent")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK31), getString(__T("jlfrequent")).c_str());
+	if (!getString(__T("jltasks")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK32), getString(__T("jltasks")).c_str());
+	if (!getString(__T("revert")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC30), getString(__T("revert")).c_str());
+	if (!getString(__T("jlnote")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC31), getString(__T("jlnote")).c_str());
+	if (!getString(__T("jlchoice")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC32), getString(__T("jlchoice")).c_str());
+	if (!getString(__T("bookmark")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK33), getString(__T("bookmark")).c_str());
 }
 
 inline std::wstring getString(std::wstring keyword, std::wstring def)
@@ -2008,15 +2040,19 @@ std::wstring getInstallPath()
 HWND getWinampWindow()
 {
 	HWND hwnd = FindWindow(L"Winamp v1.x", NULL);
+	if (hwnd != 0)
+		if (FindWindowEx(hwnd, NULL, L"WinampVis", NULL) == 0 )
+			hwnd = 0;
+
 	if (hwnd == 0)
-	{
+	{	
 		std::wstring ipath = getInstallPath();
 		if (!ipath.empty())					
 		{
 			ipath += L"\\Winamp.exe";
 			ShellExecute(NULL, L"open", ipath.c_str(), NULL, NULL, SW_SHOW);
 			int wait = 0;
-			while (hwnd == 0 || wait > 24)
+			while (hwnd == 0 && wait < 24)
 			{
 				Sleep(200);
 				wait++;
@@ -2025,6 +2061,102 @@ HWND getWinampWindow()
 		}
 	}
 	return hwnd;
+}
+
+void DoJl()
+{
+	JumpList jl;
+	if (jl.DeleteJumpList())
+	{
+		std::wstring pluginpath;
+		pluginpath.reserve(MAX_PATH);
+		pluginpath.resize(MAX_PATH, '\0');
+		GetModuleFileName(plugin.hDllInstance, &pluginpath[0], MAX_PATH);
+		pluginpath.resize(wcslen(pluginpath.c_str()));
+
+		GetShortPathName(pluginpath.c_str(), &pluginpath[0], pluginpath.length());
+		pluginpath.resize(wcslen(pluginpath.c_str()));
+
+		std::wstring bms = getBMS();
+		JumpList jl;
+		if (!jl.CreateJumpList(pluginpath, getString(__T("wapref"), __T("Winamp preferences")), getString(__T("fromstart"), __T("Play from beginning")),
+			getString(__T("resumeplay"), __T("Resume playback")), getString(__T("openfile"), __T("Open file")), getString(__T("bookmark"), __T("Bookmarks")),
+			Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks, Settings.JLbms, bms) )
+			MessageBoxEx(plugin.hwndParent, getString(__T("jumplisterror"), __T("Error creating jump list.")).c_str(), 0, MB_ICONWARNING | MB_OK, 0);
+	}	
+}
+
+inline bool parsePath(std::wstring &thepath)
+{
+	std::wstring::size_type pos1 = std::wstring::npos, pos2 = std::wstring::npos;
+	
+	pos1 = thepath.find_first_of(L'{');
+	if (pos1 != std::wstring::npos)
+	{
+		pos2 = thepath.find_first_of(L'}', pos1+1);
+		if (pos2 != std::wstring::npos)
+		{
+			std::wstring re;
+			int clsid;
+
+			re = thepath.substr(pos1+1, pos2 - pos1 - 1);
+			std::wstringstream ss;
+			ss << re;
+			ss >> clsid;
+
+			re.clear();
+			re.resize(MAX_PATH);
+			SHGetSpecialFolderPath(0, &re[0], clsid, 0);
+			re.resize(wcslen(re.c_str()));	
+
+			thepath.replace(pos1, pos2 - pos1 + 1, re);
+			return true;
+		}
+	}
+
+	pos1 = thepath.find_first_of(L'%');
+	if (pos1 != std::wstring::npos)
+	{
+		pos2 = thepath.find_first_of(L'%', pos1+1);
+		if (pos2 != std::wstring::npos)
+		{
+			std::wstring re;
+			re = thepath.substr(pos1+1, pos2 - pos1 - 1);
+			re = _wgetenv(re.c_str());
+
+			thepath.replace(pos1, pos2 - pos1 + 1, re);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::wstring getWinampINIPath()
+{	
+	std::wstring wini;
+	wini.resize(MAX_PATH);
+	GetPrivateProfileString(L"Winamp", L"inidir", L"", &wini[0], MAX_PATH, std::wstring(getInstallPath() + L"\\paths.ini").c_str());
+	wini.resize(wcslen(wini.c_str()));
+	
+	while (parsePath(wini));
+
+	if (wini.empty())
+		return getInstallPath();
+	
+	return wini;
+}
+
+std::wstring getBMS()
+{		
+	std::wstring path = getWinampINIPath() + L"\\Winamp.bm";		
+	std::wifstream is(path.c_str());
+	if (is.fail())
+		return L"";
+
+	std::wstring data;
+	std::getline(is, data, L'\0');
+	return data;
 }
 
 // This is an export function called by winamp which returns this plugin info.
@@ -2039,7 +2171,60 @@ extern "C" int __declspec(dllexport) __stdcall pref()
 	if (hwnd == 0)
 		MessageBoxEx(0, L"Please start Winamp first", 0, MB_ICONWARNING, 0);
 	else
-		SendMessage(hwnd, WM_COMMAND, 40012, 0);
+	{
+		SendMessage(hwnd,WM_WA_IPC,-1,IPC_OPENPREFSTOPAGE);
+		
+		Sleep(600);
+		HWND prefs = (HWND)SendMessage(hwnd,WM_WA_IPC,0,IPC_GETPREFSWND);
+		if (IsWindow(prefs))
+			SetForegroundWindow(prefs);
+	}
+
+	return 0;
+}
+
+extern "C" int __declspec(dllexport) __stdcall fromstart() 
+{
+	HWND hwnd = getWinampWindow();
+	if (hwnd == 0)
+		MessageBoxEx(0, L"Please start Winamp first", 0, MB_ICONWARNING, 0);
+	else
+	{
+		SendMessage(hwnd, WM_WA_IPC, -1, IPC_SETPLAYLISTPOS);
+		SendMessage(hwnd, WM_COMMAND, 40045, 0);
+
+	}
+
+	return 0;
+}
+
+extern "C" int __declspec(dllexport) __stdcall resume() 
+{
+	HWND hwnd = getWinampWindow();
+	if (hwnd == 0)
+		MessageBoxEx(0, L"Please start Winamp first", 0, MB_ICONWARNING, 0);
+	else
+	{
+		if (SendMessage(hwnd,WM_WA_IPC,0,IPC_ISPLAYING) == 1)
+			return 0;
+		
+		std::wstring path;
+		path = getWinampINIPath();
+
+		if (path.empty())
+			return -1;
+
+		path += L"\\Plugins\\win7shell.ini";
+
+		sResumeSettings sResume;
+		ZeroMemory(&sResume, sizeof(sResume));
+		if (GetPrivateProfileStruct(__T("win7shell"), __T("resume"), &sResume, sizeof(sResume), path.c_str()))
+		{
+			SendMessage(hwnd, WM_WA_IPC, sResume.ResumePosition, IPC_SETPLAYLISTPOS);
+			SendMessage(hwnd, WM_COMMAND, 40045, 0);
+			SendMessage(hwnd, WM_WA_IPC, sResume.ResumeTime, IPC_JUMPTOTIME);
+		}		
+	}
 
 	return 0;
 }

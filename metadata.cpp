@@ -22,6 +22,10 @@ bool MetaData::reset(std::wstring filename, bool force)
 	{
 		mfilename = filename;
 		cache.clear();
+
+		WIN32_FIND_DATA ffd;
+		isFile = FindFirstFile(mfilename.c_str(), &ffd) != INVALID_HANDLE_VALUE;		
+
 		return true;
 	}	
 	else
