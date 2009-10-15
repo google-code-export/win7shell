@@ -20,9 +20,11 @@ Next I'd like to thank some people / group of people who helped me with various 
  * AKLP
  * AlexP
  * Alexpd
+ * Ali Sarıoğlu
  * Dlouhan
  * Eson
  * Iatanku
+ * John Tsolakidis
  * Psik0tik
  * Keigel2001
  * Kay S
