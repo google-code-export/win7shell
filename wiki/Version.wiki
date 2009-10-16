@@ -1,12 +1,9 @@
 #labels Deprecated
-1.05
+1.06
 
-Fixed settings not saving issue
-Version checker is multithreaded
-Many other reported bugs fixed (Resume playback is working)
-Updated translations (Chinese available)
+Album art support for APE tagged media (Musepack format)
+Another fix for the settings not saving issue
+Updated translations
 
-!!! PLEASE, READ THESE: !!! 
-If you had Winamp pinned to the taskbar, remove the old icon, and pin the new one 
-Winamp needs to be set to handle your music/video files in order to make use of the recent and frequent categories of the jump list.
+>>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations! :)
