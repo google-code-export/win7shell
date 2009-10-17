@@ -1,8 +1,7 @@
 #labels Deprecated
-1.06
+1.07
 
-THIS VERSION HAS SOME NASTY BUGS, BUT I CAN'T FIX THEM NOW, SINCE I LOST MY INTERNET CONNECTION AT THE PC I AM DEVELOPING THE PLUG-IN. I'M SORRY FOR THE INCONVENIENCE, THERE'S NOTHING I CAN DO AT THE MOMENT.
-
+*Hopefully* I fixed the bugs from 1.06
 Album art support for APE tagged media (Musepack format)
 Another fix for the settings not saving issue
 Updated translations
