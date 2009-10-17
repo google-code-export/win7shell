@@ -1,6 +1,17 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.07 =
+ * New: APE (Musepack format) tag support. Album art is extracted from APEv2 tagged music files.
+ * Improvement: Another fix on the settings path finding... (sigh)
+ * Translations: Updated translations (template not changed)
+
+= 1.05 =
+ * Improvement: Using Winamp's official path finding for the settings file
+ * Improvement: All version checking is done in a separate thread
+ * Fix: Lots of reported annoying bugs fixed
+ * Translations: Updated translations (template not changed)
+
 = 1.04 =
  * New: Added Media Library bookmarks to the jump list
  * New: Added "Mute" button on the aero peek thumbnail
