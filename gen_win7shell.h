@@ -10,7 +10,7 @@
 #define GPPHDR_VER 0x10
  
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.05"
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.08"
 
 #ifdef _UNICODE
 #define tstring wstring
@@ -69,5 +69,5 @@ struct sFontEx {
 	DWORD bgcolor;
 };
 
- 
+
 #endif
