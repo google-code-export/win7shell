@@ -1,6 +1,13 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.08b =
+ * Fix: Taskbar icon progressbar always showed 0 or 100 for some users.
+
+= 1.08 =
+ * Improvement: Recent and frequent categories reworked. The list contains links instead of files. (Artist, title and track length are added to the list)
+ * Translations: Added Hungarian, updated some others.
+
 = 1.07 =
  * New: APE (Musepack format) tag support. Album art is extracted from APEv2 tagged music files.
  * Improvement: Another fix on the settings path finding... (sigh)
