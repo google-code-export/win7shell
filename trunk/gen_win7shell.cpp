@@ -39,7 +39,7 @@
 
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("1.05"));
+const std::tstring cur_version(__T("1.07"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0 ;
@@ -85,9 +85,10 @@ std::wstring getToolTip(int button);
 std::wstring getString(std::wstring keyword, std::wstring def = L"");
 std::wstring getInstallPath();
 HWND getWinampWindow();
-std::wstring getWinampINIPath();
+std::wstring getWinampINIPath(HWND wnd);
 std::wstring getBMS();
 void DoJl();
+HRESULT __CreateShellLink(PCWSTR filename, PCWSTR pszTitle, IShellLink **ppsl);
 
 int  init(void);
 void config(void);
@@ -121,7 +122,7 @@ int init()
 	GetShortPathName(pluginpath.c_str(), &pluginpath[0], pluginpath.length());
 	pluginpath.resize(wcslen(pluginpath.c_str()));
 
-	W_INI = getWinampINIPath() + L"\\Plugins\\";
+	W_INI = getWinampINIPath(plugin.hwndParent) + L"\\Plugins\\";
 	
 	FillStrings();
 
@@ -204,7 +205,8 @@ int init()
 	GetPrivateProfileString(__T("win7shell"), __T("bgpath"), __T(""), &path[0], MAX_PATH, W_INI.c_str());
 	Settings_strings.BGPath = path;
 
-	std::tstring deftext = __T("%c%%title%‡%c%%artist%‡‡Track: %curtime% / %totaltime%‡Volume:  %volume%");
+	std::tstring deftext = __T("%c%%curtime% / %totaltime%‡%c%%l%%artist%‡%c%%l%%title%‡%c%%album%‡%c%(#%curpl% of %totalpl%)");
+
 	TCHAR text[1000];	
 	GetPrivateProfileString(__T("win7shell"), __T("text"), deftext.c_str(), &text[0], 1000, W_INI.c_str());
 	Settings_strings.Text = text;
@@ -266,8 +268,8 @@ void config()
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 	GetWindowRect(cfgwindow, &rc);
-	SetWindowPos(cfgwindow, 0, (screenWidth - rc.right)/2,
-		(screenHeight - rc.bottom)/2, 0, 0, SWP_NOZORDER|SWP_NOSIZE);
+	MoveWindow(cfgwindow, (screenWidth/2) - ((rc.right - rc.left)/2),
+		(screenHeight/2) - ((rc.bottom-rc.top)/2), rc.right - rc.left, rc.bottom - rc.top, false);
 
 	ShowWindow(cfgwindow,SW_SHOW);
 }
@@ -742,8 +744,8 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 
 	Graphics tmpgfx(background);		
 
-	Pen p(Color::MakeARGB(1, 255, 255, 255), 1);
-	tmpgfx.DrawLine(&p, 0, 0, 1, 1);
+	/*Pen p(Color::MakeARGB(1, 255, 255, 255), 1);
+	tmpgfx.DrawLine(&p, 0, 0, 1, 1);*/
 
 	struct texts {
 		std::wstring text;
@@ -895,15 +897,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (LOWORD(wParam))
 			{
 			case 0:
-				SendMessage(plugin.hwndParent, WM_COMMAND, 40044, 0);
-				if (background)
 				{
-					delete background;
-					background = 0;
+					SendMessage(plugin.hwndParent, WM_COMMAND, 40044, 0);
+					gPlayListPos = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
+					if (background)
+					{
+						delete background;
+						background = 0;
+					}
+					DwmInvalidateIconicBitmaps(plugin.hwndParent);
+					int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
+					wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
+					if (p != NULL)
+						metadata.reset(p, false);
+
+					if (Settings.RemoveTitle)
+						SetWindowText(plugin.hwndParent, __T(""));
+					break;
 				}
-				if (Settings.RemoveTitle)
-					SetWindowText(plugin.hwndParent, __T(""));
-				break;
+
 			case 1:
 				{
 					int res = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
@@ -919,14 +931,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				playstate = 3; //stopped
 				break;
 			case 3:
-				SendMessage(plugin.hwndParent, WM_COMMAND, 40048, 0);
-				if (background)
-				{
-					delete background;
-					background = 0;
+				{				
+					SendMessage(plugin.hwndParent, WM_COMMAND, 40048, 0);
+					gPlayListPos = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
+					if (background)
+					{
+						delete background;
+						background = 0;
+					}
+					DwmInvalidateIconicBitmaps(plugin.hwndParent);
+					int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
+					wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
+					if (p != NULL)
+						metadata.reset(p, false);
+
+					if (Settings.RemoveTitle)
+						SetWindowText(plugin.hwndParent, __T(""));
 				}
-				if (Settings.RemoveTitle)
-					SetWindowText(plugin.hwndParent, __T(""));
 				break;
 			case 4:
 				SendMessage(plugin.hwndParent,WM_WA_IPC,5,IPC_SETRATING);
@@ -973,7 +994,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					if (filename.empty())
 					{
 						int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
-						filename = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
+						wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
+						if (p != NULL)
+							filename = p;
 					}
 					
 					metadata.reset(filename.c_str(), false);
@@ -987,10 +1010,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					
 					playstate = 1;
 
-					if ( (Settings.JLrecent || Settings.JLfrequent) && metadata.isFile )
+					if (Settings.JLrecent || Settings.JLfrequent)
 					{
-						
-						SHAddToRecentDocs(SHARD_PATHW, filename.c_str());
+						std::wstring title(metadata.getMetadata(L"title") + L" - " + 
+							metadata.getMetadata(L"artist"));
+						if (gTotal > 0)
+							title += L"  (" + SecToTime(gTotal/1000) + L")";						
+
+						IShellLink * psl;
+						if (__CreateShellLink(filename.c_str(), title.c_str(), &psl) == S_OK)
+							SHAddToRecentDocs(SHARD_LINK, psl); 
 					}
 
 					if (Settings.Thumbnailbackground == 1)
@@ -1097,16 +1126,16 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	if (!(Settings.Progressbar || Settings.VuMeter))
 		SetProgressState(TBPF_NOPROGRESS);	
 
+	if (playstate == 1 || Settings.Thumbnailpb)
+		if (gTotal <= 0)
+			gTotal = SendMessage(plugin.hwndParent,WM_WA_IPC,1,IPC_GETOUTPUTTIME) * 1000;
+
 	int cp = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETOUTPUTTIME);
 	if (gCurPos == cp)
 	{
 		return;
 	}
 	gCurPos = cp;
-
-	if (playstate == 1 || Settings.Thumbnailpb)
-		if (gTotal <= 0)
-			gTotal = SendMessage(plugin.hwndParent,WM_WA_IPC,2,IPC_GETOUTPUTTIME);
 
 	static unsigned char count1=0;
 	if (count1 == 2)
@@ -1459,8 +1488,8 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
 			if (translationfound)
 			{
-				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON1), getString(__T("ok")).c_str());
-				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON2), getString(__T("cancel")).c_str());
+				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON1), getString(__T("ok"), L"Ok").c_str());
+				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON2), getString(__T("cancel"), L"Cancel").c_str());
 			}			
 
 			int Index = 0;
@@ -2086,6 +2115,74 @@ void DoJl()
 	}	
 }
 
+HRESULT __CreateShellLink(PCWSTR filename, PCWSTR pszTitle, IShellLink **ppsl)
+{
+	IShellLink *psl;
+	HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&psl));
+	if (SUCCEEDED(hr))
+	{
+		std::wstring fname;
+		fname.resize(MAX_PATH);
+		GetModuleFileName(0, &fname[0], MAX_PATH);
+		fname.resize(wcslen(fname.c_str()));
+
+		std::wstring shortfname;
+		shortfname.resize(MAX_PATH);			
+		GetShortPathName(fname.c_str(), &shortfname[0], MAX_PATH);
+		shortfname.resize(wcslen(shortfname.c_str()));
+
+		fname.clear();
+		fname.resize(MAX_PATH);
+		if (GetShortPathName(filename, &fname[0], MAX_PATH) == 0)
+		{
+			fname = filename;
+			fname.resize(wcslen(filename));
+		}
+
+
+		psl->SetIconLocation(shortfname.c_str(), 0);
+
+		hr = psl->SetPath(shortfname.c_str());
+
+		if (SUCCEEDED(hr))
+		{
+			hr = psl->SetArguments(fname.c_str());
+			if (SUCCEEDED(hr))
+			{
+				// The title property is required on Jump List items provided as an IShellLink
+				// instance.  This value is used as the display name in the Jump List.
+				IPropertyStore *pps;
+				hr = psl->QueryInterface(IID_PPV_ARGS(&pps));
+				if (SUCCEEDED(hr))
+				{
+					PROPVARIANT propvar;
+					hr = InitPropVariantFromString(pszTitle, &propvar);
+					if (SUCCEEDED(hr))
+					{
+						hr = pps->SetValue(PKEY_Title, propvar);
+						if (SUCCEEDED(hr))
+						{
+							hr = pps->Commit();
+							if (SUCCEEDED(hr))
+							{
+								hr = psl->QueryInterface(IID_PPV_ARGS(ppsl));
+							}
+						}
+						PropVariantClear(&propvar);
+					}
+					pps->Release();
+				}
+			}
+		}
+		else
+		{
+			hr = HRESULT_FROM_WIN32(GetLastError());
+		}
+		psl->Release();
+	}
+	return hr;
+}
+
 inline bool parsePath(std::wstring &thepath)
 {
 	std::wstring::size_type pos1 = std::wstring::npos, pos2 = std::wstring::npos;
@@ -2132,24 +2229,33 @@ inline bool parsePath(std::wstring &thepath)
 	return false;
 }
 
-std::wstring getWinampINIPath()
-{	
+std::wstring getWinampINIPath(HWND wnd)
+{		
 	std::wstring wini;
 	wini.resize(MAX_PATH);
 	GetPrivateProfileString(L"Winamp", L"inidir", L"", &wini[0], MAX_PATH, std::wstring(getInstallPath() + L"\\paths.ini").c_str());
 	wini.resize(wcslen(wini.c_str()));
 	
-	while (parsePath(wini));
+	while (parsePath(wini));	
 
 	if (wini.empty())
-		return getInstallPath();
+		wini = getInstallPath();
 	
+	WIN32_FIND_DATA ffd;
+	if (FindFirstFile(std::wstring(wini + __T("\\Plugins\\win7shell.ini")).c_str(), &ffd) == INVALID_HANDLE_VALUE)
+	{
+		char *dir=(char*)SendMessage(wnd,WM_WA_IPC,0,IPC_GETINIDIRECTORY);
+		wini.resize(MAX_PATH);
+		MultiByteToWideChar(CP_ACP, 0, dir, strlen(dir), &wini[0], MAX_PATH);
+		wini.resize(wcslen(wini.c_str()));
+	}
+
 	return wini;
 }
 
 std::wstring getBMS()
 {		
-	std::wstring path = getWinampINIPath() + L"\\Winamp.bm";		
+	std::wstring path = getWinampINIPath(plugin.hwndParent) + L"\\Winamp.bm";		
 	std::wifstream is(path.c_str());
 	if (is.fail())
 		return L"";
@@ -2209,7 +2315,7 @@ extern "C" int __declspec(dllexport) __stdcall resume()
 			return 0;
 		
 		std::wstring path;
-		path = getWinampINIPath();
+		path = getWinampINIPath(hwnd);
 
 		if (path.empty())
 			return -1;
