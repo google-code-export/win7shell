@@ -5,5 +5,8 @@
 New thumbnail button: "Stop after current song"
 Small bugfixes
 
+Reworked Recent and Frequent categories
+Fixed taskbar progressbar bug
+
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations! :)
