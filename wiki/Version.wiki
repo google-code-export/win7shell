@@ -1,10 +1,9 @@
 #labels Deprecated
-1.07
+1.09
 
-*Hopefully* I fixed the bugs from 1.06
-Album art support for APE tagged media (Musepack format)
-Another fix for the settings not saving issue
-Updated translations
+!!!! Added media library playlists to the jumplist !!!!
+New thumbnail button: "Stop after current song"
+Small bugfixes
 
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations! :)
