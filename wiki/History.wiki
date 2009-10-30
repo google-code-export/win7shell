@@ -1,6 +1,12 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.09 =
+ * New: Added media library playlists to the jump list
+ * New: Thumbnail button: "Stop after current song"
+ * Fix: Small bugfixes
+ * Translations: Added 2 lines to the translation file
+
 = 1.08b =
  * Fix: Taskbar icon progressbar always showed 0 or 100 for some users.
 
