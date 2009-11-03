@@ -23,6 +23,7 @@ Next I'd like to thank some people / group of people who helped me with various 
  * AlexP
  * Alexpd
  * Ali Sarıoğlu
+ * Conyc (Jakob Langgaard Andersen)
  * Dlouhan
  * Eson
  * HCC
