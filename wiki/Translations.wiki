@@ -23,6 +23,7 @@
  * <b>Traditional Chinese</b> by HCC [http://win7shell.googlecode.com/files/zh_HanT_win7shell.lng Download]
  * <b>Simplified Chinese</b> by HCC [http://win7shell.googlecode.com/files/zh_HanS_win7shell.lng Download]
  * <b>Hungarian</b> by Pataki Gyula [http://win7shell.googlecode.com/files/HUN_win7shell.lng Download]
+ * <b>Danish</b> by Conyc (Jakob Langgaard Andersen) [http://win7shell.googlecode.com/files/DANISH_win7shell.lng Download]
 
 ----
 
