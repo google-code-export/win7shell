@@ -16,6 +16,8 @@ Next I'd like to thank some people / group of people who helped me with various 
 
 <b>NSIS installer</b> - [http://nsis.sourceforge.net/License Licenses]
 
+<b>Nikolaus Gebhardt</b> - irrXML API
+
 <b>Translators</b>
  * AKLP
  * AlexP
