@@ -1,12 +1,11 @@
 #labels Deprecated
-1.09
+1.10
 
-!!!! Added media library playlists to the jumplist !!!!
-New thumbnail button: "Stop after current song"
-Small bugfixes
-
-Reworked Recent and Frequent categories
-Fixed taskbar progressbar bug
+Fixed an important and old memory leak (it caused several other bugs, especially if you didn't restart Winamp for a long time).
+Corrected icon order in the jump list.
+Fixed several text formatting bugs, such as the shadow being sometimes one character short.
+Added two more text formatting flags: %s% for shadow, and %b% for a translucent background for the text.
+Fixed right-to-left support.
 
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
-I need more translations! :)
+I need more translations!
