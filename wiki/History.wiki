@@ -1,6 +1,17 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.10 =
+
+ * Fix: got rid of an important and old memory leak (it caused several other bugs, especially if you didn't restart Winamp for a long time)
+ * Fix: Corrected icon order in the jump list
+ * Fix: Corrected several text formatting bugs, such as the shadow being sometimes one character short
+ * New: Added two more text formatting flags: 
+  * %s% - Draws text shadow for containing line using selected shadow color
+  * %b% - The line containing this will have a darker background for the text, using the selected shadow color
+ * Fix: Right-to-left works yet again
+ * Translations: Added 5 lines to the translation file
+
 = 1.09 =
  * New: Added media library playlists to the jump list
  * New: Thumbnail button: "Stop after current song"
@@ -8,11 +19,11 @@
  * Translations: Added 2 lines to the translation file
 
 = 1.08b =
- * Fix: Taskbar icon progressbar always showed 0 or 100 for some users.
+ * Fix: Taskbar icon progressbar always showed 0 or 100 for some users
 
 = 1.08 =
  * Improvement: Recent and frequent categories reworked. The list contains links instead of files. (Artist, title and track length are added to the list)
- * Translations: Added Hungarian, updated some others.
+ * Translations: Added Hungarian, updated some others
 
 = 1.07 =
  * New: APE (Musepack format) tag support. Album art is extracted from APEv2 tagged music files.
