@@ -1,8 +1,16 @@
 #summary Plugin changelog
 #labels Featured
 
-= 1.10 =
+= 1.11 =
+ * New: Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
+ * Improvement: Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
+ * Improvement: Longer text lines will scroll on the aero peek window.
+ * New: Added text formatting flag: %d% to prevent that specific line from scrolling, even if it's longer than the width of the thumbnail window.
+ * New: Added "Apply" button to immediately see the effects of the settings.
+ * Fix: Some albums that had characters that are not allowed to be in a file name weren't loaded. It's fixed now.
+ * Translations: 2 new lines in the translation file
 
+= 1.10 =
  * Fix: got rid of an important and old memory leak (it caused several other bugs, especially if you didn't restart Winamp for a long time)
  * Fix: Corrected icon order in the jump list
  * Fix: Corrected several text formatting bugs, such as the shadow being sometimes one character short
