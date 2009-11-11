@@ -24,6 +24,7 @@
  * <b>Simplified Chinese</b> by HCC [http://win7shell.googlecode.com/files/zh_HanS_win7shell.lng Download]
  * <b>Hungarian</b> by Pataki Gyula [http://win7shell.googlecode.com/files/HUN_win7shell.lng Download]
  * <b>Danish</b> by Conyc (Jakob Langgaard Andersen) [http://win7shell.googlecode.com/files/DANISH_win7shell.lng Download]
+ * <b>Bulgarian</b> by SHERIFA [http://win7shell.googlecode.com/files/BULGARIAN_win7shell.lng Download]
 
 ----
 
