@@ -1,12 +1,12 @@
 #labels Deprecated
 1.11
 
-Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
-Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
-Longer text lines will scroll on the aero peek window.
-Added text formatting flag: %d% to prevent that specific line from scrolling, even if it's longer than the width of the thumbnail window.
-Added "Apply" button to immediately see the effects of the settings.
-Some albums that had characters that are not allowed to be in a file name weren't loaded. It's fixed now.
+* Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
+* Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
+* Longer text lines will scroll on the aero peek window.
+* Added text formatting flag: %d% to prevent that specific line from scrolling, even if it's longer than the width of the thumbnail window.
+* Added "Apply" button to immediately see the effects of the settings.
+* Some albums that had characters that are not allowed to be in a file name weren't loaded. It's fixed now.
 
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations!
