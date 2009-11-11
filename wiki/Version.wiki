@@ -1,11 +1,12 @@
 #labels Deprecated
-1.10
+1.11
 
-Fixed an important and old memory leak (it caused several other bugs, especially if you didn't restart Winamp for a long time).
-Corrected icon order in the jump list.
-Fixed several text formatting bugs, such as the shadow being sometimes one character short.
-Added two more text formatting flags: %s% for shadow, and %b% for a translucent background for the text.
-Fixed right-to-left support.
+Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
+Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
+Longer text lines will scroll on the aero peek window.
+Added text formatting flag: %d% to prevent that specific line from scrolling, even if it's longer than the width of the thumbnail window.
+Added "Apply" button to immediately see the effects of the settings.
+Some albums that had characters that are not allowed to be in a file name weren't loaded. It's fixed now.
 
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations!
