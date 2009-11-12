@@ -11,12 +11,11 @@
 
 1.11 highlights
 
-* Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
-* Album art is taken directly from Winamp
-* Longer text lines will scroll on the aero peek window.
-* New text formatting flag: %d% prevents line from scrolling
-* Added "Apply" button to immediately see the effects of the settings.
+* Volume control with mousewheel when hovering over Winamp taskbar icon.
 * "Favorite" button lets you rate the song from 0 to 5
+* Album art is taken directly from Winamp
+* Added scrolling text and a new text formatting flag
+* Added "Apply" button to immediately see the effects of the settings.
 
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations!
