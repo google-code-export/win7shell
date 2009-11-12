@@ -13,6 +13,12 @@
 
 ----
 
+===Q: How can I have a custom Winamp icon pinned to the taskbar?===
+===A: Open _C:\Users\(USER NAME)\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned_ and change the Winamp icon. If it doesn't update after this, try unpinning and re-pinning.===
+
+----
+
+
 ===Q: I minimize Winamp to the system tray (clock area), and after restoring it, the taskbar icon's features won't work anymore.===
 ===A: Most of the features are initialized at Winamp start-up. If you somehow remove the taskbar icon, you will need to restart Winamp to use its features again.===
 
