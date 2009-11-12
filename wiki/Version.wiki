@@ -1,4 +1,14 @@
 #labels Deprecated
+1.12
+
+* Added option to disable mouse wheel volume control. It caused performance drop on certain systems.
+* Fixed a bug with mouse wheel volume control where it would jump back to 100 after reaching 0.
+* Fixed a text centering bug when iconic background was enabled, and no album art was found.
+* Re-added MusePack file format support for album art
+* Fixed some title and artist formatting bugs
+* Some changes to recent and frequent jump list categories
+* Translation changes. Please update
+
 1.11
 
 * Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
