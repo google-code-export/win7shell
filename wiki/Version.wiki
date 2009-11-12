@@ -9,15 +9,14 @@
 * Some changes to recent and frequent jump list categories
 * Translation changes. Please update
 
-1.11
+1.11 highlights
 
 * Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
-* Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
+* Album art is taken directly from Winamp
 * Longer text lines will scroll on the aero peek window.
-* Added text formatting flag: %d% to prevent that specific line from scrolling, even if it's longer than the width of the thumbnail window.
+* New text formatting flag: %d% prevents line from scrolling
 * Added "Apply" button to immediately see the effects of the settings.
-* "Favorite" button now opens a little window, where you can set a rating for the song from 0 to 5
-* Some albums that had characters that are not allowed to be in a file name weren't loaded. It's fixed now.
+* "Favorite" button lets you rate the song from 0 to 5
 
 >>> PLEASE READ THE FAQ ON THE PROJECT PAGE <<<
 I need more translations!
