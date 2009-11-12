@@ -7,7 +7,7 @@
 * Re-added MusePack file format support for album art
 * Fixed some title and artist formatting bugs
 * Some changes to recent and frequent jump list categories
-* Translation changes. Please update
+* Translation changes
 
 1.11
 
