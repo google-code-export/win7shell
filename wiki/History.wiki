@@ -11,9 +11,9 @@
  * Translations: Added 1 line, change 'favorite' line
 
 = 1.11 =
- * New: Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
- * Improvement: Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
- * Improvement: Longer text lines will scroll on the aero peek window.
+ * New: *Volume can be controlled using mouse wheel scroll* when hovering over the Winamp icon on the taskbar.
+ * Improvement: *Album art is taken directly from Winamp*, so everything that is supported there, is used as aero peek background.
+ * Improvement: Longer *text lines will scroll* on the aero peek window.
  * New: Added text formatting flag: %d% to prevent that specific line from scrolling, even if it's longer than the width of the thumbnail window.
  * New: Added "Apply" button to immediately see the effects of the settings.
  * New: "Favorite" button now opens a little window where you can rate the current song from 0 to 5
@@ -21,7 +21,7 @@
  * Translations: 2 new lines in the translation file
 
 = 1.10 =
- * Fix: got rid of an important and old memory leak (it caused several other bugs, especially if you didn't restart Winamp for a long time)
+ * Fix: got rid of an *important and old memory leak* (it caused several other bugs, especially if you didn't restart Winamp for a long time)
  * Fix: Corrected icon order in the jump list
  * Fix: Corrected several text formatting bugs, such as the shadow being sometimes one character short
  * New: Added two more text formatting flags: 
@@ -31,7 +31,7 @@
  * Translations: Added 5 lines to the translation file
 
 = 1.09 =
- * New: Added media library playlists to the jump list
+ * New: Added *media library playlists* to the jump list
  * New: Thumbnail button: "Stop after current song"
  * Fix: Small bugfixes
  * Translations: Added 2 lines to the translation file
@@ -44,7 +44,7 @@
  * Translations: Added Hungarian, updated some others
 
 = 1.07 =
- * New: APE (Musepack format) tag support. Album art is extracted from APEv2 tagged music files.
+ * New: *APE (Musepack format) tag support*. Album art is extracted from APEv2 tagged music files.
  * Improvement: Another fix on the settings path finding... (sigh)
  * Translations: Updated translations (template not changed)
 
@@ -55,7 +55,7 @@
  * Translations: Updated translations (template not changed)
 
 = 1.04 =
- * New: Added Media Library bookmarks to the jump list
+ * New: Added *Media Library bookmarks* to the jump list
  * New: Added "Mute" button on the aero peek thumbnail
  * Fix: A bug that prevented empty lines on the thumbnail text
  * Improvement: Added vertical scrollbar to the text editor
@@ -74,7 +74,7 @@
 
 = 1.00 =
 
- * Improvement: Album art is read from embedded picture from ID3v2 tag
+ * Improvement: *Album art is read from embedded picture* from ID3v2 tag
  * Improvement: Album art is drawn with  higher quality
  * New: You can select what to use as background, if selected is not available
  * New: Jump list is configurable by categories
