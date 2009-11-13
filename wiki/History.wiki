@@ -1,6 +1,15 @@
 #summary Plugin changelog
 #labels Featured
 
+= 1.12 =
+ * New: Added option to disable mouse wheel volume control. It caused performance drop on certain systems and incompatibilities with ObjectDock.
+ * Fix: A bug with mouse wheel volume control, when the volume jumped back to 100 after scrolling below 0.
+ * Fix: A text centering bug when iconic background was enabled, and no album art was found
+ * Improvement: Re-added MusePack file format support for album art, using TagLib
+ * Fix: Some title and artist formatting bugs; Missing last character from artist and first character from title
+ * Improvement: Some changes to recent and frequent jump list categories. The plug-in doesn't add the played song to the recent docs if it's already there by some other application.
+ * Translations: Added 1 line, change 'favorite' line
+
 = 1.11 =
  * New: Volume can be controlled using mouse wheel scroll when hovering over the Winamp icon on the taskbar.
  * Improvement: Album art is taken directly from Winamp, so everything that is supported there, is used as aero peek background.
