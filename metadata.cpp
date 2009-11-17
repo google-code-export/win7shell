@@ -23,8 +23,8 @@ bool MetaData::reset(std::wstring filename, bool force)
 		mfilename = filename;
 		cache.clear();
 
-		WIN32_FIND_DATA ffd;
-		isFile = FindFirstFile(mfilename.c_str(), &ffd) != INVALID_HANDLE_VALUE;		
+	/*	WIN32_FIND_DATA ffd;
+		isFile = FindFirstFile(mfilename.c_str(), &ffd) != INVALID_HANDLE_VALUE;*/
 
 		return true;
 	}	
@@ -61,12 +61,21 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 				return std::wstring(L"");
 
 			size_t pos = ret.find_first_of('-');
-			if (pos != std::wstring::npos)							
+			if (pos != std::wstring::npos && pos != 0)							
 			{		
 				if (tag == L"title")
-					ret = std::wstring(ret, pos+2, ret.length()-(pos-2));
+				{
+					ret = std::wstring(ret, pos+1, ret.length()-(pos-2));
+					if (ret[0] == L' ')
+						ret.erase(0, 1);
+				}
 				else if (tag == L"artist")
-					ret = std::wstring(ret, 0, pos-1);
+				{
+					ret = std::wstring(ret, 0, pos);
+					pos--;
+					if (ret[pos] == L' ')
+						ret.erase(pos, 1);
+				}
 			}
 			else
 				if (tag == L"artist")

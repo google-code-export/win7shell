@@ -10,7 +10,7 @@
 #define GPPHDR_VER 0x10
  
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.08"
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.12"
 
 #ifdef _UNICODE
 #define tstring wstring
@@ -33,7 +33,7 @@ struct sSettings_strings {
 	std::tstring Text;
 };
  
-struct sSettings {
+struct sSettings_old {
 	bool Thumbnailenabled;
 	char Thumbnailbackground;
 	bool Thumbnailbuttons;
@@ -58,6 +58,59 @@ struct sSettings {
 	char Revertto;
 };
 
+struct sSettings_old2 {
+	bool Thumbnailenabled;
+	char Thumbnailbackground;
+	bool Thumbnailbuttons;
+	bool Progressbar;
+	bool Streamstatus;
+	bool Stoppedstatus;
+	bool Overlay;
+	bool Add2RecentDocs;
+	bool Antialias;
+	bool Shrinkframe;
+	bool ForceVersion;
+	bool DisableUpdates;
+	bool RemoveTitle;
+	bool AsIcon;
+	bool VuMeter;
+	bool Buttons[16];
+	bool Thumbnailpb;
+	bool JLrecent;
+	bool JLfrequent;
+	bool JLtasks;
+	bool JLbms;
+	bool JLpl;
+	char Revertto;
+};
+
+struct sSettings {
+	bool Thumbnailenabled;
+	char Thumbnailbackground;
+	bool Thumbnailbuttons;
+	bool Progressbar;
+	bool Streamstatus;
+	bool Stoppedstatus;
+	bool Overlay;
+	bool Add2RecentDocs;
+	bool Antialias;
+	bool Shrinkframe;
+	bool ForceVersion;
+	bool DisableUpdates;
+	bool RemoveTitle;
+	bool AsIcon;
+	bool VuMeter;
+	bool Buttons[16];
+	bool Thumbnailpb;
+	bool JLrecent;
+	bool JLfrequent;
+	bool JLtasks;
+	bool JLbms;
+	bool JLpl;
+	bool VolumeControl;
+	char Revertto;
+};
+
 struct sResumeSettings {
 	int ResumeTime;
 	int ResumePosition;
@@ -68,6 +121,5 @@ struct sFontEx {
 	DWORD color;
 	DWORD bgcolor;
 };
-
 
 #endif
