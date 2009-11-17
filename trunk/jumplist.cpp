@@ -8,6 +8,10 @@
 #include <sstream>
 #include <map>
 #include "jumplist.h"
+#include "irrXML.h"
+
+using namespace irr;
+using namespace io;
 
 JumpList::JumpList()
 {
@@ -83,9 +87,9 @@ HRESULT JumpList::_CreateShellLink(PCWSTR pszArguments, PCWSTR pszTitle, IShellL
 	return hr;
 }
 
-bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::wstring fromstart, std::wstring resume,
-							  std::wstring openfile, std::wstring bookmarks, bool recent, bool frequent, bool tasks, 
-							  bool addbm, const std::wstring bms)
+bool JumpList::CreateJumpList(std::wstring pluginpath, std::string plfilepath, std::wstring pref, std::wstring fromstart, 
+			std::wstring resume, std::wstring openfile, std::wstring bookmarks, std::wstring pltext, bool recent, 
+			bool frequent, bool tasks, bool addbm, bool playlist, const std::wstring bms)
 {
 	path = pluginpath;
 	s1 = pref;
@@ -93,6 +97,7 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::w
 	s3 = resume;
 	s4 = openfile;
 	s5 = bookmarks;
+	s6 = pltext;
 
 	UINT cMinSlots;
 	IObjectArray *poaRemoved;
@@ -110,7 +115,7 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::w
 			if (b)		
 			{				
 				IShellLink * psl;
-				hr = _CreateShellLink(line2.c_str(), line1.c_str(), &psl, 14, true);
+				hr = _CreateShellLink(line2.c_str(), line1.c_str(), &psl, 15, true);
 
 				if (!_IsItemInArray(line2, poaRemoved))
 				{
@@ -140,10 +145,13 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::w
 			pcdl->AppendKnownCategory(KDC_FREQUENT);
 		
 		if (addbm)
-			hr = _AddCategoryToList();	
+			_AddCategoryToList();	
+
+		if (playlist)
+			hr = _AddCategoryToList2(plfilepath);
 
 		if (tasks)
-			hr = _AddTasksToList();
+			_AddTasksToList();
 
 		if (SUCCEEDED(hr))
 		{
@@ -172,7 +180,7 @@ HRESULT JumpList::_AddTasksToList()
 		args = path + L",_pref@0";;
 
 		IShellLink * psl;
-		hr = _CreateShellLink(args.c_str(), s1.c_str(), &psl, 10, false);
+		hr = _CreateShellLink(args.c_str(), s1.c_str(), &psl, 11, false);
 		if (SUCCEEDED(hr))
 		{
 			hr = poc->AddObject(psl);
@@ -183,7 +191,7 @@ HRESULT JumpList::_AddTasksToList()
 
 		if (SUCCEEDED(hr))
 		{
-			hr = _CreateShellLink(args.c_str(), s4.c_str(), &psl, 11, false);
+			hr = _CreateShellLink(args.c_str(), s4.c_str(), &psl, 12, false);
 			if (SUCCEEDED(hr))
 			{
 				hr = poc->AddObject(psl);
@@ -195,7 +203,7 @@ HRESULT JumpList::_AddTasksToList()
 
 		if (SUCCEEDED(hr))
 		{
-			hr = _CreateShellLink(args.c_str(), s3.c_str(), &psl, 12, false);
+			hr = _CreateShellLink(args.c_str(), s3.c_str(), &psl, 13, false);
 			if (SUCCEEDED(hr))
 			{
 				hr = poc->AddObject(psl);
@@ -207,7 +215,7 @@ HRESULT JumpList::_AddTasksToList()
 
 		if (SUCCEEDED(hr))
 		{
-			hr = _CreateShellLink(args.c_str(), s2.c_str(), &psl, 13, false);
+			hr = _CreateShellLink(args.c_str(), s2.c_str(), &psl, 14, false);
 			if (SUCCEEDED(hr))
 			{
 				hr = poc->AddObject(psl);
@@ -273,4 +281,75 @@ HRESULT JumpList::_AddCategoryToList()
 	}
 
 	return hr;
+}
+
+// Adds a custom category to the Jump List.  Each item that should be in the category is added to
+// an ordered collection, and then the category is appended to the Jump List as a whole.
+HRESULT JumpList::_AddCategoryToList2(std::string path)
+{
+	IObjectCollection *poc;
+	HRESULT hr = CoCreateInstance(CLSID_EnumerableObjectCollection, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&poc));
+
+	IrrXMLReaderUTF16 * xml = createIrrXMLReaderUTF16((path + "playlists.xml").c_str());
+
+	// parse the file until end reached
+	while(xml && xml->read())
+	{
+		switch(xml->getNodeType())
+		{
+		case EXN_ELEMENT:
+			{		
+				const char16 *vl = xml->getNodeName();
+				if (wcscmp((const wchar_t*)vl, L"playlist") != 0)
+					break;
+
+				IShellLink * psl;
+				std::wstring title;
+
+				vl = xml->getAttributeValue(0);
+				std::wstring args = (wchar_t*)vl;
+
+				std::wstring tmp;
+				tmp.resize(MAX_PATH);
+				mbstowcs(&tmp[0], path.c_str(), MAX_PATH);
+				tmp.resize(wcslen(tmp.c_str()));
+				tmp += args;
+
+				args.resize(MAX_PATH);
+				GetShortPathName(tmp.c_str(), &args[0], MAX_PATH);
+				args.resize(wcslen(args.c_str()));
+				
+				vl = xml->getAttributeValue(1);
+				title = (wchar_t*)vl;
+				title += L" [";
+
+				vl = xml->getAttributeValue(3);
+				title += (wchar_t*)vl;
+				title += L"]";
+				
+				hr = _CreateShellLink(args.c_str(), title.c_str(), &psl, 16, true);
+				if (SUCCEEDED(hr))
+				{
+					hr = poc->AddObject(psl);
+					psl->Release();
+				}
+			}
+			break;
+		}
+	}
+
+	// delete the xml parser after usage
+	delete xml;
+
+	IObjectArray *poa;
+	hr = poc->QueryInterface(IID_PPV_ARGS(&poa));
+	if (SUCCEEDED(hr))
+	{
+		// Add the category to the Jump List.  If there were more categories, they would appear
+		// from top to bottom in the order they were appended.
+		hr = pcdl->AppendCategory(s6.c_str(), poa);
+		poa->Release();
+	}
+
+	return S_OK;
 }

@@ -24,8 +24,10 @@
 #include <gdiplus.h>
 #include <process.h>
 #include <cctype>
+#include <ctime>
 #include <fstream>
 #include <map>
+
 #include "gen_win7shell.h"
 #include "gen.h"
 #include "wa_ipc.h"
@@ -37,33 +39,52 @@
 #include "jumplist.h"
 #include "albumart.h"
 
+#include "..\\Agave\\AlbumArt\\api_albumart.h"
+#include "api\\service\\svcs\\svc_imgwrite.h"
+
+#include "HPerformanceCounter.h"
+
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("1.07"));
+const std::tstring cur_version(__T("1.12"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
-ITaskbarList3* pTBL = 0 ;
+ITaskbarList3* pTBL = 0;
 char playstate = -1;
-int gCurPos = -2, gTotal = -2, volume = 0, gPlayListPos = 0;
+int gCurPos = -2, gTotal = -2, gPlayListPos = 0;
+int volume = 0;
+size_t step = 0;
 std::tstring W_INI;
+std::string N_INI;
 sSettings Settings;
 sSettings_strings Settings_strings;
 sFontEx Settings_font;
 BOOL cfgopen = false, btaskinited = false, RTL = false, translationfound = false, totheleft = false;
-HWND cfgwindow = 0;
+bool thumbshowing = false;
+HWND cfgwindow = 0, ratewnd = 0;
 Bitmap *background;
 MetaData metadata;
 HICON iPlay, iPause, iStop;
 HIMAGELIST theicons;
 ULONG_PTR gdiplusToken;
 std::map<std::tstring, std::tstring> STRINGS;
+HHOOK hMouseHook;
+
+static api_memmgr* WASABI_API_MEMMGR;
+static api_service* WASABI_API_SVC;
+static api_albumart* AGAVE_API_ALBUMART;
 	
-// these are callback functions/events which will be called by Winamp
+//CALLBACKS
 VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 VOID CALLBACK VUMeterProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+VOID CALLBACK RateTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK cfgWndProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK rateWndProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK TabHandler(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK KeyboardEvent (int nCode, WPARAM wParam, LPARAM lParam);
+
+//THREAD PROCS
 void CheckVersion( void *dummy );
 
 HIMAGELIST prepareIcons();
@@ -75,7 +96,7 @@ void SetWindowAttr();
 HBITMAP DrawThumbnail(int width, int height, int force);
 std::tstring SearchDir(std::tstring path);
 std::tstring MetaWord(std::tstring word);
-std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forceleft);
+std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forceleft, bool &shadow, bool &darkbox, bool &dontscroll);
 void LoadStrings(std::tstring Path);
 void FillStrings();
 void getinistring(std::tstring what, std::tstring Path);
@@ -89,6 +110,7 @@ std::wstring getWinampINIPath(HWND wnd);
 std::wstring getBMS();
 void DoJl();
 HRESULT __CreateShellLink(PCWSTR filename, PCWSTR pszTitle, IShellLink **ppsl);
+bool is_in_recent(std::wstring filename);
 
 int  init(void);
 void config(void);
@@ -106,7 +128,6 @@ winampGeneralPurposePlugin plugin = {
   0            // hinstance to this dll, loaded by winamp when this dll is loaded
 };
 
-
 // event functions follow
 int init() 
 {
@@ -119,8 +140,11 @@ int init()
 	GetModuleFileName(plugin.hDllInstance, &pluginpath[0], MAX_PATH);
 	pluginpath.resize(wcslen(pluginpath.c_str()));
 
-	GetShortPathName(pluginpath.c_str(), &pluginpath[0], pluginpath.length());
-	pluginpath.resize(wcslen(pluginpath.c_str()));
+
+	std::wstring tmp;
+	tmp.resize(MAX_PATH);
+	GetShortPathName(pluginpath.c_str(), &tmp[0], MAX_PATH);
+	tmp.resize(wcslen(tmp.c_str()));	
 
 	W_INI = getWinampINIPath(plugin.hwndParent) + L"\\Plugins\\";
 	
@@ -133,7 +157,7 @@ int init()
 		translationfound = true;
 	}
 
-	W_INI += __T("win7shell.ini");	
+	W_INI += __T("win7shell.ini");
 
 	ZeroMemory(&Settings, sizeof(Settings));
 
@@ -143,47 +167,113 @@ int init()
 
 	if (!GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str()))
 	{
-		Settings.Thumbnailbackground = 1;
-		Settings.Thumbnailbuttons = true;
-		Settings.Thumbnailenabled = true;
-		Settings.Progressbar = true;
-		Settings.Overlay = false;
-		Settings.Streamstatus = true;
-		Settings.Stoppedstatus = true;
-		Settings.Add2RecentDocs = true;
-		Settings.Shrinkframe = true;
-		Settings.Antialias = true;
-		Settings.DisableUpdates = false;
-		Settings.RemoveTitle = false;
-		Settings.AsIcon = false;
-		Settings.VuMeter = false;
-		Settings.Buttons[0] = true;
-		Settings.Buttons[1] = true;
-		Settings.Buttons[2] = true;
-		Settings.Buttons[3] = true;
-		Settings.Buttons[4] = true;
-		Settings.Thumbnailpb = false;
-		Settings.Revertto = 0;
-		Settings.JLfrequent = true;
-		Settings.JLrecent = true;
-		Settings.JLtasks = true;
-		Settings.JLbms = true;
+		sSettings_old sold;
+		ZeroMemory(&sold, sizeof(sSettings_old));
+		if (GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &sold, sizeof(sold), W_INI.c_str()))
+		{
+			Settings.Add2RecentDocs = sold.Add2RecentDocs;
+			Settings.Antialias = sold.Antialias;
+			Settings.AsIcon = sold.AsIcon;
+			std::copy(sold.Buttons, sold.Buttons+16, Settings.Buttons);
+			Settings.DisableUpdates = sold.DisableUpdates;
+			Settings.ForceVersion = sold.ForceVersion;
+			Settings.JLbms = sold.JLbms;
+			Settings.JLfrequent = sold.JLfrequent;
+			Settings.JLpl = true;
+			Settings.JLrecent = sold.JLrecent;
+			Settings.JLtasks = sold.JLtasks;
+			Settings.Overlay = sold.Overlay;
+			Settings.Progressbar = sold.Progressbar;
+			Settings.RemoveTitle = sold.RemoveTitle;
+			Settings.Revertto = sold.Revertto;
+			Settings.Shrinkframe = sold.Shrinkframe;
+			Settings.Stoppedstatus = sold.Stoppedstatus;
+			Settings.Streamstatus = sold.Streamstatus;
+			Settings.Thumbnailbackground = sold.Thumbnailbackground;
+			Settings.Thumbnailbuttons = sold.Thumbnailbuttons;
+			Settings.Thumbnailenabled = sold.Thumbnailenabled;
+			Settings.Thumbnailpb = sold.Thumbnailpb;
+			Settings.VuMeter = sold.VuMeter;
+		}
+		else			
+		{
+			sSettings_old2 sold;
+			ZeroMemory(&sold, sizeof(sSettings_old2));
+			if (GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &sold, sizeof(sold), W_INI.c_str()))
+			{
+				Settings.Add2RecentDocs = sold.Add2RecentDocs;
+				Settings.Antialias = sold.Antialias;
+				Settings.AsIcon = sold.AsIcon;
+				std::copy(sold.Buttons, sold.Buttons+16, Settings.Buttons);
+				Settings.DisableUpdates = sold.DisableUpdates;
+				Settings.ForceVersion = sold.ForceVersion;
+				Settings.JLbms = sold.JLbms;
+				Settings.JLfrequent = sold.JLfrequent;
+				Settings.JLpl = true;
+				Settings.JLrecent = sold.JLrecent;
+				Settings.JLtasks = sold.JLtasks;
+				Settings.Overlay = sold.Overlay;
+				Settings.Progressbar = sold.Progressbar;
+				Settings.RemoveTitle = sold.RemoveTitle;
+				Settings.Revertto = sold.Revertto;
+				Settings.Shrinkframe = sold.Shrinkframe;
+				Settings.Stoppedstatus = sold.Stoppedstatus;
+				Settings.Streamstatus = sold.Streamstatus;
+				Settings.Thumbnailbackground = sold.Thumbnailbackground;
+				Settings.Thumbnailbuttons = sold.Thumbnailbuttons;
+				Settings.Thumbnailenabled = sold.Thumbnailenabled;
+				Settings.Thumbnailpb = sold.Thumbnailpb;
+				Settings.VuMeter = sold.VuMeter;
+				Settings.VolumeControl = true;
+			}
+			else
+			{
+				Settings.Thumbnailbackground = 1;
+				Settings.Thumbnailbuttons = true;
+				Settings.Thumbnailenabled = true;
+				Settings.Progressbar = true;
+				Settings.Overlay = false;
+				Settings.Streamstatus = true;
+				Settings.Stoppedstatus = true;
+				Settings.Add2RecentDocs = true;
+				Settings.Shrinkframe = true;
+				Settings.Antialias = true;
+				Settings.DisableUpdates = false;
+				Settings.RemoveTitle = false;
+				Settings.AsIcon = false;
+				Settings.VuMeter = false;
+				Settings.Buttons[0] = true;
+				Settings.Buttons[1] = true;
+				Settings.Buttons[2] = true;
+				Settings.Buttons[3] = true;
+				Settings.Buttons[4] = true;
+				Settings.Thumbnailpb = false;
+				Settings.Revertto = 0;
+				Settings.JLfrequent = true;
+				Settings.JLrecent = true;
+				Settings.JLtasks = true;
+				Settings.JLbms = true;
 
-		std::ofstream of(W_INI.c_str(), std::ios_base::out | std::ios_base::binary);	
-		of.write("\xFF\xFE", 2);
-		of.close();
+				std::ofstream of(W_INI.c_str(), std::ios_base::out | std::ios_base::binary);	
+				of.write("\xFF\xFE", 2);
+				of.close();
+			}
+		}
 	}
 
 	if (Settings.JLrecent || Settings.JLfrequent || Settings.JLtasks || Settings.JLbms)
 	{
 		std::wstring bms;
-		bms = getBMS();		
+		bms = getBMS();
+		N_INI = (char*)SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETINIDIRECTORY);
 
 		JumpList jl;
-		if (!jl.CreateJumpList(pluginpath, getString(__T("wapref"), __T("Winamp preferences")), 
+		if (!jl.CreateJumpList(tmp, N_INI + "\\Plugins\\ml\\", 
+			getString(__T("wapref"), __T("Winamp preferences")), 
 			getString(__T("fromstart"), __T("Play from beginning")), getString(__T("resumeplay"), __T("Resume playback")), 
 			getString(__T("openfile"), __T("Open file")), getString(__T("bookmark"), __T("Bookmarks")),
-			Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks, Settings.JLbms, bms) )
+			getString(__T("playlists"), __T("Playlists")), Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks, 
+			Settings.JLbms, Settings.JLpl, bms) )
 			MessageBoxEx(plugin.hwndParent, getString(__T("jumplisterror"), __T("Error creating jump list.")).c_str(), 0, MB_ICONWARNING | MB_OK, 0);
 	}
 
@@ -215,11 +305,23 @@ int init()
 		if (SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_INETAVAILABLE))
 			_beginthread(CheckVersion, 0, NULL);
 
+	/************************************************************************/
+	/* Winamp services                                                      */
+	/************************************************************************/
+
+	WASABI_API_SVC = (api_service*)SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GET_API_SERVICE);
+
+	waServiceFactory *sf = WASABI_API_SVC->service_getServiceByGuid(memMgrApiServiceGuid);
+	WASABI_API_MEMMGR = reinterpret_cast<api_memmgr *>(sf->getInterface());
+
+	sf = WASABI_API_SVC->service_getServiceByGuid(albumArtGUID);
+	AGAVE_API_ALBUMART = reinterpret_cast<api_albumart *>(sf->getInterface());
+
 	MSG msg;
 	while (PeekMessage(&msg, 0,0,0, PM_REMOVE))
 	{
-	TranslateMessage(&msg);
-	DispatchMessage(&msg);
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
 	}
 	
 	theicons = prepareIcons();
@@ -251,6 +353,14 @@ int init()
 
 	volume = IPC_GETVOLUME(plugin.hwndParent);
 
+	if (Settings.VolumeControl)
+	{
+		hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC) KeyboardEvent, plugin.hDllInstance, NULL);
+		if (hMouseHook == NULL)
+			MessageBoxEx(plugin.hwndParent, L"Error registering mouse hook.", 0, MB_ICONWARNING, 0);
+	}
+
+
 	return 0;
 }
 
@@ -276,18 +386,23 @@ void config()
  
 void quit() 
 {	
+	if (hMouseHook != NULL)
+		UnhookWindowsHookEx(hMouseHook);
+
 	sResumeSettings sResume;
 	sResume.ResumePosition = gPlayListPos;
 	sResume.ResumeTime = gCurPos;
 
 	DoJl();
 
+	WritePrivateProfileStruct(__T("win7shell"), __T("resume"), &sResume, sizeof(sResume), W_INI.c_str());
+
+/*
 	WritePrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str());
 	WritePrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str());
-	WritePrivateProfileStruct(__T("win7shell"), __T("resume"), &sResume, sizeof(sResume), W_INI.c_str());
 	WritePrivateProfileString(__T("win7shell"), __T("bgpath"), Settings_strings.BGPath.c_str(), W_INI.c_str());	
 	WritePrivateProfileString(__T("win7shell"), __T("text"), Settings_strings.Text.c_str(), W_INI.c_str());	
-
+*/
 	delete background;
 
 	if( pTBL != 0 )
@@ -407,6 +522,15 @@ std::tstring MetaWord(std::tstring word)
 	if (word == __T("%f%"))
 		return __T("‡forceleft‡");
 
+	if (word == __T("%s%"))
+		return __T("‡shadow‡");
+
+	if (word == __T("%b%"))
+		return __T("‡darkbox‡");
+
+	if (word == __T("%d%"))
+		return __T("‡dontscroll‡");
+
 	if (word == __T("%volume%"))
 	{
 		std::wstringstream w;
@@ -444,7 +568,6 @@ std::tstring MetaWord(std::tstring word)
 
 	if (word == __T("%rating1%") || word == __T("%rating2%"))
 	{
-		int cur_pos=SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS)+1;
 		std::wstringstream w;
 		int x = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETRATING);
 		if (word == __T("%rating1%"))
@@ -469,7 +592,7 @@ HIMAGELIST prepareIcons()
  
 	himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 9, 0); 	
 		
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 11; ++i)
 	{
 		hicon = LoadIcon(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON1+i)); 
 
@@ -516,6 +639,8 @@ std::wstring getToolTip(int button)
 		break;
 	case 9:
 		return getString(__T("mute"), __T("Mute"));
+	case 10:
+		return getString(__T("stopafter"), __T("Stop after current song"));
 	default:
 		return L"";
 	}
@@ -534,6 +659,12 @@ void updateToolbar(bool first)
 			THUMBBUTTON button;
 			button.dwMask = THB_BITMAP | THB_TOOLTIP;
 			button.iId = i;
+
+			if (i == 9 || i == 4)
+			{
+				button.dwMask = button.dwMask | THB_FLAGS;
+				button.dwFlags = THBF_DISMISSONCLICK;
+			}
 			
 			if (i == 1)
 			{				
@@ -563,7 +694,7 @@ void updateToolbar(bool first)
 		pTBL->ThumbBarUpdateButtons(plugin.hwndParent, thbButtons.size(), &thbButtons[0]);
 }
 
-std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forceleft)
+std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forceleft, bool &shadow, bool &darkbox, bool &dontscroll)
 {
 	std::tstring::size_type pos = 0, open = std::tstring::npos;
 	std::tstring text, metaword;
@@ -608,6 +739,21 @@ std::tstring GetLine(int linenumber, bool &center, bool &largefont, bool &forcel
 					metaword = __T("");
 					forceleft = true;
 				}
+				if (metaword == __T("‡shadow‡"))
+				{
+					metaword = __T("");
+					shadow = true;
+				}
+				if (metaword == __T("‡darkbox‡"))
+				{
+					metaword = __T("");
+					darkbox = true;
+				}
+				if (metaword == __T("‡dontscroll‡"))
+				{
+					metaword = __T("");
+					dontscroll = true;
+				}
 
 				text.replace(open, pos-open+1, metaword);
 				open = std::tstring::npos;
@@ -629,42 +775,94 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	(force == -1) ? bg = Settings.Thumbnailbackground : bg = force;
 
 	//Create background
-	if (!background) 
+	if (!background)
 		switch (bg)
 		{
 		case 0: //transparent
-			background = new Bitmap(width, height, PixelFormat32bppARGB);
+			background = new Bitmap(width, height, PixelFormat32bppPARGB);
 			totheleft = true;
 			break;
 
 		case 1: //album art
 			{
-				AlbumArt AA;
-				Bitmap tmpbmp(height, height, PixelFormat32bppARGB);
-				if (AA.getAA(metadata.getFileName(), metadata.getMetadata(L"album"), tmpbmp, height))
-				{					
-					background = new Bitmap(width, height, PixelFormat32bppARGB);
+				ARGB32* cur_image = 0;
+				int cur_w, cur_h;
+				
+				if (AGAVE_API_ALBUMART && AGAVE_API_ALBUMART->GetAlbumArt(metadata.getFileName().c_str(), L"cover", 
+					&cur_w, &cur_h, &cur_image) == ALBUMART_SUCCESS)
+				{
+					BITMAPINFO bmi;
+					ZeroMemory(&bmi, sizeof bmi);
+					bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+					bmi.bmiHeader.biWidth = cur_w;
+					bmi.bmiHeader.biHeight = -cur_h;
+					bmi.bmiHeader.biPlanes = 1;
+					bmi.bmiHeader.biBitCount = 32;
+					bmi.bmiHeader.biCompression = BI_RGB;
+					bmi.bmiHeader.biSizeImage = 0;
+					bmi.bmiHeader.biXPelsPerMeter = 0;
+					bmi.bmiHeader.biYPelsPerMeter = 0;
+					bmi.bmiHeader.biClrUsed = 0;
+					bmi.bmiHeader.biClrImportant = 0;
+
+					Bitmap tmpbmp(&bmi, cur_image);
+					background = new Bitmap(width, height, PixelFormat32bppPARGB);
 					Graphics gfx(background);
-					gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
+
+					gfx.SetSmoothingMode(SmoothingModeNone);
+					gfx.SetInterpolationMode(InterpolationModeHighQuality);
+					gfx.SetPixelOffsetMode(PixelOffsetModeNone);
+					gfx.SetCompositingQuality(CompositingQualityHighSpeed);
+
 					if (Settings.AsIcon)
 					{							
 						gfx.DrawImage(&tmpbmp, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
 					}
 					else
-						gfx.DrawImage(&tmpbmp, RectF(static_cast<REAL>(((double)width-(double)height)/(double)2),
-						0,static_cast<REAL>(height),static_cast<REAL>(height)));	
-					totheleft = false;
-				}			
-				else							
-				{
-					if (force != -1)
 					{
-						background = new Bitmap(width, height, PixelFormat32bppARGB);					
-						totheleft = true;
+						double ratio = (double)cur_h / (double)(height);
+						if (ratio == 0)
+							ratio = 1;
+						ratio = (double)cur_w / ratio;
+						if (ratio > width)
+							ratio = width;
+						gfx.DrawImage(&tmpbmp, RectF((int)(((double)width-(double)ratio)/(double)2), 0, ratio, height));
 					}
-					else
-						DrawThumbnail(width, height, Settings.Revertto);
+
+					if (cur_image) 
+						WASABI_API_MEMMGR->sysFree(cur_image); 
+
+					totheleft = false;
 				}
+				else
+				{
+					AlbumArt AA;
+					Bitmap tmpbmp(height, height, PixelFormat32bppPARGB);
+					if (AA.getAA(metadata.getFileName(), tmpbmp, height))
+					{                                       
+						background = new Bitmap(width, height, PixelFormat32bppPARGB);
+						Graphics gfx(background);
+						gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
+						if (Settings.AsIcon)
+						{                                                       
+							gfx.DrawImage(&tmpbmp, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
+						}
+						else
+							gfx.DrawImage(&tmpbmp, RectF(static_cast<REAL>(((double)width-(double)height)/(double)2),
+							0,static_cast<REAL>(height),static_cast<REAL>(height)));        
+						totheleft = false;
+					}          
+					else
+						if (force != -1)
+						{
+							background = new Bitmap(width, height, PixelFormat32bppPARGB);					
+							totheleft = true;
+						}
+						else
+							DrawThumbnail(width, height, Settings.Revertto);
+				}
+
+
 			}
 			break;
 
@@ -672,7 +870,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 			if (Settings.AsIcon)
 			{
 				Bitmap tmp(plugin.hDllInstance, MAKEINTRESOURCE(IDB_BACKGROUND));
-				background = new Bitmap(width, height, PixelFormat32bppARGB);
+				background = new Bitmap(width, height, PixelFormat32bppPARGB);
 				Graphics gfx(background);
 				gfx.DrawImage(&tmp, RectF(0, 0, ICONSIZEPX, ICONSIZEPX));
 				totheleft = true;
@@ -687,7 +885,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 				Image img(Settings_strings.BGPath.c_str(), true);
 				if (img.GetType() != 0)
 				{
-					background = new Bitmap(width, height, PixelFormat32bppARGB);
+					background = new Bitmap(width, height, PixelFormat32bppPARGB);
 					Graphics gfx(background);
 					gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
 					if (Settings.AsIcon)
@@ -701,7 +899,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 					if (force != -1)
 					{
 						totheleft = true;
-						background = new Bitmap(width, height, PixelFormat32bppARGB);	
+						background = new Bitmap(width, height, PixelFormat32bppPARGB);	
 					}
 					else
 						DrawThumbnail(width, height, Settings.Revertto);
@@ -712,7 +910,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 				if (force != -1)
 				{
 					totheleft = true;
-					background = new Bitmap(width, height, PixelFormat32bppARGB);					
+					background = new Bitmap(width, height, PixelFormat32bppPARGB);					
 				}
 				else
 					DrawThumbnail(width, height, Settings.Revertto);
@@ -722,30 +920,28 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 
 		default: 
 			totheleft = true;
-			background = new Bitmap(width, height, PixelFormat32bppARGB);
+			background = new Bitmap(width, height, PixelFormat32bppPARGB);
 	}
 
-	if (force > 0)
+	if (force >= 0)
 		return NULL;
 
 	//Draw text
 	HBITMAP retbmp;
 	int lines = 1;
+	HDC DC0 = GetDC(0);
 
 	int textheight=0;
-	Font font(GetDC(0), const_cast<LOGFONT*> (&Settings_font.font));
+	Font font(DC0, const_cast<LOGFONT*> (&Settings_font.font));
 	LONG oldsize = Settings_font.font.lfHeight;
-	int x = -((Settings_font.font.lfHeight * 72) / GetDeviceCaps(GetDC(0), LOGPIXELSY));
+	int x = -((Settings_font.font.lfHeight * 72) / GetDeviceCaps(DC0, LOGPIXELSY));
 	x += 4;
-	Settings_font.font.lfHeight = -MulDiv(x, GetDeviceCaps(GetDC(0), LOGPIXELSY), 72);
-	Font largefont(GetDC(0), const_cast<LOGFONT*> (&Settings_font.font));
+	Settings_font.font.lfHeight = -MulDiv(x, GetDeviceCaps(DC0, LOGPIXELSY), 72);
+	Font largefont(DC0, const_cast<LOGFONT*> (&Settings_font.font));
 	Settings_font.font.lfHeight = oldsize;
 	StringFormat sf(StringFormatFlagsNoWrap);
 
-	Graphics tmpgfx(background);		
-
-	/*Pen p(Color::MakeARGB(1, 255, 255, 255), 1);
-	tmpgfx.DrawLine(&p, 0, 0, 1, 1);*/
+	Graphics tmpgfx(background);
 
 	struct texts {
 		std::wstring text;
@@ -753,6 +949,9 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 		bool center;
 		bool largefont;
 		bool forceleft;
+		bool shadow;
+		bool darkbox;
+		bool dontscroll;
 	};
 
 	for (std::tstring::size_type i = 0; i < Settings_strings.Text.length(); i++)
@@ -760,22 +959,22 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 			lines++;
 
 	std::vector<texts> TX;
+	RectF retrect;
 
 	for (int i=0; i<lines; i++)
 	{
 		texts tx;
 		ZeroMemory(&tx, sizeof(tx));
-		tx.text = GetLine(i, tx.center, tx.largefont, tx.forceleft);
-		RectF rect;
+		tx.text = GetLine(i, tx.center, tx.largefont, tx.forceleft, tx.shadow, tx.darkbox, tx.dontscroll);
 		if (tx.largefont)
-			tmpgfx.MeasureString(tx.text.c_str(), -1, &largefont, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);
+			tmpgfx.MeasureString(tx.text.c_str(), -1, &largefont, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &retrect);
 		else
-			tmpgfx.MeasureString(tx.text.c_str(), -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);
+			tmpgfx.MeasureString(tx.text.c_str(), -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &retrect);
 
-		if (rect.GetBottom() == 0)
-			tmpgfx.MeasureString(L"QWEXCyjM", -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &rect);			
+		if (retrect.GetBottom() == 0)
+			tmpgfx.MeasureString(L"QWEXCyjM", -1, &font, RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &retrect);			
 		
-		tx.height = static_cast<int>(rect.GetBottom());
+		tx.height = static_cast<int>(retrect.GetBottom());
 		textheight += tx.height;
 		TX.push_back(tx);
 	}	
@@ -789,55 +988,114 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	if (textheight > height-2)
 		textheight = height-2;
 
-	Bitmap bmp(background->GetWidth(), textheight+2, PixelFormat32bppARGB);
+	Bitmap bmp(background->GetWidth(), textheight+2, PixelFormat32bppPARGB);
 	Graphics gfx(&bmp);
-	gfx.SetInterpolationMode(InterpolationModeHighQualityBilinear);
+	
+	gfx.SetSmoothingMode(SmoothingModeNone);
+	gfx.SetInterpolationMode(InterpolationModeNearestNeighbor);
+	gfx.SetPixelOffsetMode(PixelOffsetModeNone);
+	gfx.SetCompositingQuality(CompositingQualityHighSpeed);
+
 	if (Settings.AsIcon)
 		gfx.DrawImage(background, RectF(0, 0, static_cast<REAL>(background->GetWidth()), static_cast<REAL>(background->GetHeight())));
 	else
 		gfx.DrawImage(background, RectF(0, 0, static_cast<REAL>(background->GetWidth()), static_cast<REAL>(textheight+2)));
 
-	gfx.SetSmoothingMode(SmoothingModeNone);		
-			
 	if ( (Settings.Thumbnailbackground == 0) || (Settings.Thumbnailbackground == 1) )
 		(Settings.Antialias) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
 	else	
 		(Settings.Antialias) ? gfx.SetTextRenderingHint(TextRenderingHintAntiAlias) : gfx.SetTextRenderingHint(TextRenderingHintClearTypeGridFit);		
 
-	bool drawshadow = true;
 	SolidBrush bgcolor(Color(GetRValue(Settings_font.bgcolor), GetGValue(Settings_font.bgcolor), GetBValue(Settings_font.bgcolor)));
 	SolidBrush fgcolor(Color(GetRValue(Settings_font.color), GetGValue(Settings_font.color), GetBValue(Settings_font.color)));
-	if (GetRValue(Settings_font.bgcolor) == 255 &&
-		GetGValue(Settings_font.bgcolor) == 255 &&
-		GetBValue(Settings_font.bgcolor) == 255)
-		drawshadow = false;
 
 	int heightsofar=0;
 	for (int i=0; i < lines; i++)
 	{
-		sf.SetAlignment(static_cast<StringAlignment>(TX[i].center));
-
-		int left = 3;
+		sf.SetAlignment(StringAlignment::StringAlignmentNear);
+		int left = 2;
 		if (Settings.AsIcon && !totheleft && !TX[i].forceleft)
 			left = ICONSIZEPX + 4;
 
 		if (i)
-			heightsofar += TX[i-1].height;		
+			heightsofar += TX[i-1].height;
 
-		if (drawshadow)
-		{		
-			RectF rect(static_cast<REAL>(left+1), static_cast<REAL>(heightsofar), 197, static_cast<REAL>(heightsofar+TX[i].height));		
-			if (TX[i].largefont)
-				gfx.DrawString(TX[i].text.c_str(), -1, &largefont, rect, &sf, &bgcolor);					
-			else
-				gfx.DrawString(TX[i].text.c_str(), -1, &font, rect, &sf, &bgcolor);					
+		PointF point(static_cast<REAL>(left), static_cast<REAL>(heightsofar-1));
+		if (TX[i].largefont)
+			gfx.MeasureString(TX[i].text.c_str(), -1, &largefont, point, &sf, &retrect);
+		else
+			gfx.MeasureString(TX[i].text.c_str(), -1, &font, point, &sf, &retrect);
+
+		bool longtext = false;
+		if (left + retrect.Width - 1 > width && !TX[i].dontscroll)
+		{
+			TX[i].text += L"     ";
+			size_t pos = (step > 9) ? (step - 9) % TX[i].text.length() : 0;
+			std::wstring tmp = TX[i].text.substr(0, pos);
+			TX[i].text.erase(0, pos);
+			TX[i].text += tmp;
+			longtext = true;
+		}
+		else
+		{
+			sf.SetAlignment(static_cast<StringAlignment>(TX[i].center));
+			if (TX[i].center)
+				if (Settings.AsIcon && !TX[i].forceleft && !totheleft)
+					retrect.X = (((REAL)(196 - ICONSIZEPX) / (REAL)2) - ((REAL)retrect.Width / (REAL)2)) + ICONSIZEPX;
+				else
+				{
+					retrect.X = 98 - ((REAL)retrect.Width / 2);
+					if (retrect.X <= 0)
+						retrect.X = left;
+				}
+			if (Settings.AsIcon && retrect.X < (ICONSIZEPX + 4) && !totheleft && !TX[i].forceleft)
+				retrect.X = ICONSIZEPX + 4;
 		}
 
-		RectF rect(static_cast<REAL>(left), static_cast<REAL>(heightsofar-1), 196, static_cast<REAL>(heightsofar+TX[i].height-2));				
+		if (TX[i].darkbox)
+		{			
+			SolidBrush boxbrush(Color::MakeARGB(120, GetRValue(Settings_font.bgcolor),
+				GetGValue(Settings_font.bgcolor), GetBValue(Settings_font.bgcolor)));
+
+			retrect.Y += 2;
+			retrect.Height -= 1;
+			gfx.FillRectangle(&boxbrush, retrect);
+		}
+
+		if (TX[i].shadow)
+		{		
+			PointF shadowpt(static_cast<REAL>(left+1), static_cast<REAL>(heightsofar));
+			RectF shadowrect(retrect.X + 1, retrect.Y + 1, retrect.Width, retrect.Height);
+			if (TX[i].largefont)
+			{
+				if (longtext)
+					gfx.DrawString(TX[i].text.c_str(), -1, &largefont, shadowpt, &sf, &bgcolor);
+				else
+					gfx.DrawString(TX[i].text.c_str(), -1, &largefont, shadowrect, &sf, &bgcolor);					
+			}
+			else
+			{
+				if (longtext)
+					gfx.DrawString(TX[i].text.c_str(), -1, &font, shadowpt, &sf, &bgcolor);
+				else
+					gfx.DrawString(TX[i].text.c_str(), -1, &font, shadowrect, &sf, &bgcolor);						
+			}
+		}
+
 		if (TX[i].largefont)
-			gfx.DrawString(TX[i].text.c_str(), -1, &largefont, rect, &sf, &fgcolor);
+		{
+			if (longtext)
+				gfx.DrawString(TX[i].text.c_str(), -1, &largefont, point, &sf, &fgcolor);
+			else
+				gfx.DrawString(TX[i].text.c_str(), -1, &largefont, retrect, &sf, &fgcolor);
+		}
 		else
-			gfx.DrawString(TX[i].text.c_str(), -1, &font, rect, &sf, &fgcolor);
+		{
+			if (longtext)
+				gfx.DrawString(TX[i].text.c_str(), -1, &font, point, &sf, &fgcolor);
+			else
+				gfx.DrawString(TX[i].text.c_str(), -1, &font, retrect, &sf, &fgcolor);
+		}
 	}
 
 	if (gTotal > 0 && gCurPos >0 && Settings.Thumbnailpb)
@@ -868,6 +1126,8 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	
 	bmp.GetHBITMAP(Color::Black, &retbmp);
 
+	ReleaseDC(0, DC0);
+
 	return retbmp;
 }
 
@@ -875,9 +1135,57 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
+	case WM_DWMSENDICONICLIVEPREVIEWBITMAP:
+		{
+			thumbshowing = true;
+			RECT rect;
+			GetWindowRect(plugin.hwndParent, &rect);
+			Bitmap bmp(rect.right-rect.left-1, rect.bottom-rect.top-1, PixelFormat32bppPARGB);
+			StringFormat sf(StringFormatFlagsNoWrap);
+			sf.SetAlignment(StringAlignmentCenter);
+			Font font(L"Segoe UI", 18);
+			SolidBrush brush(Color::MakeARGB(200, 0, 0, 0));
+			std::wstringstream ss;
+			ss << L"Volume: " << ((volume * 100) /255) << L"%\n" << metadata.getMetadata(L"title");
+			ss << L"\n" << metadata.getMetadata(L"artist");
+
+			Graphics gfx(&bmp);
+			gfx.SetTextRenderingHint(TextRenderingHintAntiAlias);
+
+			gfx.DrawString(ss.str().c_str(), -1, &font, RectF(0, 0, rect.right-rect.left-1, 
+				rect.bottom-rect.top-1), &sf, &brush);
+			HBITMAP hbmp;
+			bmp.GetHBITMAP(Color::Black, &hbmp);
+			
+			POINT pt;
+			pt.x = 0;
+			pt.y = 0;
+
+			DwmSetIconicLivePreviewBitmap(plugin.hwndParent, hbmp, &pt, 0);
+			DeleteObject(hbmp);
+			return 0;
+		}
+		break;
 	case WM_DWMSENDICONICTHUMBNAIL:
 		{
-			HBITMAP thumbnail = DrawThumbnail(HIWORD(lParam), LOWORD(lParam), -1);			
+			if (!thumbshowing)
+			{
+				thumbshowing = true;
+				step  = 0;
+			}
+
+			CHPerformanceCounter pc;
+			pc.start();
+
+			HBITMAP thumbnail = DrawThumbnail(HIWORD(lParam), LOWORD(lParam), -1);	
+
+			pc.stop();
+			double time = pc.getValue();
+			std::stringstream ss;
+			ss << ">> " << time << std::endl;
+			OutputDebugStringA(ss.str().c_str());
+			
+			if (Settings.Shrinkframe)
 			Sleep(50);
 
 			HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
@@ -905,7 +1213,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 						delete background;
 						background = 0;
 					}
-					DwmInvalidateIconicBitmaps(plugin.hwndParent);
+					if (playstate != 1)
+						DwmInvalidateIconicBitmaps(plugin.hwndParent);
 					int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
 					wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
 					if (p != NULL)
@@ -939,7 +1248,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 						delete background;
 						background = 0;
 					}
-					DwmInvalidateIconicBitmaps(plugin.hwndParent);
+					if (playstate != 1)
+						DwmInvalidateIconicBitmaps(plugin.hwndParent);
 					int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
 					wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
 					if (p != NULL)
@@ -950,8 +1260,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			case 4:
-				SendMessage(plugin.hwndParent,WM_WA_IPC,5,IPC_SETRATING);
-				DwmInvalidateIconicBitmaps(plugin.hwndParent);
+				{
+					ratewnd = CreateDialogParam(plugin.hDllInstance,MAKEINTRESOURCE(IDD_RATEDLG),plugin.hwndParent,rateWndProc,0);
+
+					RECT rc;
+					POINT point;						
+					GetCursorPos(&point);
+					GetWindowRect(ratewnd, &rc);
+					MoveWindow(ratewnd, point.x - 85, point.y - 15, rc.right - rc.left, rc.bottom - rc.top, false);	
+					SetTimer(plugin.hwndParent, 6669, 5000, RateTimerProc);
+					ShowWindow(ratewnd, SW_SHOW);
+				}
 				break;
 			case 5:
 				volume -= 25;
@@ -981,6 +1300,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_SETVOLUME);
 				}
 				break;
+			case 9:
+				SendMessage(plugin.hwndParent, WM_COMMAND, 40157, 0);
+				break;
 
 			}
 		break;
@@ -989,7 +1311,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (lParam)
 			{
 			case IPC_PLAYING_FILEW:
-				{
+				{				
 					std::wstring filename = (wchar_t*)wParam;
 					if (filename.empty())
 					{
@@ -1010,7 +1332,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					
 					playstate = 1;
 
-					if (Settings.JLrecent || Settings.JLfrequent)
+					if ((Settings.JLrecent || Settings.JLfrequent) && !is_in_recent(filename))
 					{
 						std::wstring title(metadata.getMetadata(L"title") + L" - " + 
 							metadata.getMetadata(L"artist"));
@@ -1018,8 +1340,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 							title += L"  (" + SecToTime(gTotal/1000) + L")";						
 
 						IShellLink * psl;
+						SHARDAPPIDINFOLINK applink;						
 						if (__CreateShellLink(filename.c_str(), title.c_str(), &psl) == S_OK)
+						{
+							time_t rawtime;
+							time (&rawtime);
+							std::wstring timestr = _wctime(&rawtime);
+							psl->SetDescription(timestr.c_str());
+							applink.psl = psl;
+							applink.pszAppID = APPID;
 							SHAddToRecentDocs(SHARD_LINK, psl); 
+						}
 					}
 
 					if (Settings.Thumbnailbackground == 1)
@@ -1028,6 +1359,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 							delete background;
 							background = 0;
 						}
+
+					step = 0;
 				}
 				break;				
 
@@ -1036,23 +1369,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					case IPC_CB_MISC_STATUS:
 						playstate = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
-
+					
 						updateToolbar(false);
 
 						if (Settings.Overlay)
 							switch (playstate)
 							{
 							case 1:
-								pTBL->SetOverlayIcon(plugin.hwndParent, ImageList_GetIcon(theicons, 0, 0), 
-									STRINGS.find(__T("playing"))->second.c_str());
+								{
+									HICON icon = ImageList_GetIcon(theicons, 0, 0);
+									pTBL->SetOverlayIcon(plugin.hwndParent, icon, STRINGS.find(__T("playing"))->second.c_str());
+									DestroyIcon(icon);
+								}
 								break;
 							case 3:
-								pTBL->SetOverlayIcon(plugin.hwndParent, ImageList_GetIcon(theicons, 2, 0), 
-									STRINGS.find(__T("paused"))->second.c_str());
+								{
+									HICON icon = ImageList_GetIcon(theicons, 2, 0);
+									pTBL->SetOverlayIcon(plugin.hwndParent, icon, STRINGS.find(__T("paused"))->second.c_str());
+									DestroyIcon(icon);
+								}
 								break;
 							default:
-								pTBL->SetOverlayIcon(plugin.hwndParent, ImageList_GetIcon(theicons, 3, 0), 
-									STRINGS.find(__T("stopped"))->second.c_str());
+								{
+									HICON icon = ImageList_GetIcon(theicons, 3, 0);
+									pTBL->SetOverlayIcon(plugin.hwndParent, icon, STRINGS.find(__T("stopped"))->second.c_str());
+									DestroyIcon(icon);
+								}								
 							}
 						break;
 
@@ -1076,6 +1418,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return CallWindowProc(lpWndProcOld,hwnd,message,wParam,lParam);	 
 }
 
+bool is_in_recent(std::wstring filename)
+{
+	std::wstring path;
+	path.resize(MAX_PATH);
+	SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, &path[0]);
+	path.resize(wcslen(path.c_str()));
+
+	std::wstring::size_type pos = filename.find_last_of(L"\\");
+	if (pos != std::wstring::npos)
+		filename.erase(0, pos+1);
+
+	path += L"\\Microsoft\\Windows\\Recent\\" + filename + L".lnk";
+
+	WIN32_FIND_DATA ffd;
+	if (FindFirstFile(path.c_str(), &ffd) == INVALID_HANDLE_VALUE)
+		return false;
+	return true;
+}
+//"C:\Users\Atti\AppData\Roaming\Microsoft\Windows\Recent\11. Crayons Can Melt On Us For All I Care.flac.lnk"
 inline void SetProgressState(TBPFLAG newstate)
 {
 	static TBPFLAG progressbarstate = TBPF_NOPROGRESS;
@@ -1084,6 +1445,13 @@ inline void SetProgressState(TBPFLAG newstate)
 		pTBL->SetProgressState(plugin.hwndParent, newstate);
 		progressbarstate = newstate;
 	}
+}
+
+VOID CALLBACK RateTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
+{
+	if (ratewnd != NULL)
+		DestroyWindow(ratewnd);
+	KillTimer(plugin.hwndParent, 6669);
 }
 
 VOID CALLBACK VUMeterProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
@@ -1113,6 +1481,25 @@ VOID CALLBACK VUMeterProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 
 VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
+	if (thumbshowing)
+	{
+		POINT pt;
+		GetCursorPos(&pt);
+		std::wstring name;
+		name.resize(200);
+		GetClassName(WindowFromPoint(pt), &name[0], 200);
+		name.resize(wcslen(name.c_str()));
+		if (name != L"TaskListThumbnailWnd" && name != L"MSTaskListWClass")
+		{
+			thumbshowing = false;
+			//step = 0;
+		}
+
+		DwmInvalidateIconicBitmaps(plugin.hwndParent);
+	}
+
+	step+=2;
+
 	if (playstate == -1)
 	{
  		WndProc(plugin.hwndParent, WM_WA_IPC, (WPARAM)L"", IPC_PLAYING_FILEW);
@@ -1137,14 +1524,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 	}
 	gCurPos = cp;
 
-	static unsigned char count1=0;
-	if (count1 == 2)
-	{
-		DwmInvalidateIconicBitmaps(plugin.hwndParent);
-		count1 = 0;
-	}
-	else
-		count1++;
+	DwmInvalidateIconicBitmaps(plugin.hwndParent);
 
 	switch (playstate)
 	{
@@ -1315,6 +1695,9 @@ void ReadSettings(HWND hwnd)
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK31), (UINT) BM_SETCHECK, Settings.JLfrequent, 0);
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK32), (UINT) BM_SETCHECK, Settings.JLtasks, 0);
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK33), (UINT) BM_SETCHECK, Settings.JLbms, 0);
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK34), (UINT) BM_SETCHECK, Settings.JLpl, 0);
+
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK35), (UINT) BM_SETCHECK, Settings.VolumeControl, 0);
 
 	SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings_strings.BGPath.c_str());
 
@@ -1334,7 +1717,7 @@ void ReadSettings(HWND hwnd)
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), Settings.Progressbar);
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK27), Settings.Thumbnailbuttons);
 
-	for (int i = IDC_PCB1; i <= IDC_PCB9; i++)
+	for (int i = IDC_PCB1; i <= IDC_PCB10; i++)
 		SendMessage(GetDlgItem(hwnd, i), (UINT) BM_SETCHECK, Settings.Buttons[i-IDC_PCB1], 0);		
 }
 
@@ -1375,6 +1758,10 @@ void WriteSettings(HWND hwnd)
 		Settings.JLtasks = SendMessage(GetDlgItem(hwnd, IDC_CHECK32), (UINT) BM_GETCHECK, 0, 0);
 	if (GetDlgItem(hwnd, IDC_CHECK33) != NULL)
 		Settings.JLbms = SendMessage(GetDlgItem(hwnd, IDC_CHECK33), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK34) != NULL)
+		Settings.JLpl = SendMessage(GetDlgItem(hwnd, IDC_CHECK34), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK35) != NULL)
+		Settings.VolumeControl = SendMessage(GetDlgItem(hwnd, IDC_CHECK35), (UINT) BM_GETCHECK, 0, 0);
 
 	//Radiobuttons
 	if (GetDlgItem(hwnd, IDC_RADIO1) != NULL)
@@ -1419,7 +1806,7 @@ void WriteSettings(HWND hwnd)
 
 	if (GetDlgItem(hwnd, IDC_PCB1) != NULL)
 	{
-		for (int i = IDC_PCB1; i <= IDC_PCB9; i++)
+		for (int i = IDC_PCB1; i <= IDC_PCB10; i++)
 			Settings.Buttons[i-IDC_PCB1] = SendMessage(GetDlgItem(hwnd, i), (UINT) BM_GETCHECK, 0 , 0);
 	}
 }
@@ -1468,10 +1855,57 @@ std::tstring GetFileName(HWND hwnd)
     return __T("");
 }
 
+static INT_PTR CALLBACK rateWndProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_RATE1:
+			SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_SETRATING);
+			DestroyWindow(hwndDlg);
+			break;
+
+		case IDC_RATE2:
+			SendMessage(plugin.hwndParent,WM_WA_IPC,1,IPC_SETRATING);
+			DestroyWindow(hwndDlg);
+			break;
+
+		case IDC_RATE3:
+			SendMessage(plugin.hwndParent,WM_WA_IPC,2,IPC_SETRATING);
+			DestroyWindow(hwndDlg);
+			break;
+
+		case IDC_RATE4:
+			SendMessage(plugin.hwndParent,WM_WA_IPC,3,IPC_SETRATING);
+			DestroyWindow(hwndDlg);
+			break;
+
+		case IDC_RATE5:
+			SendMessage(plugin.hwndParent,WM_WA_IPC,4,IPC_SETRATING);
+			DestroyWindow(hwndDlg);
+			break;
+
+		case IDC_RATE6:
+			SendMessage(plugin.hwndParent,WM_WA_IPC,5,IPC_SETRATING);
+			DestroyWindow(hwndDlg);
+			break;
+		}
+		break;
+	}
+
+	return 0;
+}
+
 static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static HWND TabCtrl;
 	static HWND Tab1, Tab2, Tab3, Tab4, Tab5, Tab6;
+	static sSettings Settings_backup;
+	static sSettings_strings Settings_strings_backup;
+	static sFontEx Settings_font_backup;
+	static bool applypressed = false;
 
 	switch(msg)
 	{
@@ -1490,6 +1924,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 			{
 				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON1), getString(__T("ok"), L"Ok").c_str());
 				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON2), getString(__T("cancel"), L"Cancel").c_str());
+				SetWindowText(GetDlgItem(hwnd, IDC_BUTTON8), getString(__T("applybutton"), L"Apply").c_str());
 			}			
 
 			int Index = 0;
@@ -1507,10 +1942,25 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
 			TabToFront(TabCtrl, Index);
 
-			for (int i=0; i<9; i++)
+			for (int i=0; i<10; i++)
 			{
-				SendMessage(GetDlgItem(Tab3, IDC_PCB1+i), BM_SETIMAGE, IMAGE_ICON, (LPARAM)ImageList_GetIcon(theicons, i+1, 0));
+				HICON icon = ImageList_GetIcon(theicons, i+1, 0);
+				SendMessage(GetDlgItem(Tab3, IDC_PCB1+i), BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);
+				DestroyIcon(icon);
 			}
+
+			HICON okbut = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON18), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+			HICON applybut = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON20), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+			HICON cancelbut = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON19), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+			if (okbut != NULL && applybut != NULL && cancelbut != NULL)
+			{
+				SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), BM_SETIMAGE, IMAGE_ICON, (LPARAM)okbut);
+				SendMessage(GetDlgItem(hwnd, IDC_BUTTON8), BM_SETIMAGE, IMAGE_ICON, (LPARAM)applybut);
+				SendMessage(GetDlgItem(hwnd, IDC_BUTTON2), BM_SETIMAGE, IMAGE_ICON, (LPARAM)cancelbut);
+			}
+			DestroyIcon(okbut);
+			DestroyIcon(applybut);
+			DestroyIcon(cancelbut);
 
 			cfgopen = TRUE;
 		}
@@ -1575,13 +2025,171 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 					else
 						pTBL->SetOverlayIcon(plugin.hwndParent, NULL, NULL);
 
+					if (Settings.VolumeControl)
+					{
+						if (!hMouseHook)
+						{
+							hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC) KeyboardEvent, plugin.hDllInstance, NULL);
+							if (hMouseHook == NULL)
+								MessageBoxEx(plugin.hwndParent, L"Error registering mouse hook.", 0, MB_ICONWARNING, 0);
+						}
+					}
+					else
+					{
+						if (hMouseHook)
+						{
+							UnhookWindowsHookEx(hMouseHook);
+							hMouseHook = NULL;
+						}
+					}
+
+					WritePrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str());
+					WritePrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str());					
+					WritePrivateProfileString(__T("win7shell"), __T("bgpath"), Settings_strings.BGPath.c_str(), W_INI.c_str());	
+					WritePrivateProfileString(__T("win7shell"), __T("text"), Settings_strings.Text.c_str(), W_INI.c_str());	
+
 					DestroyWindow(hwnd);
 				}
 				break;
-			case IDC_BUTTON2:
+			case IDC_BUTTON2:				
+				if (applypressed)
+				{				
+					applypressed = false;
+
+					memcpy(&Settings, &Settings_backup, sizeof(Settings_backup));
+					memcpy(&Settings_font, &Settings_font_backup, sizeof(Settings_font_backup));
+					Settings_strings.BGPath = Settings_strings_backup.BGPath;
+					Settings_strings.Text = Settings_strings_backup.Text;
+
+					DoJl();					
+
+					SetWindowAttr();
+
+					if (Settings.VuMeter)
+						SetTimer(plugin.hwndParent, 6668, 50, VUMeterProc);
+					else
+						KillTimer(plugin.hwndParent, 6668);
+
+					if (background)
+					{
+						delete background;
+						background = 0;
+					}
+
+					if (Settings.Overlay)
+						WndProc(plugin.hwndParent, WM_WA_IPC, IPC_CB_MISC_STATUS, IPC_CB_MISC);
+					else
+						pTBL->SetOverlayIcon(plugin.hwndParent, NULL, NULL);
+
+					if (Settings.VolumeControl)
+					{
+						if (!hMouseHook)
+						{
+							hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC) KeyboardEvent, plugin.hDllInstance, NULL);
+							if (hMouseHook == NULL)
+								MessageBoxEx(plugin.hwndParent, L"Error registering mouse hook.", 0, MB_ICONWARNING, 0);
+						}
+					}
+					else
+					{
+						if (hMouseHook)
+						{
+							UnhookWindowsHookEx(hMouseHook);
+							hMouseHook = NULL;
+						}
+					}
+				}
+
 				cfgopen = FALSE;
 				DestroyWindow(hwnd);
 				break;	
+
+			case IDC_BUTTON8:
+				{					
+					if (!applypressed)
+					{					
+						memcpy(&Settings_backup, &Settings, sizeof(Settings));
+						memcpy(&Settings_font_backup, &Settings_font, sizeof(Settings_font));
+						Settings_strings_backup.BGPath = Settings_strings.BGPath;
+						Settings_strings_backup.Text = Settings_strings.Text;
+					}					
+
+					applypressed = true;
+
+					bool b1 = Settings.Thumbnailbuttons, b2 = false;
+					bool Buttons[16]; 
+					std::copy(Settings.Buttons, Settings.Buttons+16, Buttons);
+					bool recent = Settings.JLrecent;
+					bool frequent = Settings.JLfrequent;
+					bool tasks = Settings.JLtasks;
+					bool bms = Settings.JLbms;
+
+					WriteSettings(Tab1);
+					WriteSettings(Tab2);
+					WriteSettings(Tab3);
+					WriteSettings(Tab4);
+					WriteSettings(Tab5);
+					WriteSettings(Tab6);
+
+					if (recent != Settings.JLrecent ||
+						frequent != Settings.JLfrequent ||
+						tasks != Settings.JLtasks ||
+						bms != Settings.JLbms)
+					{
+						DoJl();					
+					}
+
+					SetWindowAttr();
+
+					if (Settings.VuMeter)
+						SetTimer(plugin.hwndParent, 6668, 50, VUMeterProc);
+					else
+						KillTimer(plugin.hwndParent, 6668);
+
+					if (background)
+					{
+						delete background;
+						background = 0;
+					}
+
+					for (int i=0; i<16; i++)
+						if (Settings.Buttons[i] != Buttons[i])
+						{
+							b2 = true;
+							break;
+						}
+
+					if (b1 != Settings.Thumbnailbuttons || b2)
+					{
+						MessageBoxEx(cfgwindow, STRINGS.find(__T("afterrestart"))->second.c_str(),
+							STRINGS.find(__T("applysettings"))->second.c_str(), MB_ICONWARNING, 0);					
+					}
+
+					if (Settings.Overlay)
+						WndProc(plugin.hwndParent, WM_WA_IPC, IPC_CB_MISC_STATUS, IPC_CB_MISC);
+					else
+						pTBL->SetOverlayIcon(plugin.hwndParent, NULL, NULL);
+
+					if (Settings.VolumeControl)
+					{
+						if (!hMouseHook)
+						{
+							hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC) KeyboardEvent, plugin.hDllInstance, NULL);
+							if (hMouseHook == NULL)
+								MessageBoxEx(plugin.hwndParent, L"Error registering mouse hook.", 0, MB_ICONWARNING, 0);
+						}
+					}
+					else
+					{
+						if (hMouseHook)
+						{
+							UnhookWindowsHookEx(hMouseHook);
+							hMouseHook = NULL;
+						}
+					}
+
+				}
+				break;
 		}
 	break;
 
@@ -1635,9 +2243,14 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 					{
 						std::tstring msgtext = STRINGS.find(__T("help1"))->second + __T("\n\n");
 						msgtext += STRINGS.find(__T("help2"))->second + __T("\n\n");
+						msgtext += __T("\t---\t ") + STRINGS.find(__T("help27"))->second + __T(" \t---\n");
 						msgtext += __T("%c%  -  ") + STRINGS.find(__T("help3"))->second + __T("\n");
 						msgtext += __T("%l%  -  ") + STRINGS.find(__T("help22"))->second + __T("\n");
 						msgtext += __T("%f%  -  ") + STRINGS.find(__T("help23"))->second + __T("\n");
+						msgtext += __T("%s%  -  ") + STRINGS.find(__T("help24"))->second + __T("\n");
+						msgtext += __T("%b%  -  ") + STRINGS.find(__T("help25"))->second + __T("\n");
+						msgtext += __T("%d%  -  ") + STRINGS.find(__T("help28"))->second + __T("\n");
+						msgtext += __T("\t---\t ") + STRINGS.find(__T("help26"))->second + __T(" \t---\n");
 						msgtext += __T("%title%  -  ") + STRINGS.find(__T("help5"))->second + __T("\n");
 						msgtext += __T("%artist%  -  ") + STRINGS.find(__T("help6"))->second + __T("\n");
 						msgtext += __T("%album%  -    ") + STRINGS.find(__T("help7"))->second + __T("\n");
@@ -1833,11 +2446,16 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 						SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getToolTip(9).c_str());
 					break;
 
+				case IDC_PCB10:
+					if ((((LPNMHDR)lParam)->code) == BCN_HOTITEMCHANGE)
+						SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getToolTip(10).c_str());
+					break;
+
 				}
 				break;
 
 		case WM_MOUSEMOVE:
-			SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), __T(""));
+			SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getString(__T("maxbuttons")).c_str());
 			break;
 
 		default:
@@ -1897,7 +2515,13 @@ void FillStrings()
 	STRINGS[__T("help21")] = __T("Repeat state (ON / OFF)");
 	STRINGS[__T("help22")] = __T("The line that contains this will be drawn with larger font");
 	STRINGS[__T("help23")] = __T("The line that contains this will be drawn to the left of the thumbnail");
-	STRINGS[__T("favorite")] = __T("Favorite");
+	STRINGS[__T("help24")] = __T("Draws text shadow for the current line (selected color)");
+	STRINGS[__T("help25")] = __T("Draws a translucent box behind text (selected color)");
+	STRINGS[__T("help26")] = __T("Text replacement");
+	STRINGS[__T("help27")] = __T("Text formatting");
+	STRINGS[__T("help28")] = __T("Prevents this text line from scrolling");
+	STRINGS[__T("favorite")] = __T("Rate");	
+	STRINGS[__T("maxbuttons")] = __T("(Max 7 buttons)");
 }
 
 void getinistring(std::tstring what, std::tstring Path)
@@ -1941,7 +2565,7 @@ BOOL CALLBACK EnumChildProc(HWND hwndChild, LPARAM lParam)
 	DWORD dwStyle;
 	dwStyle = GetWindowLong(hwndChild, GWL_EXSTYLE);
 
-	SetWindowLong(hwndChild, GWL_EXSTYLE, dwStyle | WS_EX_RTLREADING);
+	SetWindowLong(hwndChild, GWL_EXSTYLE, dwStyle | WS_EX_RTLREADING | WS_EX_LAYOUTRTL);
 	return TRUE;
 }
 
@@ -2033,6 +2657,13 @@ void SetStrings(HWND hwnd)
 		SetWindowText(GetDlgItem(hwnd, IDC_STATIC32), getString(__T("jlchoice")).c_str());
 	if (!getString(__T("bookmark")).empty())
 		SetWindowText(GetDlgItem(hwnd, IDC_CHECK33), getString(__T("bookmark")).c_str());
+	if (!getString(__T("playlists")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK34), getString(__T("playlists")).c_str());
+	if (!getString(__T("maxbuttons")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getString(__T("maxbuttons"), __T("(Max 7 buttons)")).c_str());
+	if (!getString(__T("volumecontrol")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK35), getString(__T("volumecontrol")).c_str());
+
 }
 
 inline std::wstring getString(std::wstring keyword, std::wstring def)
@@ -2103,14 +2734,18 @@ void DoJl()
 		GetModuleFileName(plugin.hDllInstance, &pluginpath[0], MAX_PATH);
 		pluginpath.resize(wcslen(pluginpath.c_str()));
 
-		GetShortPathName(pluginpath.c_str(), &pluginpath[0], pluginpath.length());
-		pluginpath.resize(wcslen(pluginpath.c_str()));
+		std::wstring tmp;
+		tmp.resize(MAX_PATH);
+		GetShortPathName(pluginpath.c_str(), &tmp[0], MAX_PATH);
+		tmp.resize(wcslen(tmp.c_str()));
 
 		std::wstring bms = getBMS();
 		JumpList jl;
-		if (!jl.CreateJumpList(pluginpath, getString(__T("wapref"), __T("Winamp preferences")), getString(__T("fromstart"), __T("Play from beginning")),
-			getString(__T("resumeplay"), __T("Resume playback")), getString(__T("openfile"), __T("Open file")), getString(__T("bookmark"), __T("Bookmarks")),
-			Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks, Settings.JLbms, bms) )
+		if (!jl.CreateJumpList(tmp, N_INI + "\\Plugins\\ml\\", 
+			getString(__T("wapref"), __T("Winamp preferences")), getString(__T("fromstart"), __T("Play from beginning")),
+			getString(__T("resumeplay"), __T("Resume playback")), getString(__T("openfile"), __T("Open file")), 
+			getString(__T("bookmark"), __T("Bookmarks")), getString(__T("playlists"), __T("Playlists")),
+			Settings.JLrecent, Settings.JLfrequent, Settings.JLtasks, Settings.JLbms, Settings.JLpl, bms) )
 			MessageBoxEx(plugin.hwndParent, getString(__T("jumplisterror"), __T("Error creating jump list.")).c_str(), 0, MB_ICONWARNING | MB_OK, 0);
 	}	
 }
@@ -2181,6 +2816,57 @@ HRESULT __CreateShellLink(PCWSTR filename, PCWSTR pszTitle, IShellLink **ppsl)
 		psl->Release();
 	}
 	return hr;
+}
+
+LRESULT CALLBACK KeyboardEvent (int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (!thumbshowing || wParam != WM_MOUSEWHEEL)
+		return CallNextHookEx(hMouseHook,nCode,wParam,lParam);
+
+	if ((short)((HIWORD(((MSLLHOOKSTRUCT*)lParam)->mouseData))) > 0)
+	{		
+		volume += 7;
+		if (volume > 255)
+			volume = 255;
+		SendMessage(plugin.hwndParent,WM_WA_IPC,volume,IPC_SETVOLUME);
+	}
+	else
+	{
+		volume -= 7;
+		if (volume < 0)
+			volume = 0;
+		SendMessage(plugin.hwndParent,WM_WA_IPC,volume,IPC_SETVOLUME);
+	}
+
+	RECT rect;
+	GetWindowRect(plugin.hwndParent, &rect);
+	Bitmap bmp(rect.right-rect.left-1, rect.bottom-rect.top-1, PixelFormat32bppPARGB);
+	StringFormat sf(StringFormatFlagsNoWrap);
+	sf.SetAlignment(StringAlignmentCenter);
+	Font font(L"Segoe UI", 18);
+	SolidBrush brush(Color::MakeARGB(200, 0, 0, 0));
+	std::wstringstream ss;
+	ss << L"Volume: " << ((volume * 100) /255) << L"%\n" << metadata.getMetadata(L"title");
+	ss << L"\n" << metadata.getMetadata(L"artist");
+
+	Graphics gfx(&bmp);
+	gfx.SetTextRenderingHint(TextRenderingHintAntiAlias);
+
+	gfx.DrawString(ss.str().c_str(), -1, &font, RectF(0, 0, rect.right-rect.left-1, 
+		rect.bottom-rect.top-1), &sf, &brush);
+	HBITMAP hbmp;
+	bmp.GetHBITMAP(Color::Black, &hbmp);
+
+	POINT pt;
+	pt.x = 0;
+	pt.y = 0;
+
+	DwmSetIconicLivePreviewBitmap(plugin.hwndParent, hbmp, &pt, 0);
+	DeleteObject(hbmp);
+
+	DwmInvalidateIconicBitmaps(plugin.hwndParent);
+
+	return CallNextHookEx(hMouseHook,nCode,wParam,lParam);
 }
 
 inline bool parsePath(std::wstring &thepath)
@@ -2345,4 +3031,3 @@ extern "C" int __declspec(dllexport) __stdcall openfile()
 
 	return 0;
 }
-
