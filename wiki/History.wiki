@@ -6,6 +6,7 @@
  * Improvement: Rating drawing on the aero peek is similar to what you see on the Bento skin, the missing stars till 5 are "padded" with bulbs
   * ex: ★ ★ ★ ● ●
  * Fix: Some of the Winamp exit crashes / hangs, and some other minor ones... please report if you notice any more
+ * (Some other changes I might forgot)
 
 = 1.12 =
  * New: Added option to disable mouse wheel volume control. It caused performance drop on certain systems and incompatibilities with ObjectDock.
