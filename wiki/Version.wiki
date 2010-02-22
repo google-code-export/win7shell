@@ -1,18 +1,9 @@
 #labels Deprecated
-1.12
+1.13
 
-* Added option to disable mouse wheel volume control. It caused performance drop on certain systems
-* Fixed a bug with mouse wheel volume control (jumped back to 100 after reaching 0)
-* Fixed a text centering bug when iconic background was enabled, and no album art was found
-* Re-added MusePack file format support for album art
-* Fixed some title and artist formatting bugs
-* Some changes to recent and frequent jump list categories
-* Translation changes
+Added option to activate (somewhat) smoother text scrolling, and drawing in general > more CPU usage.
+Improvement: Rating drawing is like on Bento skin, the missing stars till 5 are "padded" with bulbs, ex: ★ ★ ★ ● ●.
+Album art is not forced to square anymore, it keeps aspect ratio.
+Fixed some of the Winamp exit crashes / hangs, and some other minor ones...
 
-1.11
-
-* Volume control with mousewheel when hovering over Winamp taskbar icon
-* "Favorite" button lets you rate the song from 0 to 5
-* Album art is taken directly from Winamp
-* Added scrolling text and a new text formatting flag
-* Added 'Apply' button on config window  
+Please notice any additional bugs or requests. 
