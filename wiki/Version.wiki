@@ -6,4 +6,4 @@ Improvement: Rating drawing is like on Bento skin, the missing stars till 5 are 
 Album art is not forced to square anymore, it keeps aspect ratio.
 Fixed some of the Winamp exit crashes / hangs, and some other minor ones...
 
-Please notice any additional bugs or requests. 
+Please notify me in case of any additional bugs or requests. 
