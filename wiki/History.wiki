@@ -5,6 +5,7 @@
  * New: Added option to activate (somewhat) smoother text scrolling, and drawing in general > more CPU usage
  * Improvement: Rating drawing on the aero peek is similar to what you see on the Bento skin, the missing stars till 5 are "padded" with bulbs
   * ex: ★ ★ ★ ● ●
+ * Improvement: Album art is not forced to square anymore, it keeps aspect ratio
  * Fix: Some of the Winamp exit crashes / hangs, and some other minor ones... please report if you notice any more
  * (Some other changes I might forgot)
 
