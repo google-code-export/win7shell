@@ -46,7 +46,12 @@
 
 using namespace Gdiplus;
 
-const std::tstring cur_version(__T("1.12"));
+sSettings Settings;
+sSettings_strings Settings_strings;
+sFontEx Settings_font;
+int S_lowframerate = 0;
+
+const std::tstring cur_version(__T("1.13"));
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0;
@@ -56,9 +61,6 @@ int volume = 0;
 size_t step = 0;
 std::tstring W_INI;
 std::string N_INI;
-sSettings Settings;
-sSettings_strings Settings_strings;
-sFontEx Settings_font;
 BOOL cfgopen = false, btaskinited = false, RTL = false, translationfound = false, totheleft = false;
 bool thumbshowing = false;
 HWND cfgwindow = 0, ratewnd = 0;
@@ -164,6 +166,8 @@ int init()
 	Settings.VuMeter = false;
 	for (int i=0; i<16; i++)
 		Settings.Buttons[i] = false;
+
+	S_lowframerate = GetPrivateProfileInt(L"win7shell", L"lowframerate", 0, W_INI.c_str());
 
 	if (!GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str()))
 	{
@@ -349,7 +353,8 @@ int init()
 	if (Settings.VuMeter)
 		SetTimer(plugin.hwndParent, 6668, 50, VUMeterProc);
 
-	SetTimer(plugin.hwndParent, 6667, 300, TimerProc);		
+	int interval = (S_lowframerate == 1) ? 400 : 100;
+	SetTimer(plugin.hwndParent, 6667, interval, TimerProc);		
 
 	volume = IPC_GETVOLUME(plugin.hwndParent);
 
@@ -573,8 +578,12 @@ std::tstring MetaWord(std::tstring word)
 		if (word == __T("%rating1%"))
 			w << x;
 		else
+		{
 			for (int i=0; i < x; i++)
 				w << __T("\u2605");
+			for (int i=0; i < 5-x; i++)
+				w << __T(" \u25CF");
+		}
 		return w.str();
 	}
 
@@ -1436,7 +1445,7 @@ bool is_in_recent(std::wstring filename)
 		return false;
 	return true;
 }
-//"C:\Users\Atti\AppData\Roaming\Microsoft\Windows\Recent\11. Crayons Can Melt On Us For All I Care.flac.lnk"
+
 inline void SetProgressState(TBPFLAG newstate)
 {
 	static TBPFLAG progressbarstate = TBPF_NOPROGRESS;
@@ -1489,16 +1498,16 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 		name.resize(200);
 		GetClassName(WindowFromPoint(pt), &name[0], 200);
 		name.resize(wcslen(name.c_str()));
+		OutputDebugString(name.c_str());
 		if (name != L"TaskListThumbnailWnd" && name != L"MSTaskListWClass")
 		{
-			thumbshowing = false;
-			//step = 0;
+			thumbshowing = false;			
 		}
 
 		DwmInvalidateIconicBitmaps(plugin.hwndParent);
 	}
 
-	step+=2;
+	step += (S_lowframerate == 1) ? 2 : 1;
 
 	if (playstate == -1)
 	{
@@ -1698,6 +1707,7 @@ void ReadSettings(HWND hwnd)
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK34), (UINT) BM_SETCHECK, Settings.JLpl, 0);
 
 	SendMessage(GetDlgItem(hwnd, IDC_CHECK35), (UINT) BM_SETCHECK, Settings.VolumeControl, 0);
+	SendMessage(GetDlgItem(hwnd, IDC_CHECK36), (UINT) BM_SETCHECK, static_cast<WPARAM>(S_lowframerate), 0);
 
 	SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings_strings.BGPath.c_str());
 
@@ -1762,6 +1772,8 @@ void WriteSettings(HWND hwnd)
 		Settings.JLpl = SendMessage(GetDlgItem(hwnd, IDC_CHECK34), (UINT) BM_GETCHECK, 0, 0);
 	if (GetDlgItem(hwnd, IDC_CHECK35) != NULL)
 		Settings.VolumeControl = SendMessage(GetDlgItem(hwnd, IDC_CHECK35), (UINT) BM_GETCHECK, 0, 0);
+	if (GetDlgItem(hwnd, IDC_CHECK36) != NULL)
+		S_lowframerate = static_cast<int>(SendMessage(GetDlgItem(hwnd, IDC_CHECK36), (UINT) BM_GETCHECK, 0, 0));
 
 	//Radiobuttons
 	if (GetDlgItem(hwnd, IDC_RADIO1) != NULL)
@@ -1906,6 +1918,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 	static sSettings_strings Settings_strings_backup;
 	static sFontEx Settings_font_backup;
 	static bool applypressed = false;
+	static int lowframerate_backup;
 
 	switch(msg)
 	{
@@ -2043,10 +2056,16 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 						}
 					}
 
+					int interval = (S_lowframerate == 1) ? 400 : 100;
+					SetTimer(plugin.hwndParent, 6667, interval, TimerProc);		
+
 					WritePrivateProfileStruct(__T("win7shell"), __T("settings"), &Settings, sizeof(Settings), W_INI.c_str());
 					WritePrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str());					
 					WritePrivateProfileString(__T("win7shell"), __T("bgpath"), Settings_strings.BGPath.c_str(), W_INI.c_str());	
 					WritePrivateProfileString(__T("win7shell"), __T("text"), Settings_strings.Text.c_str(), W_INI.c_str());	
+					std::wstringstream wss;
+					wss << S_lowframerate;
+					WritePrivateProfileString(L"win7shell", L"lowframerate", wss.str().c_str(), W_INI.c_str());
 
 					DestroyWindow(hwnd);
 				}
@@ -2060,6 +2079,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 					memcpy(&Settings_font, &Settings_font_backup, sizeof(Settings_font_backup));
 					Settings_strings.BGPath = Settings_strings_backup.BGPath;
 					Settings_strings.Text = Settings_strings_backup.Text;
+					S_lowframerate = lowframerate_backup;
 
 					DoJl();					
 
@@ -2098,6 +2118,9 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 							hMouseHook = NULL;
 						}
 					}
+
+					int interval = (S_lowframerate == 1) ? 400 : 100;
+					SetTimer(plugin.hwndParent, 6667, interval, TimerProc);
 				}
 
 				cfgopen = FALSE;
@@ -2112,6 +2135,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 						memcpy(&Settings_font_backup, &Settings_font, sizeof(Settings_font));
 						Settings_strings_backup.BGPath = Settings_strings.BGPath;
 						Settings_strings_backup.Text = Settings_strings.Text;
+						lowframerate_backup = S_lowframerate;
 					}					
 
 					applypressed = true;
@@ -2188,6 +2212,8 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 						}
 					}
 
+					int interval = (S_lowframerate == 1) ? 400 : 100;
+					SetTimer(plugin.hwndParent, 6667, interval, TimerProc);
 				}
 				break;
 		}
@@ -2663,7 +2689,8 @@ void SetStrings(HWND hwnd)
 		SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), getString(__T("maxbuttons"), __T("(Max 7 buttons)")).c_str());
 	if (!getString(__T("volumecontrol")).empty())
 		SetWindowText(GetDlgItem(hwnd, IDC_CHECK35), getString(__T("volumecontrol")).c_str());
-
+	if (!getString(__T("lowframerate")).empty())
+		SetWindowText(GetDlgItem(hwnd, IDC_CHECK36), getString(__T("lowframerate")).c_str());
 }
 
 inline std::wstring getString(std::wstring keyword, std::wstring def)
@@ -2916,13 +2943,23 @@ inline bool parsePath(std::wstring &thepath)
 }
 
 std::wstring getWinampINIPath(HWND wnd)
-{		
+{	
+	if (!W_INI.empty())
+	{
+		std::wstring::size_type pos = 0;
+		pos = W_INI.find(L"\\Plugins\\");
+		if (pos != std::wstring::npos)
+		{
+			return W_INI.substr(pos);
+		}
+	}
+
 	std::wstring wini;
 	wini.resize(MAX_PATH);
 	GetPrivateProfileString(L"Winamp", L"inidir", L"", &wini[0], MAX_PATH, std::wstring(getInstallPath() + L"\\paths.ini").c_str());
 	wini.resize(wcslen(wini.c_str()));
 	
-	while (parsePath(wini));	
+	while (parsePath(wini));
 
 	if (wini.empty())
 		wini = getInstallPath();
@@ -2931,9 +2968,14 @@ std::wstring getWinampINIPath(HWND wnd)
 	if (FindFirstFile(std::wstring(wini + __T("\\Plugins\\win7shell.ini")).c_str(), &ffd) == INVALID_HANDLE_VALUE)
 	{
 		char *dir=(char*)SendMessage(wnd,WM_WA_IPC,0,IPC_GETINIDIRECTORY);
-		wini.resize(MAX_PATH);
-		MultiByteToWideChar(CP_ACP, 0, dir, strlen(dir), &wini[0], MAX_PATH);
-		wini.resize(wcslen(wini.c_str()));
+		if (!dir)
+			wini.clear();
+		else
+		{
+			wini.resize(MAX_PATH);
+			MultiByteToWideChar(CP_ACP, 0, dir, strlen(dir), &wini[0], MAX_PATH);
+			wini.resize(wcslen(wini.c_str()));
+		}
 	}
 
 	return wini;
