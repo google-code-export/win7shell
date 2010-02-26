@@ -14,6 +14,7 @@
 #define IDI_ICON8                       130
 #define IDI_ICON9                       131
 #define IDI_ICON15                      132
+#define IDI_ICON16                      133
 #define IID_MAIN                        140
 #define IDD_DIALOG1                     141
 #define IDB_BACKGROUND                  142
@@ -28,8 +29,17 @@
 #define IDI_ICON12                      195
 #define IDI_ICON13                      196
 #define IDI_ICON14                      197
+#define IDI_ICON17                      200
+#define IDD_RATEDLG                     201
+#define IDI_ICON18                      208
+#define IDI_ICON19                      209
+#define IDI_ICON20                      210
 #define IDC_BUTTON1                     1002
 #define IDC_BUTTON2                     1003
+#define IDC_RATE3                       1004
+#define IDC_RATE4                       1005
+#define IDC_RATE5                       1006
+#define IDC_RATE6                       1007
 #define IDC_CHECK2                      1015
 #define IDC_CHECK3                      1016
 #define IDC_CHECK4                      1017
@@ -60,7 +70,6 @@
 #define IDC_SYSLINK1                    1043
 #define IDC_SYSLINK2                    1044
 #define IDC_SYSLINK3                    1045
-#define IDC_EDIT1                       1046
 #define IDC_SYSLINK5                    1046
 #define IDC_STATIC12                    1047
 #define IDC_CHECK20                     1048
@@ -94,7 +103,7 @@
 #define IDC_PCB7                        1082
 #define IDC_PCB8                        1083
 #define IDC_PCB9                        1084
-#define IDC_CHECK29                     1085
+#define IDC_PCB10                       1085
 #define IDC_COMBO1                      1086
 #define IDC_CHECK31                     1087
 #define IDC_CHECK32                     1088
@@ -103,14 +112,21 @@
 #define IDC_STATIC32                    1091
 #define IDC_CHECK33                     1092
 #define IDC_STATIC29                    1093
+#define IDC_CHECK29                     1094
+#define IDC_CHECK34                     1095
+#define IDC_RATE2                       1096
+#define IDC_CHECK35                     1096
+#define IDC_BUTTON8                     1097
+#define IDC_RATE1                       1098
+#define IDC_CHECK36                     1099
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        199
+#define _APS_NEXT_RESOURCE_VALUE        212
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1093
+#define _APS_NEXT_CONTROL_VALUE         1099
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

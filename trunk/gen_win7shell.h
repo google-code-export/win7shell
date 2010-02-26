@@ -10,7 +10,7 @@
 #define GPPHDR_VER 0x10
  
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.12"
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.13"
 
 #ifdef _UNICODE
 #define tstring wstring
