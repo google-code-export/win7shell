@@ -47,7 +47,7 @@
 
 // changes from v1.14 Test 5
 // * fixed getToolTip(..) not having break's in all the correct places
-//
+// * fixed string id 34 not correctly showing the star symbol (alt code 9733)
 
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
