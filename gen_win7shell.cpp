@@ -707,8 +707,10 @@ std::wstring getToolTip(int button)
 		break;
 	case 9:
 		strID = IDS_MUTE;
+		break;
 	case 10:
 		strID = IDS_STOP_AFTER_CURRENT;
+		break;
 	}
 
 	if(strID != -1)
