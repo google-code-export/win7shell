@@ -17,8 +17,8 @@ public:
 	bool _IsItemInArray(std::wstring path, IObjectArray *poaRemoved);
 	HRESULT _AddTasksToList();
 	HRESULT _AddCategoryToList();
-	HRESULT _AddCategoryToList2(std::string path);
-	bool CreateJumpList(std::wstring pluginpath, std::string plfilepath, std::wstring pref, std::wstring fromstart, 
+	HRESULT _AddCategoryToList2();
+	bool CreateJumpList(std::wstring pluginpath, std::wstring pref, std::wstring fromstart, 
 		std::wstring resume, std::wstring openfile, std::wstring bookmarks, std::wstring pltext, bool recent, 
 		bool frequent, bool tasks, bool addbm, bool playlist, const std::wstring bms);
 	bool DeleteJumpList();

@@ -40,7 +40,6 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
         return L"";
     }
 
-
     for(p = servinfo; p != NULL; p = p->ai_next) 
 	{
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) 
@@ -107,8 +106,8 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
 		closesocket(sockfd);
 		return L"";
 	}
-	
-	if (curvers == GET.substr(1, pos-1))
+
+	if (curvers == GET.substr(1, pos-1) || (_wcsicmp(curvers.c_str(), GET.substr(1, pos-1).c_str()) >= 0))
 	{
 		closesocket(sockfd);
 		return L"";
@@ -118,4 +117,3 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
 
 	return GET;
 }
-

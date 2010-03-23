@@ -5,18 +5,8 @@
 #include <windows.h>
 #include <string>
  
- 
-// plugin version (don't touch this)
-#define GPPHDR_VER 0x10
- 
 // plugin name/title (change this to something you like)
-#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.13"
-
-#ifdef _UNICODE
-#define tstring wstring
-#else
-#define tstring string
-#endif
+#define PLUGIN_NAME "Windows 7 Taskbar Integration v1.14 Test Build 2"
 
 #ifdef  _UNICODE
 typedef wchar_t TCHAR;
@@ -29,8 +19,8 @@ typedef char TCHAR;
 #define NEWLINE __T('‡')
 
 struct sSettings_strings {
-	std::tstring BGPath;
-	std::tstring Text;
+	std::wstring BGPath;
+	std::wstring Text;
 };
  
 struct sSettings_old {

@@ -82,7 +82,7 @@ Index     - Index of the new item (indices start with 0)
 Returns the new index or -1 if an error occured.
 */
 
-int AddTab(HWND TabWindow, HWND Window, wchar_t * Caption, int Index);
+int AddTab(HWND TabWindow, HWND Window, wchar_t * Caption, int Index, HWND winamp);
 
 /*
 bool RemoveTab(HWND TabWindow, int Index)

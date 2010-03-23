@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <commctrl.h> // Tabs
 #include <shlwapi.h>  // DllGetVersion
+#include "..\..\sdk\winamp\wa_ipc.h"
 
 // Flags for EnableThemeDialogTexture
 #define ETDT_DISABLE       0x00000001
@@ -22,10 +23,7 @@ bool TabCleanup(HWND TabWindow);
 bool SetTabIcon(HWND TabWindow, int Index, HICON Icon);
 int  TabToFront(HWND TabWindow, int Index);
 
-void SetTabThemeTexture(HWND Window, bool Enable);
-bool VisualStylesEnabled();
-
-int AddTab(HWND TabWindow, HWND Window, wchar_t * Caption, int Index){
+int AddTab(HWND TabWindow, HWND Window, wchar_t * Caption, int Index, HWND winamp){
 TC_ITEM TabData;
 RECT TabRect;
 
@@ -50,7 +48,7 @@ RECT TabRect;
 	
 		SetProp(TabWindow, PropName, (HANDLE)Window);
 
-		SetTabThemeTexture(Window, true);
+		SendMessage(winamp,WM_WA_IPC,(WPARAM)Window,IPC_USE_UXTHEME_FUNC);
 	}
 
 	return Index;
@@ -88,8 +86,6 @@ int Count;
 				if(Index == Count) Index--; // Last tab
 				TabToFront(TabWindow, Index);
 			}
-
-			SetTabThemeTexture((HWND)TabData.lParam, false);
 			return true;
 		}
 	}
@@ -156,37 +152,4 @@ TC_ITEM TabData;
 	}
 
 	return -1;
-}
-
-void SetTabThemeTexture(HWND Window, bool Enable){
-typedef HRESULT (WINAPI * ENABLETHEMEDIALOGTEXTURE)(HWND, DWORD);
-ENABLETHEMEDIALOGTEXTURE pEnableThemeDialogTexture;
-DWORD dwFlags;
-
-	dwFlags = Enable ? ETDT_ENABLETAB : ETDT_DISABLE;
-
-	if(VisualStylesEnabled()){
-		pEnableThemeDialogTexture = (ENABLETHEMEDIALOGTEXTURE)GetProcAddress(GetModuleHandle(L"uxtheme.dll"), "EnableThemeDialogTexture");
-		if(pEnableThemeDialogTexture){
-			pEnableThemeDialogTexture(Window, dwFlags);
-		}
-	}
-}
-
-bool VisualStylesEnabled(){
-HMODULE hMod;
-DLLGETVERSIONPROC pDllGetVersion;
-DLLVERSIONINFO DllVersion;
-
-	hMod = GetModuleHandle(L"comctl32.dll");
-	if(hMod){
-		pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hMod, "DllGetVersion");
-		if(pDllGetVersion){
-			DllVersion.cbSize = sizeof(DLLVERSIONINFO);
-			if(pDllGetVersion(&DllVersion) == S_OK){
-				return (DllVersion.dwMajorVersion >= 6);
-			}
-		}
-	}
-	return false;
 }
