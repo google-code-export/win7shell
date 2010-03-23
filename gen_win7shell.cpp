@@ -48,6 +48,7 @@
 // changes from v1.14 Test 5
 // * fixed getToolTip(..) not having break's in all the correct places
 // * fixed string id 34 not correctly showing the star symbol (alt code 9733)
+// * changed the non-rated part with %rating2% to use the empty star instead of a dot as it's not too clear (though easy to revert if not liked)
 
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
@@ -642,7 +643,7 @@ std::wstring MetaWord(std::wstring word)
 			for (int i=0; i < x; i++)
 				w << __T("\u2605");
 			for (int i=0; i < 5-x; i++)
-				w << __T(" \u25CF");
+				w << __T("\u2606"/*" \u25CF"*/);
 		}
 		return w.str();
 	}
