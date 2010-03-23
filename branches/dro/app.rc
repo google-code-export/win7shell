@@ -1,0 +1,395 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IID_TAB1 DIALOGEX 0, 0, 405, 115
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_EDIT3,5,6,166,66,ES_MULTILINE | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL
+    PUSHBUTTON      "Help",IDC_BUTTON4,177,7,112,15,BS_FLAT
+    PUSHBUTTON      "Select Font",IDC_BUTTON5,177,24,112,15
+    PUSHBUTTON      "Shadow Color",IDC_BUTTON6,177,41,112,15
+    CONTROL         "Anti alias text",IDC_CHECK8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,179,63,191,10
+    CONTROL         "Shrink thumbnail depending on number of lines",IDC_CHECK1,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,79,365,10
+    CONTROL         "Reduce thumnbail redrawing frequency (for slower systems)",IDC_CHECK36,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,95,365,10
+END
+
+IID_TAB2 DIALOGEX 0, 0, 385, 113
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Transparent",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,10,7,365,10
+    CONTROL         "Album art",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,10,25,365,10
+    CONTROL         "Default background",IDC_RADIO3,"Button",BS_AUTORADIOBUTTON,10,43,365,10
+    CONTROL         "Custom background",IDC_RADIO4,"Button",BS_AUTORADIOBUTTON,10,60,365,10
+    EDITTEXT        IDC_EDIT2,9,76,154,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse",IDC_BUTTON3,171,76,62,14
+    COMBOBOX        IDC_COMBO1,9,93,99,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "is used, if selected background not available",IDC_STATIC30,112,95,263,8
+END
+
+IID_TAB3 DIALOGEX 0, 0, 385, 122
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Enable custom Aero Peek thumbnail",IDC_CHECK7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,9,365,10
+    CONTROL         "Add player control &buttons",IDC_CHECK6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,25,365,10
+    CONTROL         "",IDC_PCB1,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,22,39,18,16
+    CONTROL         "",IDC_PCB2,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,45,39,18,16
+    CONTROL         "",IDC_PCB3,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,68,39,18,16
+    CONTROL         "",IDC_PCB4,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,91,39,18,16
+    CONTROL         "",IDC_PCB5,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,114,39,18,16
+    CONTROL         "",IDC_PCB6,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,137,39,18,16
+    CONTROL         "",IDC_PCB7,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,160,39,18,16
+    CONTROL         "",IDC_PCB8,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,183,39,18,16
+    CONTROL         "",IDC_PCB9,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,206,39,18,16
+    CONTROL         "",IDC_PCB10,"Button",BS_AUTOCHECKBOX | BS_ICON | BS_PUSHLIKE | WS_TABSTOP,229,39,18,16
+    CTEXT           "(Max 7 buttons)",IDC_STATIC29,251,43,119,8
+    CONTROL         "Remove Winamp window title",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,59,365,10
+    CONTROL         "Show image as icon instead of background ",IDC_CHECK25,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,75,365,10
+    CONTROL         "Show playback progress bar on thumbnail",IDC_CHECK29,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,90,365,10
+    CONTROL         "Enable volume control with mouse wheel on taskbar icon",IDC_CHECK35,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,105,195,10
+END
+
+IID_TAB4 DIALOGEX 0, 0, 375, 97
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Use &progressbar to show player status",IDC_CHECK2,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,9,365,10
+    CONTROL         "Set '&Indeterminate' progressbar state for streaming media",IDC_CHECK4,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,26,336,10
+    CONTROL         "Set '&Error' state (red icon) when media is stopped",IDC_CHECK5,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,43,336,10
+    CONTROL         "Use progressbar as VU meter",IDC_CHECK26,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,62,365,10
+    CONTROL         "Use icon &overlays to show player status",IDC_CHECK3,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,79,365,10
+END
+
+IID_TAB5 DIALOGEX 0, 0, 386, 107
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Show the following categories in the jump list:",IDC_STATIC32,10,10,364,8
+    CONTROL         "Recent",IDC_CHECK30,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,25,160,10
+    CONTROL         "Frequent",IDC_CHECK31,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,41,160,10
+    CONTROL         "Tasks",IDC_CHECK32,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,57,160,10
+    CONTROL         "Bookmarks",IDC_CHECK33,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,200,25,160,10
+    CONTROL         "Playlists",IDC_CHECK34,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,200,41,160,10
+    LTEXT           "Note: Only files that are registred to be handled by Winamp will be added to the list (It doesn't need to be the default program). If you already have files in the jump, you can remove them by clearing the recent files list.",IDC_STATIC31,10,73,363,33
+END
+
+IID_TAB6 DIALOGEX 0, 0, 395, 121
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "<a>Bugs and suggestions</a> - Submit your wishes or issues with the plugin",IDC_SYSLINK2,
+                    "SysLink",LWS_USEVISUALSTYLE | WS_TABSTOP,9,9,365,12
+    CONTROL         "<a>Project home</a> - For updates, news, screen shots and a detailed overview",IDC_SYSLINK1,
+                    "SysLink",LWS_USEVISUALSTYLE | WS_TABSTOP,9,26,365,10
+    CONTROL         "<a>Translations</a> - Help translate the plug-in, or get available translations",IDC_SYSLINK3,
+                    "SysLink",LWS_USEVISUALSTYLE | WS_TABSTOP,9,43,365,10
+    CONTROL         "<a>Credits</a> - People who helped creating this plug-in",IDC_SYSLINK5,
+                    "SysLink",LWS_USEVISUALSTYLE | WS_TABSTOP,9,60,365,10
+    CONTROL         "Do not check for updates on Winamp startup",IDC_CHECK9,
+                    "Button",BS_AUTOCHECKBOX | BS_LEFT | WS_TABSTOP,9,77,365,10
+    CONTROL         "Author: Magyari Attila <a>atti86@gmail.com</a>",IDC_SYSLINK4,
+                    "SysLink",LWS_RIGHT | WS_TABSTOP,152,109,219,10
+END
+
+IID_MAIN DIALOGEX 0, 0, 400, 164
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CAPTION | WS_SYSMENU
+CAPTION "Configure Plugin"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "O&K",IDC_BUTTON1,64,144,78,16
+    PUSHBUTTON      "&Apply",IDC_BUTTON8,159,144,75,16
+    PUSHBUTTON      "&Cancel",IDC_BUTTON2,252,144,78,16
+    CONTROL         "",IDC_TAB,"SysTabControl32",TCS_HOTTRACK | WS_TABSTOP,7,6,386,133
+END
+
+IDD_RATEDLG DIALOGEX 0, 0, 115, 17
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_SYSMENU
+EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "x",IDC_RATE1,0,0,19,17
+    PUSHBUTTON      "1",IDC_RATE2,19,0,19,17
+    PUSHBUTTON      "2",IDC_RATE3,38,0,19,17
+    PUSHBUTTON      "3",IDC_RATE4,57,0,19,17
+    PUSHBUTTON      "4",IDC_RATE5,76,0,19,17
+    PUSHBUTTON      "5",IDC_RATE6,95,0,19,17
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IID_TAB1, DIALOG
+    BEGIN
+        RIGHTMARGIN, 374
+        BOTTOMMARGIN, 107
+    END
+
+    IID_TAB2, DIALOG
+    BEGIN
+        RIGHTMARGIN, 375
+    END
+
+    IID_TAB3, DIALOG
+    BEGIN
+        RIGHTMARGIN, 374
+    END
+
+    IID_TAB4, DIALOG
+    BEGIN
+        RIGHTMARGIN, 374
+    END
+
+    IID_TAB5, DIALOG
+    BEGIN
+        RIGHTMARGIN, 374
+        BOTTOMMARGIN, 101
+    END
+
+    IID_TAB6, DIALOG
+    BEGIN
+        RIGHTMARGIN, 374
+        BOTTOMMARGIN, 109
+    END
+
+    IID_MAIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 393
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 160
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "Resources\\play.ico"
+IDI_ICON2               ICON                    "Resources\\previous.ico"
+IDI_ICON4               ICON                    "Resources\\stop.ico"
+IDI_ICON5               ICON                    "Resources\\next.ico"
+IDI_ICON3               ICON                    "Resources\\pause.ico"
+IDI_ICON6               ICON                    "Resources\\fav.ico"
+IDI_ICON7               ICON                    "Resources\\minus.ico"
+IDI_ICON8               ICON                    "Resources\\plus.ico"
+IDI_ICON9               ICON                    "Resources\\open.ico"
+IDI_ICON10              ICON                    "Resources\\settings (2.ico"
+IDI_ICON11              ICON                    "Resources\\open (2).ico"
+IDI_ICON12              ICON                    "Resources\\Resume (2).ico"
+IDI_ICON13              ICON                    "Resources\\play (2).ico"
+IDI_ICON14              ICON                    "Resources\\bookmark.ico"
+IDI_ICON15              ICON                    "Resources\\mute1.ico"
+IDI_ICON16              ICON                    "Resources\\playstop.ico"
+IDI_ICON17              ICON                    "Resources\\playlist.ico"
+IDI_ICON18              ICON                    "Resources\\applybut.ico"
+IDI_ICON19              ICON                    "Resources\\cancelbut.ico"
+IDI_ICON20              ICON                    "Resources\\okbut.ico"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+    "\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BACKGROUND          BITMAP                  "Resources\\try.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    65535                   "{7204A532-5D37-415d-B431-272C953B7459}"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_PLUGIN_NAME         "Windows 7 Taskbar Integration v%s"
+    IDS_NEW_VERSION_AVAILABLE "New version available"
+    IDS_DISABLE_UPDATE_CHECK 
+                            "You can disable checking for updates in the plugin configuration"
+    IDS_OPEN_DOWNLOAD_PAGE  "Do you want to open the download page?"
+    IDS_INFORMATION         "Information"
+    IDS_ON                  "ON"
+    IDS_OFF                 "OFF"
+    IDS_PREVIOUS            "Previous"
+    IDS_PAUSE               "Pause"
+    IDS_PLAY                "Play"
+    IDS_STOP                "Stop"
+    IDS_NEXT                "Next"
+    IDS_ERROR_SETTING_THUMBNAIL 
+                            "Error setting thumbnail, switching feature off"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_PLAYING             "Playing"
+    IDS_PAUSED              "Paused"
+    IDS_STOPPED             "Stopped"
+    IDS_TASKBAR_INITIALIZE_FAILURE 
+                            "Unable to initialize Windows 7 taskbar interface"
+    IDS_ALL_IMAGE_FORMATS   "All supported image formats"
+    IDS_USE_AS_THUMB_BKGND  "Use as thumbnail background"
+    IDS_SELECT_IMAGE_FILE   "Select an image file"
+    IDS_MOD_PLAYER_BUTTONS_RESTART 
+                            "Modifying player control buttons will only take effect after restarting Winamp."
+    IDS_APPLYING_SETTINGS   "Applying Settings"
+    IDS_HELP1               "The text you enter in this editbox will be drawn on the thumbnail. You can write as many lines as you want. If the 'shrink thumbnail' option is enabled, the frame will be resized depending on the number of lines in this editbox."
+    IDS_HELP2               "In order to create dynamic text, you can use a set of metawords, which if you include in the text, they will be replaced by the actual data taken from Winamp. Here are these words: "
+    IDS_HELP3               "The line that contains this is drawn centered"
+    IDS_HELP5               "Title of currently playing media"
+    IDS_HELP6               "Artist of currently playing media"
+    IDS_HELP7               "Name of album, empty if not found"
+    IDS_HELP8               "Release year of the album, empty if not found"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_HELP9               "Track number"
+    IDS_HELP10              "Current song rating in digits (e.g. 4)"
+    IDS_HELP11              "Current song rating in stars (e.g. ???? )"
+    IDS_HELP12              "Current playback time"
+    IDS_HELP13              "Time left from current song"
+    IDS_HELP14              "Total playback time"
+    IDS_HELP15              "Current playlist position"
+    IDS_HELP16              "Total number of tracks in current playlist"
+    IDS_HELP17              "Bitrate in kb/s"
+    IDS_HELP18              "Samplerate in kilohertz"
+    IDS_HELP19              "Current volume in percentage ('%' sign not included)"
+    IDS_HELP20              "Shuffle state (ON / OFF)"
+    IDS_HELP21              "Repeat state (ON / OFF)"
+    IDS_TRANSPARENT         "Transparent"
+    IDS_ALBUM_ART           "Album art"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_DEFAULT_BACKGROUND  "Default background"
+    IDS_CUSTOM_BACKGROUND   "Custom background"
+    IDS_TASKBAR_ICON        "Taskbar Icon"
+    IDS_JUMPLIST            "Jump List"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_DEVELOPMENT         "Development"
+    IDS_OPTIONS             "Options"
+    IDS_TEXT                "Text"
+    IDS_BACKGROUND          "Background"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_VOLUME_UP           "Volume +10%"
+    IDS_VOLUME_DOWN         "Volume -10%"
+    IDS_OPEN_FILE           "Open File"
+    IDS_WINAMP_PREFERENCES  "Winamp Preferences"
+    IDS_PLEASE_START_WINAMP_FIRST "Please start Winamp first"
+    IDS_ERROR_CREATING_JUMP_LIST "Error creating jump list"
+    IDS_RESUME_PLAYBACK     "Resume Playback"
+    IDS_PLAY_FROM_BEGINNING "Play from beginning"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_HELP22              "The line that contains this will be drawn with larger font"
+    IDS_HELP23              "The line that contains this will be drawn to the left of the thumbnail"
+    IDS_BOOKMARKS           "Bookmarks"
+    IDS_MUTE                "Mute"
+    IDS_PLAYLISTS           "Playlists"
+    IDS_STOP_AFTER_CURRENT  "Stop after current song"
+    IDS_HELP24              "Draws text shadow for the current line (selected color)"
+    IDS_HELP25              "Draws a translucent box behind text (selected color)"
+    IDS_HELP26              "Text replacement"
+    IDS_HELP27              "Text formatting"
+    IDS_HELP28              "Prevents this text line from scrolling"
+    IDS_RATE                "Rate"
+    IDS_UNINSTALL_PROMPT    "Do you also want to remove the saved settings for this plugin?"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_ERROR_SETTING_APPID "Error setting AppID. This might affect certain features."
+    IDS_ERROR_REGISTERING_MOUSE_HOOK "Error registering mouse hook."
+    IDS_MAX_BUTTONS         "(Max 7 buttons)"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
