@@ -45,6 +45,10 @@
 // * cleaned up project files to fit in a single folder so it's easier to pop into a development folder relative to the 'sdk' folder
 // * removed DestroyIcon(..) call when the imagelist is built as per MSDN info (maybe this will resolve the random loss of icon issue?!?!)
 
+// changes from v1.14 Test 5
+// * fixed getToolTip(..) not having break's in all the correct places
+//
+
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
 
@@ -89,7 +93,7 @@ sFontEx Settings_font;
 int S_lowframerate = 0;
 static UINT WM_TASKBARBUTTONCREATED;
 const std::wstring cur_version(__T("1.14"));
-const std::string cur_versionA("1.14 Test Build 5");
+const std::string cur_versionA("1.14 Test Build 6");
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0;
