@@ -49,6 +49,7 @@
 // * fixed getToolTip(..) not having break's in all the correct places
 // * fixed string id 34 not correctly showing the star symbol (alt code 9733)
 // * changed the non-rated part with %rating2% to use the empty star instead of a dot as it's not too clear (though easy to revert if not liked)
+// * fixed incorrect string mapping on the title formatting help message
 
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
@@ -2408,7 +2409,7 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 						msgtext += WASABI_API_LNGSTRINGW(IDS_HELP2);
 						msgtext += __T("\n\n");
 						msgtext += __T("\t---\t ");
-						msgtext += WASABI_API_LNGSTRINGW(IDS_HELP2);
+						msgtext += WASABI_API_LNGSTRINGW(IDS_HELP27);
 						msgtext += __T(" \t---\n");
 						msgtext += __T("%c%  -  ");
 						msgtext += WASABI_API_LNGSTRINGW(IDS_HELP3);
