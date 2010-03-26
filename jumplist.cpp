@@ -21,7 +21,6 @@ JumpList::~JumpList()
 	pcdl->Release();
 }
 
-
 // Creates a CLSID_ShellLink to insert into the Tasks section of the Jump List.  This type of Jump
 // List item allows the specification of an explicit command line to execute the task.
 HRESULT JumpList::_CreateShellLink(PCWSTR pszArguments, PCWSTR pszTitle, IShellLink **ppsl, int iconindex, bool WA)
