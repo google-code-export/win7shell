@@ -50,6 +50,8 @@
 // * fixed string id 34 not correctly showing the star symbol (alt code 9733)
 // * changed the non-rated part with %rating2% to use the empty star instead of a dot as it's not too clear (though easy to revert if not liked)
 // * fixed incorrect string mapping on the title formatting help message
+// * altered implementation for the remove title feature so it'll pad things out to ensure all buttons will appear as required even under the 'basic' theme
+// -> will now re-enable the text when the setting is altered as well when taskbar text scrolling is disabled
 
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
@@ -428,6 +430,13 @@ int init()
 					MessageBoxEx(plugin.hwndParent,
 								 WASABI_API_LNGSTRINGW(IDS_ERROR_REGISTERING_MOUSE_HOOK),
 								 BuildPluginNameW(), MB_ICONWARNING, 0);
+			}
+
+			// send this on init(..) to update the text incase Winamp has already started
+			// to play something and taskbar text scrolling is disabled (or enabled :) )
+			if (Settings.RemoveTitle)
+			{
+				SendMessageW(plugin.hwndParent,WM_SETTEXT,0,0);
 			}
 			return GEN_INIT_SUCCESS;
 		}
@@ -1309,9 +1318,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
 					if (p != NULL)
 						metadata.reset(p, false);
-
-					if (Settings.RemoveTitle)
-						SetWindowText(plugin.hwndParent, __T(""));
 					break;
 				}
 
@@ -1346,9 +1352,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 					wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
 					if (p != NULL)
 						metadata.reset(p, false);
-
-					if (Settings.RemoveTitle)
-						SetWindowText(plugin.hwndParent, __T(""));
 				}
 				break;
 
@@ -1520,8 +1523,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40001,0), 0);
 			break;
 
-		default:
-			return CallWindowProc(lpWndProcOld,hwnd,message,wParam,lParam);	 
+		case WM_SETTEXT:
+			if (Settings.RemoveTitle && !wParam)
+			{
+				wchar_t tmp[64] = {0};
+				for(int i = IDC_PCB1; i <= IDC_PCB10; i++)
+				{
+					if(Settings.Buttons[i-IDC_PCB1])
+					{
+						StringCchCat(tmp,64,L"     ");
+					}
+				}
+				SendMessageW(hwnd,WM_SETTEXT,wParam+1,(LPARAM)tmp);
+				return FALSE;
+			}
 	}
 
 	LRESULT ret = CallWindowProc(lpWndProcOld,hwnd,message,wParam,lParam);	 
@@ -1538,6 +1553,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			}
+			break;
 	}
 
 	return ret;
@@ -1629,10 +1645,6 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
  		WndProc(plugin.hwndParent, WM_WA_IPC, (WPARAM)L"", IPC_PLAYING_FILEW);
 		WndProc(plugin.hwndParent, WM_WA_IPC, IPC_CB_MISC_STATUS, IPC_CB_MISC);
 	}
-
-	if (Settings.RemoveTitle)					
-		if (GetWindowTextLength(plugin.hwndParent) != 0)
-			SetWindowText(plugin.hwndParent, __T(""));
 
 	if (!(Settings.Progressbar || Settings.VuMeter))
 		SetProgressState(TBPF_NOPROGRESS);	
@@ -1846,7 +1858,7 @@ void ReadSettings(HWND hwnd)
 	EnableWindow(GetDlgItem(hwnd, IDC_CHECK27), Settings.Thumbnailbuttons);
 
 	for (int i = IDC_PCB1; i <= IDC_PCB10; i++)
-		SendMessage(GetDlgItem(hwnd, i), (UINT) BM_SETCHECK, Settings.Buttons[i-IDC_PCB1], 0);		
+		SendMessage(GetDlgItem(hwnd, i), (UINT) BM_SETCHECK, Settings.Buttons[i-IDC_PCB1], 0);
 }
 
 void WriteSettings(HWND hwnd)
@@ -1871,7 +1883,20 @@ void WriteSettings(HWND hwnd)
 	if (GetDlgItem(hwnd, IDC_CHECK9) != NULL)
 		Settings.DisableUpdates = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK9)) == BST_CHECKED);
 	if (GetDlgItem(hwnd, IDC_CHECK10) != NULL)
+	{
 		Settings.RemoveTitle = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK10)) == BST_CHECKED);
+		// do this all so that the title can be cleared or reset as required on-the-fly
+		if(Settings.RemoveTitle)
+		{
+			SetWindowText(plugin.hwndParent,L"");
+		}
+		else
+		{
+			wchar_t tmp[1024] = {0};
+			GetWindowText(plugin.hwndParent,tmp,1024);
+			SetWindowText(plugin.hwndParent,tmp);
+		}
+	}
 	if (GetDlgItem(hwnd, IDC_CHECK25) != NULL)
 		Settings.AsIcon = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK25)) == BST_CHECKED);
 	if (GetDlgItem(hwnd, IDC_CHECK26) != NULL)
