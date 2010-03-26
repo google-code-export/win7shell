@@ -52,6 +52,7 @@
 // * fixed incorrect string mapping on the title formatting help message
 // * altered implementation for the remove title feature so it'll pad things out to ensure all buttons will appear as required even under the 'basic' theme
 // -> will now re-enable the text when the setting is altered as well when taskbar text scrolling is disabled
+// * changed the prompt for player control buttons to allow Winamp to be restarted if yes is selected
 
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
@@ -86,8 +87,6 @@
 #include "metadata.h"
 #include "jumplist.h"
 #include "albumart.h"
-
-#include "HPerformanceCounter.h"
 
 using namespace Gdiplus;
 
@@ -909,13 +908,14 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 					}
 					else
 					{
-						double ratio = (double)cur_h / (double)(height);
+						float ratio = (float)cur_h / (float)(height);
+						float widthD = (float)width;
 						if (ratio == 0)
 							ratio = 1;
-						ratio = (double)cur_w / ratio;
-						if (ratio > width)
-							ratio = width;
-						gfx.DrawImage(&tmpbmp, RectF((int)(((double)width-(double)ratio)/(double)2), 0, ratio, height));
+						ratio = (float)cur_w / ratio;
+						if (ratio > widthD)
+							ratio = widthD;
+						gfx.DrawImage(&tmpbmp, RectF(((widthD-ratio)/2.0f), 0, ratio, (float)height));
 					}
 
 					if (cur_image) 
@@ -1099,7 +1099,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 	int heightsofar=0;
 	for (int i=0; i < lines; i++)
 	{
-		sf.SetAlignment(StringAlignment::StringAlignmentNear);
+		sf.SetAlignment(StringAlignmentNear);
 		int left = 2;
 		if (Settings.AsIcon && !totheleft && !TX[i].forceleft)
 			left = ICONSIZEPX + 4;
@@ -1133,7 +1133,7 @@ HBITMAP DrawThumbnail(int width, int height, int force)
 				{
 					retrect.X = 98 - ((REAL)retrect.Width / 2);
 					if (retrect.X <= 0)
-						retrect.X = left;
+						retrect.X = (float)left;
 				}
 			if (Settings.AsIcon && retrect.X < (ICONSIZEPX + 4) && !totheleft && !TX[i].forceleft)
 				retrect.X = ICONSIZEPX + 4;
@@ -1252,8 +1252,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			Graphics gfx(&bmp);
 			gfx.SetTextRenderingHint(TextRenderingHintAntiAlias);
 
-			gfx.DrawString(ss.str().c_str(), -1, &font, RectF(0, 0, rect.right-rect.left-1, 
-				rect.bottom-rect.top-1), &sf, &brush);
+			gfx.DrawString(ss.str().c_str(), -1, &font, RectF(0, 0, (float)(rect.right-rect.left-1), (float)(rect.bottom-rect.top-1)), &sf, &brush);
 			HBITMAP hbmp;
 			bmp.GetHBITMAP(Color::Black, &hbmp);
 			
@@ -1274,16 +1273,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				step  = 0;
 			}
 
-			CHPerformanceCounter pc;
-			pc.start();
-
 			HBITMAP thumbnail = DrawThumbnail(HIWORD(lParam), LOWORD(lParam), -1);	
-
-			pc.stop();
-			double time = pc.getValue();
-			
 			if (Settings.Shrinkframe)
-			Sleep(50);
+				Sleep(50);
 
 			HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
 			if (FAILED(hr))
@@ -2175,10 +2167,13 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 					if (b1 != Settings.Thumbnailbuttons || b2)
 					{
 						wchar_t title[128];
-						MessageBoxEx(cfgwindow,
+						if(MessageBoxEx(cfgwindow,
 									 WASABI_API_LNGSTRINGW(IDS_MOD_PLAYER_BUTTONS_RESTART),
 									 WASABI_API_LNGSTRINGW_BUF(IDS_APPLYING_SETTINGS, title, 128),
-									 MB_ICONWARNING, 0);
+									 MB_ICONWARNING | MB_YESNO, 0) == IDYES)
+						{
+							PostMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_RESTARTWINAMP);
+						}
 					}
 
 					if (Settings.Overlay)
@@ -2224,7 +2219,7 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 			case IDC_BUTTON2:
 			case IDCANCEL:
 				if (applypressed)
-				{				
+				{	
 					applypressed = false;
 
 					memcpy(&Settings, &Settings_backup, sizeof(Settings_backup));
@@ -2319,6 +2314,28 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 						DoJl();					
 					}
 
+					for (int i=0; i<16; i++)
+					{
+						if (Settings.Buttons[i] != Buttons[i])
+						{
+							b2 = true;
+							break;
+						}
+					}
+
+					if (b1 != Settings.Thumbnailbuttons || b2)
+					{
+						wchar_t title[128];
+						if(MessageBoxEx(cfgwindow, WASABI_API_LNGSTRINGW(IDS_MOD_PLAYER_BUTTONS_RESTART),
+									WASABI_API_LNGSTRINGW_BUF(IDS_APPLYING_SETTINGS, title, 128),
+									MB_ICONWARNING | MB_YESNO, 0) == IDYES)
+						{
+							PostMessage(hwnd, WM_COMMAND, MAKEWPARAM(IDC_BUTTON1,0), (LPARAM)GetDlgItem(hwnd, IDC_BUTTON1));
+							PostMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_RESTARTWINAMP);
+							break;
+						}
+					}
+
 					SetWindowAttr();
 
 					if (Settings.VuMeter)
@@ -2330,21 +2347,6 @@ static INT_PTR CALLBACK cfgWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 					{
 						delete background;
 						background = 0;
-					}
-
-					for (int i=0; i<16; i++)
-						if (Settings.Buttons[i] != Buttons[i])
-						{
-							b2 = true;
-							break;
-						}
-
-					if (b1 != Settings.Thumbnailbuttons || b2)
-					{
-						wchar_t title[128];
-						MessageBoxEx(cfgwindow, WASABI_API_LNGSTRINGW(IDS_MOD_PLAYER_BUTTONS_RESTART),
-									WASABI_API_LNGSTRINGW_BUF(IDS_APPLYING_SETTINGS, title, 128),
-									MB_ICONWARNING, 0);
 					}
 
 					if (Settings.Overlay)
@@ -2879,8 +2881,7 @@ LRESULT CALLBACK KeyboardEvent (int nCode, WPARAM wParam, LPARAM lParam)
 	Graphics gfx(&bmp);
 	gfx.SetTextRenderingHint(TextRenderingHintAntiAlias);
 
-	gfx.DrawString(ss.str().c_str(), -1, &font, RectF(0, 0, rect.right-rect.left-1, 
-		rect.bottom-rect.top-1), &sf, &brush);
+	gfx.DrawString(ss.str().c_str(), -1, &font, RectF(0, 0, (float)(rect.right-rect.left-1), (float)(rect.bottom-rect.top-1)), &sf, &brush);
 	HBITMAP hbmp;
 	bmp.GetHBITMAP(Color::Black, &hbmp);
 
