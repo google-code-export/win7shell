@@ -1,6 +1,8 @@
 #summary Documentation about the plug-in's configuration
 #labels Featured,Phase-Deploy
 
+<font color="red"><b>This page will be updated after the next public release of the plug-in.</b></font>
+
 <b>I will write a short description about each control on the plug-in configuration window. </b>
 
 = Text =
