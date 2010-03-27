@@ -5,7 +5,7 @@
 
 === Operating System ===
 
-First of all, don't even try to use this plug-in, if you don't have <b>Windows 7</b> (Or maybe that Windows 2010 Server). It was tested on the final versions, the beta and Rc versions are not supported.
+First of all, don't even try to use this plug-in, if you don't have <b>Windows 7</b> (Or maybe Windows 2010 Server). It was tested on the final versions, the beta and RC releases are not supported.
 
 === Winamp ===
 
