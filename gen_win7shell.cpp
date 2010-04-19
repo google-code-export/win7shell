@@ -54,6 +54,10 @@
 // -> will now re-enable the text when the setting is altered as well when taskbar text scrolling is disabled
 // * changed the prompt for player control buttons to allow Winamp to be restarted if yes is selected
 
+// changes from v1.14 Test 6
+// *tweaking the blank space padding from 5 to 7 characters to hopefully resolve osmosis's issues under basic theme...
+// -> appears to work better now i've re-tested things on this version so will see what comes back..
+
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
 
@@ -96,7 +100,7 @@ sFontEx Settings_font;
 int S_lowframerate = 0;
 static UINT WM_TASKBARBUTTONCREATED;
 const std::wstring cur_version(__T("1.14"));
-const std::string cur_versionA("1.14 Test Build 6");
+const std::string cur_versionA("1.14 Test Build 7");
 UINT s_uTaskbarRestart=0;
 WNDPROC lpWndProcOld = 0;
 ITaskbarList3* pTBL = 0;
@@ -1523,7 +1527,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					if(Settings.Buttons[i-IDC_PCB1])
 					{
-						StringCchCat(tmp,64,L"     ");
+						StringCchCat(tmp,64,L"       ");
 					}
 				}
 				SendMessageW(hwnd,WM_SETTEXT,wParam+1,(LPARAM)tmp);
