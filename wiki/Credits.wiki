@@ -3,7 +3,7 @@
 
 = Credits =
 
-<b>Magyari Attila</b> - myself, project owner (e-mail: [mailto:atti86@gmail.com atti86@gmail.com])
+<b>Magyari Attila</b> - myself, project owner, coder (e-mail: [mailto:atti86@gmail.com atti86@gmail.com])
 
 ----
 
@@ -11,6 +11,8 @@ Next I'd like to thank some people / group of people who helped me with various 
 
 
 <b>Paweł Porwisz</b> - NSIS Installer script and Polish translation
+
+<b>Darren Owen</b> - Coder
 
 <b>Scott Wheeler</b> - TagLib Audio Meta-Data Library ( Licenses: [http://www.gnu.org/licenses/lgpl.html LGPL] [http://www.mozilla.org/MPL/MPL-1.1.html MPL] )
 
