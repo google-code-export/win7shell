@@ -57,6 +57,8 @@
 // changes from v1.14 Test 6
 // *tweaking the blank space padding from 5 to 7 characters to hopefully resolve osmosis's issues under basic theme...
 // -> appears to work better now i've re-tested things on this version so will see what comes back..
+// * adjusted font creation on new installs to now create a font which is correct (will need verification)
+// * adjusted the font chooser to ignore non-scalable and oem fonts which aren't showing correctly when i've tried then (causes whole preview area to shrink)
 
 // sort out opening prefs/ofd to be slightly delayed so that all of Winamp can be correctly started before they appear (affects modern skins)
 // fix jump list to work better - is there aa limit on the number of items to be shown??
@@ -367,10 +369,10 @@ int init()
 			if (!GetPrivateProfileStruct(__T("win7shell"), __T("font"), &Settings_font, sizeof(Settings_font), W_INI.c_str()))
 			{
 				LOGFONT ft;
+				ZeroMemory(&ft, sizeof(ft));
 				wcsncpy(ft.lfFaceName, L"Segoe UI", 32);
-				ft.lfHeight = 14;
-				ft.lfStrikeOut = 0;
-				ft.lfUnderline = 0;
+				ft.lfHeight = -14;
+				ft.lfWeight = FW_NORMAL;
 
 				Settings_font.color = RGB(255,255,255);
 				Settings_font.bgcolor = RGB(0,0,0);
@@ -2528,7 +2530,12 @@ INT_PTR CALLBACK TabHandler(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPara
 						cf.hwndOwner = cfgwindow;					
 						cf.rgbColors = Settings_font.color;
 						cf.lpLogFont = &Settings_font.font;
-						cf.Flags = CF_EFFECTS | CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT;
+						cf.Flags = CF_EFFECTS | CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT |
+								   // added these styles to prevent fonts being listed
+								   // which appear to have no effect when used (will
+								   // need to investigate further but this is a decent
+								   // safety blanket on things for the time being - dro).
+								   CF_SCALABLEONLY | CF_NOOEMFONTS;
 						
 						if (ChooseFont(&cf))
 						{
