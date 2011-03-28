@@ -1,0 +1,35 @@
+#summary Come on, buy me a beer!
+#labels Deprecated
+
+= Buy me a beer, if you like this plug-in =
+
+<br />
+
+|| Hello, my name is Atti, and I am the primary developer of this plug-in. *Please sacrifice 2 minutes of your precious time*, as I've sacrificed hundreds of sleepless hours to create this for you, since I started it almost two years ago, *and read this page :)*. Here is a picture of me basking in sunlight, so you have an idea who is talking to you. || http://dl.dropbox.com/u/3568892/me.jpg ||
+
+<br />
+
+== Why you should buy me a beer ==
+
+ * Because beer is good, and a "temporary solution" to everything
+ * To thank me for working hard for free to create this plug-in
+ * To support open-source software development (free = good)
+ * To assist with continuing development
+ * You're a good person who values the effort of other people
+ * Because I will write your name on a thank you list (if you want)
+
+== Why you should not buy me a beer ==
+
+ * Because you don't have money (I understand)
+ * Because you're lazy to spend 5 minutes on this
+ * Because you're cheap
+ * You don't like the plug-in :(
+ * You don't appreciate free work
+
+<br />
+
+All jokes aside, I really do ask only for something small, something that isn't a big deal for you. Unfortunately many of you don't live in my area, and you can't buy me an actual beer, so I've set up a PayPal account where you can "donate a beer" to show your support. I will be extremely grateful. 
+
+[https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=LC4XBXL5KMJRL https://www.paypalobjects.com/WEBSCR-640-20110306-1/en_US/i/btn/btn_donateCC_LG_global.gif]
+
+[http://www.google.com Google home page]
