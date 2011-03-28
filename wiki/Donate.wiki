@@ -17,6 +17,7 @@
  * To assist with continuing development
  * You're a good person who values the effort of other people
  * Because I will write your name on a thank you list (if you want)
+ * Because I will give you a hug of appreciation
 
 == Why you should not buy me a beer ==
 
@@ -28,8 +29,12 @@
 
 <br />
 
-All jokes aside, I really do ask only for something small, something that isn't a big deal for you. Unfortunately many of you don't live in my area, and you can't buy me an actual beer, so I've set up a PayPal account where you can "donate a beer" to show your support. I will be extremely grateful. 
+All jokes aside, I really do ask only for something small, something that isn't a big deal for you. Unfortunately many of you don't live in my area, and you can't buy me an actual beer, so I've set up a PayPal account where you can "donate a beer" to show your support. I will be extremely grateful.
 
-[https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=LC4XBXL5KMJRL https://www.paypalobjects.com/WEBSCR-640-20110306-1/en_US/i/btn/btn_donateCC_LG_global.gif]
+<br />
 
-[http://www.google.com Google home page]
+|| *Amount* || *Effect* || *PayPal Link* || *Conversion* ||
+|| 5 EUR || Beer / Coffee || [https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=B9JYJ89D7X59N https://www.paypalobjects.com/WEBSCR-640-20110306-1/en_GB/i/btn/btn_donate_LG.gif] || [http://www.google.com/search?hl=en&q=5+eur+in+usd USD] [http://www.google.com/search?hl=en&q=5+eur+in+gbp GBP] [http://www.google.com/search?hl=en&q=5+eur+in+russian+rubble USD] ||
+|| 10 EUR || Meal + Beer || [https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4ZAPNH86CZMSS https://www.paypalobjects.com/WEBSCR-640-20110306-1/en_GB/i/btn/btn_donate_LG.gif] || [http://www.google.com/search?hl=en&q=10+eur+in+usd USD] [http://www.google.com/search?hl=en&q=10+eur+in+gbp GBP] [http://www.google.com/search?hl=en&q=10+eur+in+russian+rubble USD] ||
+|| 45 EUR || Yours truly :) || [https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X57YBAMMGP2U4 https://www.paypalobjects.com/WEBSCR-640-20110306-1/en_GB/i/btn/btn_donate_LG.gif] || [http://www.google.com/search?hl=en&q=45+eur+in+usd USD] [http://www.google.com/search?hl=en&q=45+eur+in+gbp GBP] [http://www.google.com/search?hl=en&q=45+eur+in+russian+rubble USD] ||
+|| Other || Specify amount... || [https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=LC4XBXL5KMJRL https://www.paypalobjects.com/WEBSCR-640-20110306-1/en_GB/i/btn/btn_donate_LG.gif] || N/A ||
