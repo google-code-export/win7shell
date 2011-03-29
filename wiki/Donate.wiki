@@ -1,5 +1,6 @@
 #summary Come on, buy me a beer!
-#labels Deprecated
+#labels Featured
+
 
 = Buy me a beer, if you like this plug-in =
 
