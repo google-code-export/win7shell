@@ -9,16 +9,11 @@
 
 Next I'd like to thank some people / group of people who helped me with various aspects of my project. (If you do not wish to appear here, or you want another name/nick displayed, just tell me)
 
+*Directly*
 
-<b>Paweł Porwisz</b> - NSIS Installer script and Polish translation
+<b>Paweł Porwisz</b> - NSIS Installer script and Polish translation + moral support :)
 
 <b>Darren Owen</b> - Coder
-
-<b>Scott Wheeler</b> - TagLib Audio Meta-Data Library ( Licenses: [http://www.gnu.org/licenses/lgpl.html LGPL] [http://www.mozilla.org/MPL/MPL-1.1.html MPL] )
-
-<b>NSIS installer</b> - [http://nsis.sourceforge.net/License Licenses]
-
-<b>Nikolaus Gebhardt</b> - irrXML API
 
 <b>Donors<b>
  * osmosis
@@ -48,9 +43,17 @@ Next I'd like to thank some people / group of people who helped me with various 
  * Seven
  * Suffo
 
-
-
 <b>BD-Calvin, Ensiferum, Silex, TinoDidriksen and others</b> - Lots of help with coding in the #c++ IRC channel on Quakenet [irc://irc.quakenet.org/C++ irc://irc.quakenet.org/C++]
+
+<b>Arnab Datta</b> - Icons
+
+<b>Winamp forums</b> - [http://forums.winamp.com/showthread.php?s=&threadid=310348 win7shell thread]
+
+*Indirectly*
+
+<b>NSIS installer</b> - [http://nsis.sourceforge.net/License Licenses]
+
+<b>Nikolaus Gebhardt</b> - irrXML API
 
 <b>Yochay Kiriaty</b> - Jump list code
 
@@ -58,6 +61,4 @@ Next I'd like to thank some people / group of people who helped me with various 
 
 <b>Killboy/SND</b> - Tabbed pages code
 
-<b>Arnab Datta</b> - Icons
-
-<b>Winamp forums</b> - [http://forums.winamp.com/showthread.php?s=&threadid=310348 win7shell thread]
+<b>Scott Wheeler</b> - TagLib Audio Meta-Data Library ( Licenses: [http://www.gnu.org/licenses/lgpl.html LGPL] [http://www.mozilla.org/MPL/MPL-1.1.html MPL] )
