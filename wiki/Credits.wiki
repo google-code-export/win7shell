@@ -49,6 +49,8 @@ Next I'd like to thank some people / group of people who helped me with various 
 
 <b>Winamp forums</b> - [http://forums.winamp.com/showthread.php?s=&threadid=310348 win7shell thread]
 
+<br />
+
 === Indirectly ===
 
 <b>NSIS installer</b> - [http://nsis.sourceforge.net/License Licenses]
