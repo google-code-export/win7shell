@@ -9,7 +9,7 @@
 
 Next I'd like to thank some people / group of people who helped me with various aspects of my project. (If you do not wish to appear here, or you want another name/nick displayed, just tell me)
 
-*Directly*
+=== Directly ===
 
 <b>Paweł Porwisz</b> - NSIS Installer script and Polish translation + moral support :)
 
