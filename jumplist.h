@@ -1,3 +1,6 @@
+#ifndef jumplist_h__
+#define jumplist_h__
+
 #include <objectarray.h>
 #include <shobjidl.h>
 #include <propkey.h>
@@ -30,3 +33,4 @@ private:
 	std::wstring path, s1, s2, s3, s4, s5, s6;
 };
 
+#endif // jumplist_h__

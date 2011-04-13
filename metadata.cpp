@@ -3,7 +3,7 @@
 #include <map>
 #include <ctype.h>
 #include "metadata.h"
-#include "..\..\sdk\winamp\wa_ipc.h"
+#include "sdk/winamp/wa_ipc.h"
 
 using namespace std;
 
@@ -98,7 +98,7 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 	return ret;
 }
 
-std::wstring MetaData::getFileName()
+std::wstring MetaData::getFileName() const
 {
 	return mfilename;
 }
