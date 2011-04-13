@@ -1,19 +1,19 @@
 #include <windows.h>
 
-#include <tbytevector.h>
+/*#include <tbytevector.h>
 #include <mpegfile.h>
 #include <attachedpictureframe.h>
 #include <string>
 #include <gdiplus.h>
-#include <apetag.h>
+#include <apetag.h>*/
 
 #include "albumart.h"
 
-using namespace TagLib;
+//using namespace TagLib;
 
 bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap &retimg, int height)
 {
-	MPEG::File f(fname.c_str());
+	/*MPEG::File f(fname.c_str());
 
 	if (f.isOpen())
 	{
@@ -74,7 +74,7 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap &retimg, int height)
 				}
 			}
 		}
-	}
+	}*/
 	
 	return false;
 }

@@ -7,11 +7,9 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <strsafe.h>
 #include "jumplist.h"
-#include "irrXML.h"
-
-using namespace irr;
-using namespace io;
+#include "api.h"
 
 JumpList::JumpList()
 {
@@ -22,7 +20,6 @@ JumpList::~JumpList()
 {
 	pcdl->Release();
 }
-
 
 // Creates a CLSID_ShellLink to insert into the Tasks section of the Jump List.  This type of Jump
 // List item allows the specification of an explicit command line to execute the task.
@@ -87,7 +84,7 @@ HRESULT JumpList::_CreateShellLink(PCWSTR pszArguments, PCWSTR pszTitle, IShellL
 	return hr;
 }
 
-bool JumpList::CreateJumpList(std::wstring pluginpath, std::string plfilepath, std::wstring pref, std::wstring fromstart, 
+bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::wstring fromstart, 
 			std::wstring resume, std::wstring openfile, std::wstring bookmarks, std::wstring pltext, bool recent, 
 			bool frequent, bool tasks, bool addbm, bool playlist, const std::wstring bms)
 {
@@ -119,6 +116,7 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::string plfilepath, s
 
 				if (!_IsItemInArray(line2, poaRemoved))
 				{
+					psl->SetDescription(line2.c_str());
 					poc->AddObject(psl);				
 				}
 				psl->Release();			
@@ -148,7 +146,7 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::string plfilepath, s
 			_AddCategoryToList();	
 
 		if (playlist)
-			hr = _AddCategoryToList2(plfilepath);
+			hr = _AddCategoryToList2();
 
 		if (tasks)
 			_AddTasksToList();
@@ -255,7 +253,7 @@ bool JumpList::_IsItemInArray(std::wstring path, IObjectArray *poaRemoved)
 			{
 				std::wstring removedpath;
 				removedpath.resize(MAX_PATH);
-				fRet = psiCompare->GetArguments(&removedpath[0], MAX_PATH);
+				fRet = (psiCompare->GetArguments(&removedpath[0], MAX_PATH)== S_OK);
 				removedpath.resize(wcslen(removedpath.c_str()));
 				fRet = !path.compare(removedpath);
 
@@ -285,61 +283,36 @@ HRESULT JumpList::_AddCategoryToList()
 
 // Adds a custom category to the Jump List.  Each item that should be in the category is added to
 // an ordered collection, and then the category is appended to the Jump List as a whole.
-HRESULT JumpList::_AddCategoryToList2(std::string path)
+HRESULT JumpList::_AddCategoryToList2()
 {
 	IObjectCollection *poc;
 	HRESULT hr = CoCreateInstance(CLSID_EnumerableObjectCollection, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&poc));
 
-	IrrXMLReaderUTF16 * xml = createIrrXMLReaderUTF16((path + "playlists.xml").c_str());
+	// enumerate through playlists (need to see if can use api_playlists.h via sdk)
+	if(AGAVE_API_PLAYLISTS && AGAVE_API_PLAYLISTS->GetCount()){
+		for(size_t i = 0; i < AGAVE_API_PLAYLISTS->GetCount(); i++){
+			size_t numItems;
+			IShellLink * psl;
+			std::wstring title;
 
-	// parse the file until end reached
-	while(xml && xml->read())
-	{
-		switch(xml->getNodeType())
-		{
-		case EXN_ELEMENT:
-			{		
-				const char16 *vl = xml->getNodeName();
-				if (wcscmp((const wchar_t*)vl, L"playlist") != 0)
-					break;
+			std::wstring tmp;
+			tmp.resize(MAX_PATH);
 
-				IShellLink * psl;
-				std::wstring title;
+			title = AGAVE_API_PLAYLISTS->GetName(i);
 
-				vl = xml->getAttributeValue(0);
-				std::wstring args = (wchar_t*)vl;
-
-				std::wstring tmp;
-				tmp.resize(MAX_PATH);
-				mbstowcs(&tmp[0], path.c_str(), MAX_PATH);
-				tmp.resize(wcslen(tmp.c_str()));
-				tmp += args;
-
-				args.resize(MAX_PATH);
-				GetShortPathName(tmp.c_str(), &args[0], MAX_PATH);
-				args.resize(wcslen(args.c_str()));
-				
-				vl = xml->getAttributeValue(1);
-				title = (wchar_t*)vl;
-				title += L" [";
-
-				vl = xml->getAttributeValue(3);
-				title += (wchar_t*)vl;
-				title += L"]";
-				
-				hr = _CreateShellLink(args.c_str(), title.c_str(), &psl, 16, true);
-				if (SUCCEEDED(hr))
-				{
-					hr = poc->AddObject(psl);
-					psl->Release();
-				}
+			AGAVE_API_PLAYLISTS->GetInfo(i, api_playlists_itemCount, &numItems, sizeof(numItems));
+			StringCchPrintf((LPWSTR)tmp.c_str(),tmp.size(),L" [%d]",numItems);
+			title += tmp;
+			
+			hr = _CreateShellLink(AGAVE_API_PLAYLISTS->GetFilename(i), title.c_str(), &psl, 16, true);
+			if (SUCCEEDED(hr))
+			{
+				psl->SetDescription(AGAVE_API_PLAYLISTS->GetFilename(i));
+				hr = poc->AddObject(psl);
+				psl->Release();
 			}
-			break;
 		}
 	}
-
-	// delete the xml parser after usage
-	delete xml;
 
 	IObjectArray *poa;
 	hr = poc->QueryInterface(IID_PPV_ARGS(&poa));

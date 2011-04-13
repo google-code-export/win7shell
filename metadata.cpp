@@ -3,7 +3,9 @@
 #include <map>
 #include <ctype.h>
 #include "metadata.h"
-#include "wa_ipc.h"
+#include "..\..\sdk\winamp\wa_ipc.h"
+
+using namespace std;
 
 void MetaData::setWinampWindow(HWND winampwindow)
 {
@@ -20,12 +22,8 @@ bool MetaData::reset(std::wstring filename, bool force)
 
 	if (filename != mfilename)
 	{
-		mfilename = filename;
 		cache.clear();
-
-	/*	WIN32_FIND_DATA ffd;
-		isFile = FindFirstFile(mfilename.c_str(), &ffd) != INVALID_HANDLE_VALUE;*/
-
+		mfilename = filename;
 		return true;
 	}	
 	else
@@ -34,17 +32,21 @@ bool MetaData::reset(std::wstring filename, bool force)
 
 std::wstring MetaData::getMetadata(std::wstring tag)
 {
-	if (cache.find(tag) != cache.end())
-		return cache.find(tag)->second;
-
 	if (mfilename.empty())
 		return L"";
+
+	if (!cache.empty() && cache.find(tag) != cache.end())
+		return cache.find(tag)->second;
+
+	/*wchar_t a[32];
+	wsprintf(a,L"%s %d",tag.c_str(),cache.size());
+	MessageBox(0,mfilename.c_str(),a,0);*/
 
 	std::wstring ret;
 	ret.reserve(512);
 	ret.resize(512,0);
 
-	extendedFileInfoStructW efs;
+	extendedFileInfoStructW efs = {0};
 	efs.filename= mfilename.c_str();
 	efs.metadata=tag.c_str();
 	efs.ret=&ret[0];	
@@ -58,7 +60,7 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 		{
 			ret = (wchar_t*) SendMessage(mhwnd,WM_WA_IPC,0,IPC_GET_PLAYING_TITLE);
 			if (ret.length() == 0)
-				return std::wstring(L"");
+				return L"";
 
 			size_t pos = ret.find_first_of('-');
 			if (pos != std::wstring::npos && pos != 0)							
@@ -79,7 +81,7 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 			}
 			else
 				if (tag == L"artist")
-					return std::wstring(L"");
+					return L"";
 		}
 		else
 			return L"";
