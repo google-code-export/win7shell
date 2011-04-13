@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib dwmapi.lib gdiplus.lib Msimg32.lib ws2_32.lib propsys.lib shlwapi.lib TagLib\tagd.lib"
+				AdditionalDependencies="comctl32.lib dwmapi.lib gdiplus.lib Msimg32.lib ws2_32.lib propsys.lib shlwapi.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -87,7 +87,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="lng_generator &quot;$(OutDir)\$(ProjectName).dll&quot; /build&#x0D;&#x0A;copy &quot;$(OutDir)\$(ProjectName).dll&quot; &quot;$(ProgramFiles)\Winamp\Plugins&quot; /y&#x0D;&#x0A;"
+				CommandLine="lng_generator &quot;$(OutDir)\$(ProjectName).dll&quot; /build&#x0D;&#x0A;copy &quot;$(OutDir)\$(ProjectName).dll&quot; &quot;$(ProgramFiles)\Winamp\Plugins&quot; /y"
 			/>
 		</Configuration>
 		<Configuration
@@ -115,6 +115,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="2"
+				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\..\sdk\wasabi"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GEN_WIN7SHELL_EXPORTS"
 				StringPooling="true"
@@ -140,6 +142,7 @@
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
 				RandomizedBaseAddress="1"
 				TargetMachine="1"
 			/>
@@ -243,6 +246,221 @@
 				CommandLine="lng_generator &quot;$(OutDir)\$(ProjectName).dll&quot; /build&#x0D;&#x0A;copy &quot;$(OutDir)\$(ProjectName).dll&quot; &quot;$(ProgramFiles)\Winamp\Plugins&quot; /y&#x0D;&#x0A;"
 			/>
 		</Configuration>
+		<Configuration
+			Name="half-release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				InlineFunctionExpansion="0"
+				FavorSizeOrSpeed="0"
+				WholeProgramOptimization="false"
+				AdditionalIncludeDirectories="..\..\sdk\wasabi"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GEN_WIN7SHELL_EXPORTS"
+				StringPooling="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib dwmapi.lib gdiplus.lib Msimg32.lib ws2_32.lib propsys.lib shlwapi.lib"
+				GenerateManifest="false"
+				IgnoreDefaultLibraryNames="TagLib\tag.lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="1"
+				EnableCOMDATFolding="1"
+				OptimizeForWindows98="1"
+				RandomizedBaseAddress="1"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+				EmbedManifest="false"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="lng_generator &quot;$(OutDir)\$(ProjectName).dll&quot; /build&#x0D;&#x0A;copy &quot;$(OutDir)\$(ProjectName).dll&quot; &quot;$(ProgramFiles)\Winamp\Plugins&quot; /y&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="half-debug_|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="half-debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="..\..\sdk\wasabi"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GEN_WIN7SHELL_EXPORTS"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib dwmapi.lib gdiplus.lib Msimg32.lib ws2_32.lib propsys.lib shlwapi.lib"
+				LinkIncremental="2"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="lng_generator &quot;$(OutDir)\$(ProjectName).dll&quot; /build&#x0D;&#x0A;copy &quot;$(OutDir)\$(ProjectName).dll&quot; &quot;$(ProgramFiles)\Winamp\Plugins&quot; /y"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -265,6 +483,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\lines.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\metadata.cpp"
 				>
 				<FileConfiguration
@@ -278,9 +500,32 @@
 						WholeProgramOptimization="false"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="half-release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						EnableIntrinsicFunctions="false"
+						WholeProgramOptimization="false"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\renderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\settings.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\tabs.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\taskbar.cpp"
 				>
 			</File>
 			<File
@@ -310,7 +555,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\lines.h"
+				>
+			</File>
+			<File
 				RelativePath=".\metadata.h"
+				>
+			</File>
+			<File
+				RelativePath=".\renderer.h"
 				>
 			</File>
 			<File
@@ -318,7 +571,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\settings.h"
+				>
+			</File>
+			<File
 				RelativePath=".\tabs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\taskbar.h"
+				>
+			</File>
+			<File
+				RelativePath=".\tools.h"
 				>
 			</File>
 			<File

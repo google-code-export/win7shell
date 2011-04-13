@@ -7,7 +7,7 @@
 #include <windows.h>
 #include <commctrl.h> // Tabs
 #include <shlwapi.h>  // DllGetVersion
-#include "..\..\sdk\winamp\wa_ipc.h"
+#include "sdk/winamp/wa_ipc.h"
 
 // Flags for EnableThemeDialogTexture
 #define ETDT_DISABLE       0x00000001

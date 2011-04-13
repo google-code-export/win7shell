@@ -1,3 +1,6 @@
+#ifndef versionchecker_h__
+#define versionchecker_h__
+
 #include <string>
 
 #define MAXDATASIZE 1000
@@ -13,3 +16,5 @@ public:
 private:
 	bool inited;
 };
+
+#endif // versionchecker_h__

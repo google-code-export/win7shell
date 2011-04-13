@@ -16,7 +16,7 @@ extern api_service *serviceManager;
 extern api_memmgr *memmgrApi;
 #define WASABI_API_MEMMGR memmgrApi
 
-#include "../playlist/api_playlists.h"
+#include "playlist/api_playlists.h"
 extern api_playlists *playlistsApi;
 #define AGAVE_API_PLAYLISTS playlistsApi
 

@@ -1,3 +1,6 @@
+#ifndef metadata_h__
+#define metadata_h__
+
 #include <windows.h>
 #include <string>
 #include <map>
@@ -11,7 +14,7 @@ public:
 	void setWinampWindow(HWND winampwindow);
 	bool reset(std::wstring, bool);
 	std::wstring getMetadata(std::wstring tag);
-	std::wstring getFileName();
+	std::wstring getFileName() const;
 	bool isFile;
 
 private:
@@ -22,3 +25,5 @@ private:
 	std::map<std::wstring, std::wstring> cache;
 	std::wstring mfilename;
 };
+
+#endif // metadata_h__
