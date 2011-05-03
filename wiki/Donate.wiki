@@ -6,7 +6,8 @@
 
 <br />
 
-|| Hello, my name is Atti, and I am the primary developer of this plug-in. *Please sacrifice 2 minutes of your precious time*, as I've sacrificed hundreds of sleepless hours to create this for you, since I started it almost two years ago, *and read this page :)*. Here is a picture of me basking in sunlight, so you have an idea who is talking to you. || http://dl.dropbox.com/u/3568892/me.jpg ||
+|| Hello, my name is Atti, and I am the primary developer of this plug-in. *Please sacrifice 2 minutes of your precious time*, 
+as I've sacrificed hundreds of sleepless hours to create this for you, since I started it almost two years ago, *and read this page :)*. Here is a picture of me basking in sunlight, so you have an idea who is talking to you. || http://dl.dropbox.com/u/3568892/me.jpg ||
 
 <br />
 
