@@ -27,8 +27,58 @@ namespace tools
     bool is_in_recent(std::wstring filename);
     HIMAGELIST prepareIcons();
     std::wstring SecToTime(int sec);
+    std::wstring getToolTip(int button);
+    int getBitmap(int button);
 
     // Function definitions
+    std::wstring getToolTip(int button)
+    {
+        int strID = -1;
+
+        switch (button)
+        {
+        case 0:
+            strID = IDS_PLAY;
+            break;
+        case 1076:
+            strID = IDS_PREVIOUS;
+            break;
+        case 1077:
+            strID = IDS_PAUSE;
+            break;
+        case 1078:
+            strID = IDS_STOP;
+            break;
+        case 1079:
+            strID = IDS_NEXT;
+            break;
+        case 1080:
+            strID = IDS_RATE;
+            break;
+        case 1081:
+            strID = IDS_VOLUME_DOWN;
+            break;
+        case 1082:
+            strID = IDS_VOLUME_UP;
+            break;
+        case 1083:
+            strID = IDS_OPEN_FILE;
+            break;
+        case 1084:
+            strID = IDS_MUTE;
+            break;
+        case 1085:
+            strID = IDS_STOP_AFTER_CURRENT;
+            break;
+        }
+
+        if(strID != -1)
+        {
+            return WASABI_API_LNGSTRINGW(strID);
+        }
+        return L"";
+    }
+
     std::wstring getBMS(HWND WinampWindow)
     {
         if(BM_path.empty())
@@ -64,7 +114,7 @@ namespace tools
     }
     
     std::wstring getWinampINIPath(HWND wnd)
-    {
+    {        
 	    if(INI_DIR_path.empty())
 	    {
 		    if(IsWindow(wnd))
@@ -347,6 +397,35 @@ namespace tools
             ss << ZS;
 
         return ss.str();
+    }
+
+    int getBitmap(int button)
+    {
+        switch (button)
+        {
+            case TB_PREVIOUS:
+                return 1;
+            case TB_PLAYPAUSE:
+                return 2;
+            case TB_STOP:
+                return 3;
+            case TB_NEXT:
+                return 4;
+            case TB_RATE:
+                return 5;
+            case TB_VOLDOWN:
+                return 6;
+            case TB_VOLUP:
+                return 7;
+            case TB_OPENFILE:
+                return 8;
+            case TB_MUTE:
+                return 9;
+            case TB_STOPAFTER:
+                return 10;
+        }
+
+        return -1;
     }
 }
 #endif // tools_h__

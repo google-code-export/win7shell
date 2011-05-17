@@ -13,22 +13,22 @@ using namespace std;
 
 int SettingsManager::GetInt(wstring key, int default_value)
 {
-	return GetPrivateProfileIntW(currentSection.c_str(), key.c_str(), default_value, mPath.c_str());
+    return GetPrivateProfileIntW(currentSection.c_str(), key.c_str(), default_value, mPath.c_str());
 }
 
 bool SettingsManager::GetBool(wstring key, bool default_value)
 {
-	return (bool)GetPrivateProfileIntW(currentSection.c_str(), key.c_str(), default_value, mPath.c_str());
+    return (bool)GetPrivateProfileIntW(currentSection.c_str(), key.c_str(), default_value, mPath.c_str());
 }
 
 wstring SettingsManager::GetString(wstring key, wstring default_value, size_t max_size)
 {
-	wstring buffer;
+    wstring buffer;
     buffer.resize(max_size);
-	GetPrivateProfileStringW(currentSection.c_str(), key.c_str(), default_value.c_str(),
-		&buffer[0], max_size, mPath.c_str());
+    GetPrivateProfileStringW(currentSection.c_str(), key.c_str(), default_value.c_str(),
+        &buffer[0], max_size, mPath.c_str());
     buffer.resize(wcslen(buffer.c_str()));
-	return wstring(buffer);
+    return wstring(buffer);
 }
 
 bool SettingsManager::WriteInt(wstring key, int value)
@@ -76,7 +76,7 @@ bool SettingsManager::ReadSettings(sSettings &Destination_struct)
     Destination_struct.Stoppedstatus = GetBool(L"StoppedStatusOn", true);
     Destination_struct.Streamstatus = GetBool(L"StreamStatusOn", true);
     Destination_struct.Text = GetString(L"Text", 
-        L"%c%%curtime% / %totaltime%‡%c%%l%%artist%‡%c%%l%%title%‡%c%%album%‡%c%(#%curpl% of %totalpl%)");
+        L"%c%%s%%curpl% of %totalpl%. ‡%c%%s%%title%‡%c%%s%%artist%‡‡%c%%s%%curtime%/%totaltime%‡%c%%s%Track #: %track%        Volume: %volume%%");
     Destination_struct.Thumbnailbackground = GetInt(L"ThumbnailBackGround", BG_ALBUMART);
     Destination_struct.Thumbnailbuttons = GetBool(L"ThumbnailButtons", true);
     Destination_struct.Thumbnailenabled = GetBool(L"ThumbnailEnabled", true);
@@ -96,14 +96,20 @@ bool SettingsManager::ReadSettings(sSettings &Destination_struct)
         Destination_struct.Buttons[i] = (Buttons[i] == '1' ? true : false);
     }
 
+    if (!GetBool(L"OldSettings", false))
+    {
+        ReadOldSettings(Destination_struct);
+        WriteBool(L"OldSettings", true);
+    }
+
+    // Read font
     currentSection = SECTION_NAME_FONT;
 
     if (!GetPrivateProfileStructW(SECTION_NAME_FONT, L"font", &Destination_struct.font, 
         sizeof(Destination_struct.font), mPath.c_str()))
     {
-        LOGFONT ft;
-        ZeroMemory(&ft, sizeof(ft));
-        wcsncpy(ft.lfFaceName, L"Segoe UI", 32);
+        LOGFONT ft = {};
+        wcsncpy_s(ft.lfFaceName, L"Segoe UI", 32);
         ft.lfHeight = -14;
         ft.lfWeight = FW_NORMAL;
         Destination_struct.font = ft;
@@ -280,6 +286,10 @@ void SettingsManager::WriteSettings_ToForm(HWND hwnd, HWND WinampWnd, const sSet
     SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETRANGEMAX, TRUE, 100);
     SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETRANGEMIN, TRUE, 1);
     SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETPOS, TRUE, Settings.IconSize);
+    
+    wstringstream size;
+    size << "Icon size (" << SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_GETPOS, NULL, NULL) << "%)";
+    SetWindowTextW(GetDlgItem(hwnd, IDC_ICONSIZE), size.str().c_str());
 
     SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings.BGPath.c_str());
 
@@ -298,125 +308,118 @@ void SettingsManager::WriteSettings_ToForm(HWND hwnd, HWND WinampWnd, const sSet
     EnableWindow(GetDlgItem(hwnd, IDC_CHECK4), Settings.Progressbar);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECK5), Settings.Progressbar);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECK27), Settings.Thumbnailbuttons);
-
-    for (int i = IDC_PCB1; i <= IDC_PCB10; i++)
-        SendMessage(GetDlgItem(hwnd, i), (UINT) BM_SETCHECK, Settings.Buttons[i-IDC_PCB1], 0);
 }
 
-void SettingsManager::ReadSettings_FromForm(HWND hwnd, HWND WinampWnd, sSettings &Settings)
+void SettingsManager::ReadOldSettings( sSettings & Destination_struct )
 {
-    //Checkboxes
-    if (GetDlgItem(hwnd, IDC_CHECK3) != NULL)
-        Settings.Overlay = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK3)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK2) != NULL)
-        Settings.Progressbar = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK2)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK4) != NULL)
-        Settings.Streamstatus = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK4)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK5) != NULL)
-        Settings.Stoppedstatus = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK5)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK6) != NULL)
-        Settings.Thumbnailbuttons = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK6)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK7) != NULL)
-        Settings.Thumbnailenabled = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK7)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK8) != NULL)
-        Settings.Antialias = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK8)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK1) != NULL)
-        Settings.Shrinkframe = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK1)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK9) != NULL)
-        Settings.DisableUpdates = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK9)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK10) != NULL)
+    struct sSettings_old 
     {
-        Settings.RemoveTitle = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK10)) == BST_CHECKED);
-        // do this all so that the title can be cleared or reset as required on-the-fly
-        if(Settings.RemoveTitle)
+        bool Thumbnailenabled;
+        char Thumbnailbackground;
+        bool Thumbnailbuttons;
+        bool Progressbar;
+        bool Streamstatus;
+        bool Stoppedstatus;
+        bool Overlay;
+        bool Add2RecentDocs;
+        bool Antialias;
+        bool Shrinkframe;
+        bool ForceVersion;
+        bool DisableUpdates;
+        bool RemoveTitle;
+        bool AsIcon;
+        bool VuMeter;
+        bool Buttons[16];
+        bool Thumbnailpb;
+        bool JLrecent;
+        bool JLfrequent;
+        bool JLtasks;
+        bool JLbms;
+        bool JLpl;
+        bool VolumeControl;
+        char Revertto;
+    };
+
+    sSettings_old old_settings = {};
+
+    if (!GetPrivateProfileStruct(__T("win7shell"), __T("settings"), &old_settings, sizeof(old_settings), mPath.c_str()))
+    {
+        return;
+    }
+    else
+    {        
+        Destination_struct.Add2RecentDocs = old_settings.Add2RecentDocs;
+        Destination_struct.Antialias = old_settings.Antialias;
+        Destination_struct.AsIcon = old_settings.AsIcon;
+        std::copy(old_settings.Buttons, old_settings.Buttons+16, Destination_struct.Buttons);
+        Destination_struct.DisableUpdates = old_settings.DisableUpdates;
+        Destination_struct.ForceVersion = old_settings.ForceVersion;
+        Destination_struct.JLbms = old_settings.JLbms;
+        Destination_struct.JLfrequent = old_settings.JLfrequent;
+        Destination_struct.JLpl = true;
+        Destination_struct.JLrecent = old_settings.JLrecent;
+        Destination_struct.JLtasks = old_settings.JLtasks;
+        Destination_struct.Overlay = old_settings.Overlay;
+        Destination_struct.Progressbar = old_settings.Progressbar;
+        Destination_struct.RemoveTitle = old_settings.RemoveTitle;
+        Destination_struct.Revertto = old_settings.Revertto;
+        Destination_struct.Shrinkframe = old_settings.Shrinkframe;
+        Destination_struct.Stoppedstatus = old_settings.Stoppedstatus;
+        Destination_struct.Streamstatus = old_settings.Streamstatus;
+        Destination_struct.Thumbnailbackground = old_settings.Thumbnailbackground;
+        Destination_struct.Thumbnailbuttons = old_settings.Thumbnailbuttons;
+        Destination_struct.Thumbnailenabled = old_settings.Thumbnailenabled;
+        Destination_struct.Thumbnailpb = old_settings.Thumbnailpb;
+        Destination_struct.VuMeter = old_settings.VuMeter;
+    }
+}
+
+bool SettingsManager::WriteButtons(std::vector<int> &tba)
+{
+    if (tba.size() > 7)
+    {
+        tba.resize(7);
+    }
+
+    std::wstringstream button_TextStream;
+
+    for (int i = 0; i != tba.size(); ++i)
+    {        
+        button_TextStream << tba[i] << ",";
+    }
+    std::wstring button_Text = button_TextStream.str();
+    button_Text.erase(button_Text.length()-1, 1);
+
+    return WritePrivateProfileString(SECTION_NAME_GENERAL, L"ThumbButtons", button_Text.c_str(), mPath.c_str());
+}
+
+bool SettingsManager::ReadButtons( std::vector<int> &tba )
+{
+    std::wstring text;
+    text.resize(100);
+    if (!GetPrivateProfileString(SECTION_NAME_GENERAL, L"ThumbButtons", L"1076,1077,1078,1079,1084", &text[0], 99, mPath.c_str()))
+    {
+        return false;
+    }
+    text.resize(wcslen(&text[0]));
+
+    tba.clear();
+    std::wstring::size_type pos = std::wstring::npos;
+    do
+    {
+        pos = text.find_first_of(L',');
+        std::wstringstream buffer;
+        buffer << text.substr(0, pos);
+        int code;
+        buffer >> code;
+        if (code == -1)
         {
-            SetWindowText(WinampWnd,L"");
+            continue;
         }
-        else
-        {
-            wchar_t tmp[1024] = {0};
-            GetWindowText(WinampWnd,tmp,1024);
-            SetWindowText(WinampWnd,tmp);
-        }
-    }
-    if (GetDlgItem(hwnd, IDC_CHECK25) != NULL)
-        Settings.AsIcon = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK25)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK26) != NULL)
-        Settings.VuMeter = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK26)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK29) != NULL)
-        Settings.Thumbnailpb = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK29)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK30) != NULL)
-        Settings.JLrecent = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK30)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK31) != NULL)
-        Settings.JLfrequent = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK31)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK32) != NULL)
-        Settings.JLtasks = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK32)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK33) != NULL)
-        Settings.JLbms = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK33)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK34) != NULL)
-        Settings.JLpl = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK34)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK35) != NULL)
-        Settings.VolumeControl = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK35)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_CHECK36) != NULL)
-        Settings.LowFrameRate = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK36)) == BST_CHECKED);
-    if (GetDlgItem(hwnd, IDC_SLIDER1) != NULL)
-        Settings.IconSize = SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_GETPOS, NULL, NULL);
+        tba.push_back(code);
+        text.erase(0, pos+1);
+    } 
+    while (pos != std::wstring::npos);
 
-    //Radiobuttons for thumbnail background
-    if (GetDlgItem(hwnd, IDC_RADIO1) != NULL)
-    {
-        if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO1), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.Thumbnailbackground = BG_TRANSPARENT;
-        else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO2), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.Thumbnailbackground = BG_ALBUMART;
-        else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO3), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.Thumbnailbackground = BG_CUSTOM;
-    }
-
-    //Radiobuttons for icon position
-    if (GetDlgItem(hwnd, IDC_RADIO4) != NULL)
-    {
-        if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO4), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.IconPosition = IP_UPPERLEFT;
-        else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO7), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.IconPosition = IP_LOWERLEFT;
-        else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO6), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.IconPosition = IP_UPPERRIGHT;
-        else if ( SendMessage(GetDlgItem(hwnd, IDC_RADIO8), (UINT) BM_GETCHECK, 0 , 0) )
-            Settings.IconPosition = IP_LOWERRIGHT;
-    }
-
-    if (GetDlgItem(hwnd, IDC_COMBO1) != NULL)
-        Settings.Revertto = (char)SendMessage(GetDlgItem(hwnd, IDC_COMBO1), CB_GETCURSEL, 0, 0);
-
-    if (GetDlgItem(hwnd, IDC_EDIT2) != NULL)
-    {
-        int size = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT2));
-        std::vector<wchar_t> buf1(size+1);
-        GetWindowText(GetDlgItem(hwnd, IDC_EDIT2), &buf1[0], size+1);	
-        Settings.BGPath = &buf1[0];
-    }
-
-    if (GetDlgItem(hwnd, IDC_EDIT3) != NULL)
-    {
-        int size = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDIT3));
-        std::vector<wchar_t> buf2(size+1);
-        GetWindowText(GetDlgItem(hwnd, IDC_EDIT3), &buf2[0], size+1);	
-        Settings.Text = &buf2[0];
-
-        std::wstring::size_type pos = std::wstring::npos;
-        do 
-        {
-            pos = Settings.Text.find(__T("\xD\xA"));
-            if (pos != std::wstring::npos)
-                Settings.Text.replace(pos, 2, __T("‡"));
-        }
-        while (pos != std::wstring::npos);
-    }
-
-    if (GetDlgItem(hwnd, IDC_PCB1) != NULL)
-    {
-        for (int i = IDC_PCB1; i <= IDC_PCB10; i++)
-            Settings.Buttons[i-IDC_PCB1] = (Button_GetCheck(GetDlgItem(hwnd, i)) == BST_CHECKED);
-    }
+    return true;
 }

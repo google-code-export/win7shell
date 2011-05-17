@@ -17,11 +17,6 @@ public:
     inline std::wstring GetLineText(int index) const { return m_texts[index]; }
     inline linesettings GetLineSettings(int index) const { return m_linesettings[index]; }
 
-    inline void SetLineText(int index, const std::wstring &text) { m_texts[index] = text; }
-    inline void SetLineSettings(int index, const linesettings &settings) { m_linesettings[index] = settings; }
-    
-    inline void SetLineCalculated(int index, bool calculated) { m_linesettings[index].iscalculated = calculated; }
-
     void Parse();
 
 private:

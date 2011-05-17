@@ -57,54 +57,10 @@ HRESULT iTaskBar::SetImageList(HIMAGELIST ImageList)
 
 HRESULT iTaskBar::ThumbBarUpdateButtons( std::vector<THUMBBUTTON>& thbButtons, bool first )
 {
-//     THUMBBUTTON *button;
-//     button = new THUMBBUTTON[2];
-// 
-//     ZeroMemory(&button[0], sizeof(button));
-//     button[0].dwMask = THB_TOOLTIP;
-//     button[0].iId = 0;
-//     button[0].hIcon = NULL;
-//     button[0].iBitmap = NULL;
-//     wcscpy(button[0].szTip, L"Text");
-// 
-//     ZeroMemory(&button[1], sizeof(button));
-//     button[1].dwMask = THB_TOOLTIP;
-//     button[1].iId = 0;
-//     button[1].hIcon = NULL;
-//     button[1].iBitmap = NULL;
-//     wcscpy(button[1].szTip, L"Text");
-// 
-//     if (first)
-//         return pTBL->ThumbBarAddButtons(WinampWnd, 2, button);
-//     else
-//         return pTBL->ThumbBarUpdateButtons(WinampWnd, 2, button);
-
-
     if (first)
         return pTBL->ThumbBarAddButtons(mWinampWnd, thbButtons.size(), &thbButtons[0]);
     else
         return pTBL->ThumbBarUpdateButtons(mWinampWnd, thbButtons.size(), &thbButtons[0]);
-// 
-//     THUMBBUTTONMASK dwMask = THB_BITMAP | THB_TOOLTIP | THB_FLAGS;
-// 
-//     THUMBBUTTON thbButtons[2];
-//     thbButtons[0].dwMask = dwMask;
-//     thbButtons[0].iId = 0;
-//     thbButtons[0].iBitmap = 0;
-//     thbButtons[0].szTip = TEXT("Button 1");
-//     thbButtons[0].dwFlags = THBF_DISMISSONCLICK;
-// 
-//     dwMask = THB_BITMAP | THB_TOOLTIP;
-//     thbButtons[1].dwMask = dwMask;
-//     thbButtons[1].iId = 1;
-//     thbButtons[1].iBitmap = 1;
-//     thbButtons[1].szTip = TEXT("Button 2");
-// 
-//             // Attach the toolbar to the thumbnail.
-//             pTBL->ThumbBarAddButtons(WinampWnd, ARRAYSIZE(thbButtons), &thbButtons);
-//        
-//         pTBL->Release();
-// 
 }
 
 void iTaskBar::SetIconOverlay( HICON icon, std::wstring text )

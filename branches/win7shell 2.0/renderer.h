@@ -14,23 +14,33 @@ public:
     renderer(const sSettings& Settings, MetaData &metadata, const AlbumArt &AA, HWND WinampWnd);
     ~renderer();
 
-    /*__forceinline*/ HBITMAP GetThumbnail(int width, int height);
+    HBITMAP GetThumbnail();
     inline void ClearBackground();
+    void ClearCustomBackground();
     void ThumbnailPopup();
+
+    inline void SetDimensions(int new_w, int new_h) 
+    {
+        width = new_w;
+        height = new_h;
+    }
 
 private:
     ULONG_PTR gdiplusToken;
-    bool fail;
+    Gdiplus::Image *custom_img;
+    Gdiplus::Bitmap *background;
 
     const sSettings &m_Settings;
     MetaData &m_metadata;
-    const AlbumArt &m_albumart;
-    Gdiplus::Bitmap *background;
+    const AlbumArt &m_albumart;    
 
+    int width, height, m_iconwidth, m_iconheight;
+    int m_textpause;
     HWND m_hwnd;
     std::vector<int> m_textpositions;
-    std::vector<int> m_textpause;
     bool no_icon;
+    bool fail;
+    bool scroll_block;
 };
 
 #endif // renderer_h__

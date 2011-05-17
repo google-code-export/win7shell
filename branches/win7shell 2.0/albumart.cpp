@@ -22,7 +22,7 @@ m_AGAVE_API_ALBUMART(AGAVE_API_ALBUMART)
 }
 
 bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg, 
-                     int width, int height, int icon, int iconsize) const
+                     int width, int height, int icon, int& iconsize) const
 {
     ARGB32* cur_image = 0;
     int cur_w = 0, cur_h = 0;
@@ -30,8 +30,7 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
     if (m_AGAVE_API_ALBUMART && m_AGAVE_API_ALBUMART->GetAlbumArt(fname.c_str(), L"cover", 
         &cur_w, &cur_h, &cur_image) == ALBUMART_SUCCESS)
     {
-        BITMAPINFO bmi;
-        ZeroMemory(&bmi, sizeof bmi);
+        BITMAPINFO bmi = {};
         bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
         bmi.bmiHeader.biWidth = cur_w;
         bmi.bmiHeader.biHeight = -cur_h;
@@ -51,48 +50,86 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
         gfx.SetInterpolationMode(InterpolationModeHighQuality);
         gfx.SetPixelOffsetMode(PixelOffsetModeNone);
         gfx.SetCompositingQuality(CompositingQualityHighSpeed);
+       
+        int iconleft = 0, icontop = 0;
 
-        if (icon >= 0)
-        {            
-            int iconleft = 0, icontop = 0;
+        switch (icon)
+        {
+        case IP_LOWERLEFT:
+            icontop = height - iconsize - 2;
+            break;
+        case IP_UPPERRIGHT:
+            iconleft = width - iconsize - 2;
+            break;
+        case IP_LOWERRIGHT:
+            iconleft = width - iconsize - 2;
+            icontop = height - iconsize - 2;
+            break;
+        }
 
-            switch (icon)
+        float new_height = 0;
+        float new_width = 0;
+        float anchor = height;
+
+        if (icon < 0)
+        {
+            if (width < height)
             {
-            case IP_LOWERLEFT:
-                icontop = height - iconsize - 2;
-                break;
-            case IP_UPPERRIGHT:
-                iconleft = width - iconsize - 2;
-                break;
-            case IP_LOWERRIGHT:
-                iconleft = width - iconsize - 2;
-                icontop = height - iconsize - 2;
-                break;
+                anchor = width;
             }
-
-            // Draw icon shadow
-            gfx.SetSmoothingMode(SmoothingModeAntiAlias);
-            gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110, 0, 0, 0)),
-                static_cast<REAL>(iconleft + 1), static_cast<REAL>(icontop + 1), 
-                static_cast<REAL>(iconsize + 1), static_cast<REAL>(iconsize + 1));
-
-            // Draw icon
-            gfx.SetSmoothingMode(SmoothingModeNone);
-            gfx.DrawImage(&tmpbmp, 
-                RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
-                static_cast<REAL>(iconsize), static_cast<REAL>(iconsize)));
         }
         else
         {
-            float ratio = (float)cur_h / (float)(height);
-            float widthD = (float)width;
-            if (ratio == 0)
-                ratio = 1;
-            ratio = (float)cur_w / ratio;
-            if (ratio > widthD)
-                ratio = widthD;
-            gfx.DrawImage(&tmpbmp, RectF(((widthD-ratio)/2.0f), 0, ratio, (float)height));
+            anchor = iconsize;
         }
+
+        if (cur_w > cur_h)
+        {
+            new_height = (float)cur_h / (float)cur_w * (float)anchor;
+            new_height -= 2;
+            new_width = anchor;
+
+            if (new_height > height)
+            {
+                new_width = (float)cur_w / (float)cur_h * (float)anchor;
+                new_width -= 2;
+                new_height = anchor;
+            }
+        }
+        else
+        {
+            new_width = (float)cur_w / (float)cur_h * (float)anchor;
+            new_width -= 2;
+            new_height = anchor;
+
+            if (new_width > width)
+            {
+                new_height = (float)cur_h / (float)cur_w * (float)anchor;
+                new_height -= 2;
+                new_width = anchor;
+            }
+        }
+
+        iconsize = new_width;
+
+        // Draw icon shadow
+        if (icon < 0)
+        {
+            iconleft = (width / 2) - (new_width / 2);            
+        }        
+        else
+        {
+            gfx.SetSmoothingMode(SmoothingModeAntiAlias);
+            gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110, 0, 0, 0)),
+                static_cast<REAL>(iconleft + 1), static_cast<REAL>(icontop + 1), 
+                static_cast<REAL>(new_width + 1), static_cast<REAL>(new_height + 1));
+        }
+
+        // Draw icon
+        gfx.SetSmoothingMode(SmoothingModeNone);
+        gfx.DrawImage(&tmpbmp, 
+            RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
+            static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
 
         if (cur_image) 
             WASABI_API_MEMMGR->sysFree(cur_image);
@@ -100,68 +137,68 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
         return true;
     }
 
-	/*MPEG::File f(fname.c_str());
+    /*MPEG::File f(fname.c_str());
 
-	if (f.isOpen())
-	{
-		APE::Tag *ape = f.APETag();
+    if (f.isOpen())
+    {
+        APE::Tag *ape = f.APETag();
 
-		if (ape)
-		{
-			for(APE::ItemListMap::ConstIterator it = ape->itemListMap().begin();
-				it != ape->itemListMap().end(); it++)
-			{
-				int type = (*it).second.type();	
-				if (type == 1)
-				{
-					HGLOBAL hBuffer = ::GlobalAlloc(GMEM_MOVEABLE, (*it).second.value().size());
+        if (ape)
+        {
+            for(APE::ItemListMap::ConstIterator it = ape->itemListMap().begin();
+                it != ape->itemListMap().end(); it++)
+            {
+                int type = (*it).second.type();	
+                if (type == 1)
+                {
+                    HGLOBAL hBuffer = ::GlobalAlloc(GMEM_MOVEABLE, (*it).second.value().size());
 
-					if(hBuffer)
-					{
-						void* pBuffer = ::GlobalLock(hBuffer);
-						if(pBuffer)
-						{
-							int size = (*it).second.value().size();
-							std::vector<char> data(size);							
-							
-							memcpy(&data[0], (*it).second.value().data(), size);
-							for (std::vector<char>::iterator it = data.begin();
-								it != data.end(); it++)							
-								if ((*it) == 0)
-								{
-									data.erase(data.begin(), it+1);
-									break;
-								}							
+                    if(hBuffer)
+                    {
+                        void* pBuffer = ::GlobalLock(hBuffer);
+                        if(pBuffer)
+                        {
+                            int size = (*it).second.value().size();
+                            std::vector<char> data(size);							
+                            
+                            memcpy(&data[0], (*it).second.value().data(), size);
+                            for (std::vector<char>::iterator it = data.begin();
+                                it != data.end(); it++)							
+                                if ((*it) == 0)
+                                {
+                                    data.erase(data.begin(), it+1);
+                                    break;
+                                }							
 
-							CopyMemory(pBuffer, &data[0], data.size());
-							IStream* pStream = NULL;
+                            CopyMemory(pBuffer, &data[0], data.size());
+                            IStream* pStream = NULL;
 
-							if(::CreateStreamOnHGlobal(hBuffer,FALSE,&pStream) == S_OK)
-							{
-								Gdiplus::Image img(pStream);
+                            if(::CreateStreamOnHGlobal(hBuffer,FALSE,&pStream) == S_OK)
+                            {
+                                Gdiplus::Image img(pStream);
 
-								pStream->Release();
-								if(img.GetLastStatus() == 0)
-								{
-									Gdiplus::Graphics gfx(&retimg);
-									gfx.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-									gfx.SetSmoothingMode(Gdiplus::SmoothingModeNone);
-									gfx.DrawImage(&img, 0, 0, height, height);
+                                pStream->Release();
+                                if(img.GetLastStatus() == 0)
+                                {
+                                    Gdiplus::Graphics gfx(&retimg);
+                                    gfx.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+                                    gfx.SetSmoothingMode(Gdiplus::SmoothingModeNone);
+                                    gfx.DrawImage(&img, 0, 0, height, height);
 
-									::GlobalUnlock(hBuffer);
-									::GlobalFree(hBuffer);
+                                    ::GlobalUnlock(hBuffer);
+                                    ::GlobalFree(hBuffer);
 
-									return true;
-								}
-							}
-							::GlobalUnlock(hBuffer);
-						}
-						::GlobalFree(hBuffer);    
-					}
-				}
-			}
-		}
-	}*/
-	
-	return false;
+                                    return true;
+                                }
+                            }
+                            ::GlobalUnlock(hBuffer);
+                        }
+                        ::GlobalFree(hBuffer);    
+                    }
+                }
+            }
+        }
+    }*/
+    
+    return false;
 }

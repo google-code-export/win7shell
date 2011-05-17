@@ -4,6 +4,7 @@
 #define gen_myplugin_h
 #include <windows.h>
 #include <string>
+#include <vector>
  
 // plugin name/title
 #define PLUGIN_NAME "Windows 7 Taskbar Integration v1.14 Test Build 2"
@@ -81,29 +82,41 @@ struct sSettings
 
 struct linesettings
 {
-    int height;
     bool center;
     bool largefont;
     bool forceleft;
     bool shadow;
     bool darkbox;
     bool dontscroll;
-    bool iscalculated;
 };
 
-enum 
+enum BG_Mode
 { 
     BG_TRANSPARENT, 
     BG_ALBUMART, 
     BG_CUSTOM
 };
 
-enum
+enum IconPosition
 {
     IP_UPPERLEFT,
     IP_LOWERLEFT,
     IP_UPPERRIGHT,
     IP_LOWERRIGHT
+};
+
+enum ThumbButtonID
+{
+    TB_PREVIOUS = 1076,
+    TB_PLAYPAUSE,
+    TB_STOP,
+    TB_NEXT,
+    TB_RATE,
+    TB_VOLDOWN,
+    TB_VOLUP,
+    TB_OPENFILE,
+    TB_MUTE,
+    TB_STOPAFTER
 };
 
 #define SECTION_NAME_GENERAL L"general"

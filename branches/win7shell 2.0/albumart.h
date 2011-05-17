@@ -12,7 +12,7 @@ public:
 	~AlbumArt() {};
 
 	bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg, 
-                         int width, int height, int icon, int size) const;
+                         int width, int height, int icon, int& size) const;
 
 private:
     api_memmgr* m_WASABI_API_MEMMGR;

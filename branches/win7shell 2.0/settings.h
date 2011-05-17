@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <string>
 #include <sstream>
+#include <vector>
 #include "gen_win7shell.h"
 
 using namespace std;
@@ -19,8 +20,10 @@ public:
     bool ReadResume(sResumeSettings &resume);
     bool WriteResume(sResumeSettings &resume);
 
-    static void ReadSettings_FromForm(HWND hwnd, HWND WinampWnd, sSettings &Settings);
     static void WriteSettings_ToForm(HWND hwnd, HWND WinampWnd, const sSettings &Settings);
+
+    bool WriteButtons(std::vector<int> &tba);
+    bool ReadButtons(std::vector<int> &tba);
 
 private:
     int GetInt(wstring key, int default_value);
@@ -30,7 +33,7 @@ private:
     bool WriteInt(wstring key, int value);
     bool WriteBool(wstring key, bool value);
     bool WriteString(wstring key, wstring value);
-
+    void ReadOldSettings(sSettings & Destination_struct);
     wstring mPath;
     wstring currentSection;
 };
