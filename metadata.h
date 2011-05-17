@@ -10,12 +10,11 @@ using namespace std;
 class MetaData 
 {
 public: 
-	MetaData() {isFile = false;}
+	MetaData() : isFile(false), mfilename(L"")  {}
 	void setWinampWindow(HWND winampwindow);
 	bool reset(std::wstring, bool);
 	std::wstring getMetadata(std::wstring tag);
-	std::wstring getFileName() const;
-	bool isFile;
+	std::wstring getFileName() const;	
 
 private:
 	HWND mhwnd;
@@ -24,6 +23,7 @@ private:
     //cacheType cache;
 	std::map<std::wstring, std::wstring> cache;
 	std::wstring mfilename;
+    bool isFile;
 };
 
 #endif // metadata_h__
