@@ -43,7 +43,7 @@ Next I'd like to thank some people / group of people who helped me with various 
  * Seven
  * Suffo
 
-<b>BD-Calvin, Ensiferum, Silex, TinoDidriksen and others</b> - Lots of help with coding in the #c++ IRC channel on Quakenet [irc://irc.quakenet.org/C++ irc://irc.quakenet.org/C++]
+<b>BD-Calvin, Ensiferum, Martin, Silex, TinoDidriksen and others</b> - Lots of help with coding in the #c++ IRC channel on Quakenet [irc://irc.quakenet.org/C++ irc://irc.quakenet.org/C++]
 
 <b>Arnab Datta</b> - Icons
 
