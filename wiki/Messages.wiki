@@ -1,7 +1,7 @@
 #labels Deprecated
-©0 first message
-©0 www.pown.it
-©1 second message
+#0 first message
+#0 www.pown.it
+#1 second message
 still second
-©1 www.google.com
-©2 third message
+#1 www.google.com
+#2 third message
