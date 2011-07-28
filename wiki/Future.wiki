@@ -1,13 +1,4 @@
 #summary Future development plans for the plug-in
 #labels Featured,Phase-Support
 
-= What now? =
-
-DrO is working on it to fix some broken code, make it more compatible with Winamp, and better integration. Translation system will change too, so if you still want to help  translating, we'll be grateful :P
-
----
-
-The plug-in development has come to a point where all the Win7 API was implemented, which was the main goal, and it's working fine (?). I think I will slow down with it, and just change some features, polish it a bit, etc. The main goal now is to get more translations
-
-Check if the plug-in is translated into your native language, if not, create one yourself :D
-You can translate both the plug-in and the installer. 
+Brace yourselves for win7shell v2.0!
