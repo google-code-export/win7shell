@@ -6,11 +6,12 @@
 
 <br />
 
-|| Hello, my name is Atti, and I am the primary developer of this plug-in. *Please sacrifice 2 minutes of your precious time*, as I've sacrificed hundreds of sleepless hours to create this for you, since I started it almost two years ago, *and read this page :)*. Here is a picture of me basking in sunlight, so you have an idea who is talking to you. || http://dl.dropbox.com/u/3568892/me.jpg ||
+|| Hello, my name is Atti, and I am the primary developer of this plug-in. <br>*Please sacrifice 2 minutes of your precious time*, as I've sacrificed <br>hundreds of sleepless hours to create this for you, since I started it <br>more than two years ago, *and read this page :)*. Here is a picture of <br>me basking in sunlight, so you have an idea who is talking to you. || http://dl.dropbox.com/u/3568892/me.jpg ||
+|| http://dl.dropbox.com/u/3568892/Pictures/mountain_h.jpg || This is also me on this year's mountain trip. I'm a bit shy.<br> So, you have nothing (well pennies) to lose, make me <br>(and you) happy by trading some of these pennies for *good<br>feelings*; after all, that's what they're for, right? Right.<br>Because we both deserve it!<br/>Oh, and you can also click on this: <g:plusone size="medium"></g:plusone> ||
 
 <br />
 
-== Why you should buy me a beer ==
+== Why you should buy me a beer :-) ==
 
  * Because beer is good, and a "temporary solution" to everything
  * To thank me for working hard for free to create this plug-in
@@ -20,9 +21,9 @@
  * Because I will write your name on a shiny thank you list (if you want)
  * Because I will give you a hug of appreciation
 
-== Why you should not buy me a beer ==
+== Why you should not buy me a beer :-( ==
 
- * Because you don't have money (I understand)
+ * Because you don't have money (I understand, thanks for reading)
  * Because you're lazy to spend 5 minutes on this
  * Because you're cheap
  * You don't like the plug-in :(
