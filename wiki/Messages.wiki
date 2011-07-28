@@ -1,3 +1,4 @@
 #labels Deprecated
-#0 If you like this plug-in, show your appreciation and buy me a beer. Ok? :)
-#0 http://code.google.com/p/win7shell/wiki/Donate
+#4 If you like this plug-in, show your appreciation and buy me a beer. Ok? :)
+#4 http://code.google.com/p/win7shell/wiki/Donate
+#5 There's a new version, you should check it out!
