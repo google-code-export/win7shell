@@ -1,7 +1,3 @@
 #labels Deprecated
-#0 first message
-#0 www.pown.it
-#1 second message
-still second
-#1 www.google.com
-#2 third message
+#0 If you like this plug-in, show your appreciation and buy me a beer. Ok? :)
+#0 http://code.google.com/p/win7shell/wiki/Donate
