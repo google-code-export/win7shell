@@ -6,6 +6,8 @@
 #include <propvarutil.h>
 #include <propkey.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 namespace tools
 {
@@ -27,48 +29,99 @@ namespace tools
     bool is_in_recent(std::wstring filename);
     HIMAGELIST prepareIcons();
     std::wstring SecToTime(int sec);
-    std::wstring getToolTip(int button);
-    int getBitmap(int button);
+    std::wstring getToolTip(int button, int mode = -1);
+    int getBitmap(int button, int mode);
 
     // Function definitions
-    std::wstring getToolTip(int button)
+    std::wstring getToolTip(int button, int mode)
     {
         int strID = -1;
 
         switch (button)
         {
-        case 0:
-            strID = IDS_PLAY;
-            break;
-        case 1076:
+        case TB_PREVIOUS:
             strID = IDS_PREVIOUS;
             break;
-        case 1077:
-            strID = IDS_PAUSE;
+        case TB_PLAYPAUSE:
+            // mode 1 = playing, mode 0,3 = paused, -1 = button name
+            if (mode == -1)
+            {
+                strID = IDS_PLAYPAUSE;
+            }
+            else if (mode == 1)
+            {
+                strID = IDS_PAUSE;
+            }
+            else
+            {
+                strID = IDS_PLAY;
+            }            
             break;
-        case 1078:
+        case TB_STOP:
             strID = IDS_STOP;
             break;
-        case 1079:
+        case TB_NEXT:
             strID = IDS_NEXT;
             break;
-        case 1080:
+        case TB_RATE:
             strID = IDS_RATE;
             break;
-        case 1081:
+        case TB_VOLDOWN:
             strID = IDS_VOLUME_DOWN;
             break;
-        case 1082:
+        case TB_VOLUP:
             strID = IDS_VOLUME_UP;
             break;
-        case 1083:
+        case TB_OPENFILE:
             strID = IDS_OPEN_FILE;
             break;
-        case 1084:
+        case TB_MUTE:
             strID = IDS_MUTE;
             break;
-        case 1085:
+        case TB_STOPAFTER:
             strID = IDS_STOP_AFTER_CURRENT;
+            break;
+        case TB_REPEAT:
+            if (mode == -1) // button name
+            {
+                strID = IDS_REPEAT;
+            }
+            else if (mode == 0) // repeat off, toggle repeat all on
+            {
+                strID = IDS_REPEAT_ON_ALL;
+            }
+            else if (mode == 1) // repeat all on, toggle repeat current
+            {
+                strID = IDS_REPEAT_ON_CURRENT;
+            }
+            else // repeat current on, toggle repeat off
+            {
+                strID = IDS_REPEAT_OFF;
+            }
+            break;
+        case TB_SHUFFLE:
+            // mode 0 = shuffle is off, mode 1 = shuffle is on
+            if (mode == -1) // button name
+            {
+                strID = IDS_SHUFFLE;
+            }
+            else if (mode == 0) // shuffle is off, toggle on
+            {
+                strID = IDS_SHUFFLE_ON;
+            }
+            else // shuffle is on, toggle off
+            {
+                strID = IDS_SHUFFLE_OFF;
+            }            
+            break;
+        case TB_JTFE:
+            strID = IDS_JTFE;
+            break;
+        case TB_DELETE:
+            strID = IDS_DELETE_PHYSICALLY;
+            break;
+        case TB_OPENEXPLORER:
+            strID = IDS_OPEN_EXPLORER;
             break;
         }
 
@@ -92,7 +145,10 @@ namespace tools
             }
             else
             {
-                BM_path = (wchar_t*)SendMessage(WinampWindow,WM_WA_IPC,0,IPC_ADDBOOKMARKW);
+                if (IsWindow(WinampWindow))
+                {
+                    BM_path = (wchar_t*)SendMessage(WinampWindow,WM_WA_IPC,0,IPC_ADDBOOKMARKW);
+                }    
             }
         }
 
@@ -399,14 +455,14 @@ namespace tools
         return ss.str();
     }
 
-    int getBitmap(int button)
+    int getBitmap(int button, int mode)
     {
         switch (button)
         {
             case TB_PREVIOUS:
                 return 1;
             case TB_PLAYPAUSE:
-                return 2;
+                return (mode == 1) ? 2 : 0;
             case TB_STOP:
                 return 3;
             case TB_NEXT:
@@ -423,6 +479,27 @@ namespace tools
                 return 9;
             case TB_STOPAFTER:
                 return 10;
+            case TB_REPEAT:
+                if (mode == 0)
+                {
+                    return 11;
+                }
+                else if (mode == 1)
+                {
+                    return 12;
+                }
+                else
+                {
+                    return 13;
+                }
+            case TB_SHUFFLE:
+                return (mode == 1) ? 14 : 15;
+            case TB_JTFE:
+                return 16;
+            case TB_DELETE:
+                return 17;
+            case TB_OPENEXPLORER:
+                return 18;
         }
 
         return -1;

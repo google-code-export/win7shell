@@ -21,8 +21,8 @@ public:
 
 private:
 
-    inline void lines::ProcessLine(int index);
-    inline std::wstring MetaWord(const std::wstring &word);
+    void ProcessLine(int index);
+    std::wstring MetaWord(const std::wstring &word);
 
     std::vector<std::wstring> m_texts;
     std::vector<linesettings> m_linesettings;
@@ -30,5 +30,7 @@ private:
     const sSettings &m_settings;
     const HWND m_hwnd;    
 };
+
+// Inline
 
 #endif // lines_h__

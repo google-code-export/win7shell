@@ -9,12 +9,13 @@ using namespace std;
 
 class MetaData 
 {
-public: 
-	MetaData() : isFile(false), mfilename(L"")  {}
+public: 	
+    MetaData();
 	void setWinampWindow(HWND winampwindow);
 	bool reset(std::wstring, bool);
 	std::wstring getMetadata(std::wstring tag);
-	std::wstring getFileName() const;	
+	std::wstring getFileName() const;
+    bool CheckPlayCount();
 
 private:
 	HWND mhwnd;
@@ -24,6 +25,7 @@ private:
 	std::map<std::wstring, std::wstring> cache;
 	std::wstring mfilename;
     bool isFile;
+    int m_play_count;    
 };
 
 #endif // metadata_h__

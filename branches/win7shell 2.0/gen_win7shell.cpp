@@ -5,10 +5,10 @@
 #define TAGLIB_STATIC
 
 #define ICONSIZEPX 50
-#define APPID L"Winamp"
 #define INIFILE_NAME L"win7shell.ini"
 #define PREF_PAGE "Taskbar Integration"
 #define PREF_PAGEW L"Taskbar Integration"
+#define NR_BUTTONS 15
 
 #include <windows.h>
 #include <windowsx.h>
@@ -38,6 +38,7 @@
 #include "sdk/winamp/gen.h"
 #include "sdk/winamp/wa_ipc.h"
 #include "sdk/Agave/Language/lang.h"
+#include "ipc_pe.h"
 #include "resource.h"
 #include "api.h"
 #include "tools.h"
@@ -52,10 +53,10 @@
 
 UINT WM_TASKBARBUTTONCREATED;
 const std::wstring cur_version(__T("1.14"));
-const std::string cur_versionA("1.14 Test Build 15");
+const std::string cur_versionA("2.0 RC");
+const std::wstring AppID(L"Winamp");
 
 WNDPROC lpWndProcOld = 0;
-char playstate = -1;
 bool thumbshowing = false, 
      uninstall = false;
 HWND ratewnd = 0;
@@ -180,7 +181,7 @@ int init()
 
             // Set Application model to APPID
             // TODO: auto-pin icon (?)
-            if (SetCurrentProcessExplicitAppUserModelID(APPID) != S_OK)
+            if (SetCurrentProcessExplicitAppUserModelID(AppID.c_str()) != S_OK)
                 MessageBoxEx(plugin.hwndParent,
                              WASABI_API_LNGSTRINGW(IDS_ERROR_SETTING_APPID),
                              BuildPluginNameW(),
@@ -192,16 +193,13 @@ int init()
                 SettingsManager SManager(SettingsFile);
                 SManager.ReadSettings(Settings);
                 SManager.ReadButtons(TButtons);
-            }            
+            }
 
-            // If enabled, create jumplist
-            if (Settings.JLrecent || Settings.JLfrequent || Settings.JLtasks || Settings.JLbms)
-            {
-                SetupJumpList();
-            }            
+            // Create jumplist
+            SetupJumpList();
 
             // Check for updates
-            if (!Settings.DisableUpdates && Settings.LastUpdateCheck != tools::GetCurrentDay())
+            if (!Settings.DisableUpdates)// && Settings.LastUpdateCheck != tools::GetCurrentDay())
                 if (SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_INETAVAILABLE))
                 {
                     _beginthread(CheckVersion, 0, NULL);
@@ -279,7 +277,7 @@ int init()
            }
            else if (Settings.Thumbnailbuttons)
            {
-               taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl);
+               taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
                if SUCCEEDED(taskbar->SetImageList(theicons))
                    updateToolbar(true);
            }       
@@ -302,8 +300,12 @@ int init()
             }
 
             // Create album art wrapper and thumbnail renderer
-            static AlbumArt albumart(WASABI_API_MEMMGR, AGAVE_API_ALBUMART);
-            thumbnaildrawer = new renderer(Settings, metadata, albumart, plugin.hwndParent);
+            static AlbumArt albumart(WASABI_API_MEMMGR, AGAVE_API_ALBUMART, Settings);
+            thumbnaildrawer = new renderer(Settings, metadata, albumart, plugin.hwndParent);            
+
+            int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
+            wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
+            WndProc(plugin.hwndParent, WM_WA_IPC, (WPARAM)p, IPC_PLAYING_FILEW);
 
             return GEN_INIT_SUCCESS;
         }
@@ -342,9 +344,13 @@ void quit()
 
 void CheckVersion(void *dummy)
 {
-    VersionChecker *vc = new VersionChecker();
-    std::wstring news = vc->IsNewVersion(cur_version), vermsg;
+    VersionChecker vc;
+    std::wstring news = vc.IsNewVersion(cur_version);
+    std::wstring vermsg = L"";
     wchar_t tmp[256], tmp2[256], tmp3[256];
+    std::list<std::pair<std::wstring, std::wstring>> message_list;
+
+    // Check for new version
     if (news != __T(""))
     {
         news.erase(news.length()-1, 1);
@@ -361,8 +367,29 @@ void CheckVersion(void *dummy)
         {
             ShellExecute(NULL, L"open", L"http://code.google.com/p/win7shell/", NULL, NULL, SW_SHOW);
         }
+    }        
+    
+    // Check for server messages
+    int last_message_on_server = Settings.LastMessage;
+    int first_message = vc.GetMessages(message_list, last_message_on_server);
+    if (first_message != -1 && Settings.LastMessage < first_message)
+    {
+        for (std::list<std::pair<std::wstring, std::wstring>>::const_iterator iter = message_list.begin();
+            iter != message_list.end();
+            ++iter)
+        {
+            UINT flag = (*iter).second.empty() ? 0 : MB_OKCANCEL;
+
+            int re = MessageBox(plugin.hwndParent, (*iter).first.c_str(), L"Taskbar Integration Message", 
+                MB_TASKMODAL | MB_SETFOREGROUND | flag);
+            if (flag !=0 && re == IDOK)
+            {
+                ShellExecute(NULL, L"open", (*iter).second.c_str(), NULL, NULL, SW_SHOW);
+            }
+        }
+
+        Settings.LastMessage = last_message_on_server;
     }
-    delete vc;
 }
 
 void updateToolbar(bool first)
@@ -376,11 +403,13 @@ void updateToolbar(bool first)
         THUMBBUTTON button = {};
         button.dwMask = THB_BITMAP | THB_TOOLTIP;
         button.iId = TButtons[i];
-        button.hIcon = NULL;
-        button.iBitmap = tools::getBitmap(button.iId);
-        wcsncpy(button.szTip, tools::getToolTip(button.iId).c_str(), 260);
+        button.hIcon = NULL;        
 
-        if (button.iId == TB_RATE || button.iId == TB_STOPAFTER)
+        if (button.iId == TB_RATE || 
+            button.iId == TB_STOPAFTER ||
+            button.iId == TB_DELETE || 
+            button.iId == TB_OPENEXPLORER || 
+            button.iId == TB_JTFE)
         {
             button.dwMask = button.dwMask | THB_FLAGS;
             button.dwFlags = THBF_DISMISSONCLICK;
@@ -388,16 +417,26 @@ void updateToolbar(bool first)
 
         if (button.iId == TB_PLAYPAUSE)
         {				
-            if (playstate == PLAYSTATE_PLAYING)
-            {
-                button.iBitmap = 2;
-                wcsncpy(button.szTip, tools::getToolTip(2).c_str(), 260);
-            }
-            else
-            {
-                button.iBitmap = 0;
-                wcsncpy(button.szTip, tools::getToolTip(0).c_str(), 260);
-            }
+            button.iBitmap = tools::getBitmap(button.iId, Settings.play_state == PLAYSTATE_PLAYING ? 1 : 0);
+            wcsncpy(button.szTip, tools::getToolTip(TB_PLAYPAUSE, Settings.play_state).c_str(), 260);
+        } 
+
+        else if (button.iId == TB_REPEAT)
+        {
+            button.iBitmap = tools::getBitmap(button.iId, Settings.state_repeat);
+            wcsncpy(button.szTip, tools::getToolTip(TB_REPEAT, Settings.state_repeat).c_str(), 260);
+        } 
+
+        else if (button.iId == TB_SHUFFLE)
+        {
+            button.iBitmap = tools::getBitmap(button.iId, Settings.play_state == Settings.state_shuffle);
+            wcsncpy(button.szTip, tools::getToolTip(TB_SHUFFLE, Settings.state_shuffle).c_str(), 260);
+        }
+
+        else
+        {
+            button.iBitmap = tools::getBitmap(button.iId, 0);
+            wcsncpy(button.szTip, tools::getToolTip(button.iId, 0).c_str(), 260);
         }
 
         thbButtons.push_back(button);
@@ -449,7 +488,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     {
                         thumbnaildrawer->ClearBackground();
 
-                        if (playstate != PLAYSTATE_PLAYING)
+                        if (Settings.play_state != PLAYSTATE_PLAYING)
                         {
                             DwmInvalidateIconicBitmaps(plugin.hwndParent);
                         }
@@ -480,14 +519,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     {
                         SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40045,0), 0);					
                     }
-                    playstate = (char)res;
+                    Settings.play_state = (char)res;
                 }
                 return 0;
                 break;
 
             case TB_STOP:
                 SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40047,0), 0);
-                playstate = PLAYSTATE_NOTPLAYING; 
+                Settings.play_state = PLAYSTATE_NOTPLAYING; 
                 return 0;
                 break;
 
@@ -500,7 +539,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     {
                         thumbnaildrawer->ClearBackground();
 
-                        if (playstate != PLAYSTATE_PLAYING)
+                        if (Settings.play_state != PLAYSTATE_PLAYING)
                         {
                             DwmInvalidateIconicBitmaps(plugin.hwndParent);
                         }                        
@@ -524,7 +563,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     POINT point;						
                     GetCursorPos(&point);
                     GetWindowRect(ratewnd, &rc);
-                    MoveWindow(ratewnd, point.x - 85, point.y - 15, rc.right - rc.left, rc.bottom - rc.top, false);	
+                    MoveWindow(ratewnd, point.x - 155, point.y - 15, rc.right - rc.left, rc.bottom - rc.top, false);	
                     SetTimer(plugin.hwndParent, 6669, 5000, TimerProc);
                     ShowWindow(ratewnd, SW_SHOW);
                 }
@@ -571,16 +610,110 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40157,0), 0);
                 return 0;
                 break;
+
+            case TB_REPEAT:
+                // get
+                Settings.state_repeat = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_REPEAT);
+
+                if (Settings.state_repeat == 1 && SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_MANUALPLADVANCE) == 1)
+                {
+                    Settings.state_repeat = 2;
+                }
+
+                ++Settings.state_repeat;
+
+                if (Settings.state_repeat > 2)
+                {
+                    Settings.state_repeat = 0;
+                }
+
+                SendMessage(plugin.hwndParent, WM_WA_IPC, Settings.state_repeat >= 1 ? 1 : 0, IPC_SET_REPEAT);
+                SendMessage(plugin.hwndParent, WM_WA_IPC, Settings.state_repeat == 2 ? 1 : 0, IPC_SET_MANUALPLADVANCE);            
+                updateToolbar(false);
+                return 0;
+                break;
+
+            case TB_SHUFFLE:
+                Settings.state_shuffle = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_SHUFFLE);
+                Settings.state_shuffle = !Settings.state_shuffle;
+                SendMessage(plugin.hwndParent, WM_WA_IPC, Settings.state_shuffle, IPC_SET_SHUFFLE);
+                updateToolbar(false);
+                return 0;
+                break;
+
+            case TB_JTFE:                
+                ShowWindow(plugin.hwndParent, SW_SHOWNORMAL);
+                SendMessage(plugin.hwndParent, WM_COMMAND, 40194, 0);
+                return 0;
+                break;
+
+            case TB_OPENEXPLORER:
+                {
+                    WIN32_FIND_DATAW data;
+	                if (FindFirstFile(metadata.getFileName().c_str(), &data) != INVALID_HANDLE_VALUE)
+	                {
+                        ITEMIDLIST *pidl = ILCreateFromPath(metadata.getFileName().c_str());
+                        if(pidl) 
+                        {
+                            SHOpenFolderAndSelectItems(pidl,0,0,0);
+                            ILFree(pidl);
+                        }
+	                }     
+                }
+                return 0;
+                break;
+
+            case TB_DELETE:
+                {
+                    SHFILEOPSTRUCTW fileop = {};
+                    std::wstring path(metadata.getFileName().c_str());
+                    path += L'\0';
+	                
+	                fileop.hwnd = NULL;
+	                fileop.wFunc = FO_DELETE;                    
+	                fileop.pFrom = path.c_str();
+	                fileop.pTo = L"";
+	                fileop.fFlags = FOF_ALLOWUNDO | FOF_FILESONLY;
+	                fileop.hNameMappings = NULL;
+	                fileop.fAnyOperationsAborted = false;
+	                fileop.lpszProgressTitle = L"";
+
+                    SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40047,0), 0);
+                    Settings.play_state = PLAYSTATE_NOTPLAYING; 
+	
+	                if (SHFileOperation(&fileop) == 0)
+                    {
+                        SendMessage((HWND)SendMessage(plugin.hwndParent, WM_WA_IPC, IPC_GETWND_PE, IPC_GETWND),
+                            WM_WA_IPC, IPC_PE_DELETEINDEX, SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS));
+                    }
+
+                    SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40045,0), 0);
+                    return 0;
+                }
+                break;
             }
-            
         break;
 
         case WM_WA_IPC:
             switch (lParam)
             {
             case IPC_PLAYING_FILEW:
-                {				
-                    std::wstring filename = (wchar_t*)wParam;
+                {
+                    if (wParam == 0)
+                    {
+                        return 0;
+                    }
+
+                    std::wstring filename(L"");
+                    try
+                    {
+                        filename = (wchar_t*)wParam;
+                    }
+                    catch (...)
+                    {
+                        return 0;
+                    }
+                    
                     // TODO - not sure on this one
                     //int true_msg = true;
                     if (filename.empty())
@@ -588,14 +721,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                         int index = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
                         wchar_t *p = (wchar_t*)SendMessage(plugin.hwndParent,WM_WA_IPC,index,IPC_GETPLAYLISTFILEW); 
                         if (p != NULL)
+                        {
                             filename = p;
+                        }
                         //true_msg = false;
                     }
 
                     metadata.reset(filename, false);
+                    if (metadata.CheckPlayCount())
+                    {
+                        JumpList JL(AppID);
+                        JL.CleanJumpList();
+                    }
 
                     Settings.play_playlistpos = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS);
-
                     Settings.play_total = SendMessage(plugin.hwndParent,WM_WA_IPC,2,IPC_GETOUTPUTTIME);
                     Settings.play_current = 0;
 
@@ -607,7 +746,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     DwmInvalidateIconicBitmaps(plugin.hwndParent);                   
                     thumbnaildrawer->ThumbnailPopup();                    
 
-                    playstate = PLAYSTATE_PLAYING;
+                    Settings.play_state = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
 
                     if ((Settings.JLrecent || Settings.JLfrequent) && !tools::is_in_recent(filename))
                     {
@@ -619,14 +758,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                         IShellLink * psl;
                         SHARDAPPIDINFOLINK applink;						
-                        if (/*true_msg  && */tools::__CreateShellLink(filename.c_str(), title.c_str(), &psl) == S_OK)
+                        if (/*true_msg  && */
+                            tools::__CreateShellLink(filename.c_str(), title.c_str(), &psl) == S_OK &&
+                            Settings.play_state == PLAYSTATE_PLAYING &&
+                            Settings.Add2RecentDocs)
                         {
                             time_t rawtime;
                             time (&rawtime);
                             std::wstring timestr = _wctime(&rawtime);
                             psl->SetDescription(timestr.c_str());
                             applink.psl = psl;
-                            applink.pszAppID = APPID;
+                            applink.pszAppID = AppID.c_str();
                             SHAddToRecentDocs(SHARD_LINK, psl); 
                         }
                     }
@@ -638,14 +780,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 switch (wParam)
                 {
                     case IPC_CB_MISC_STATUS:
-                        playstate = (char)SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
+                        Settings.play_state = (char)SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
                     
                         updateToolbar(false);
 
                         if (Settings.Overlay)
                         {
                             wchar_t tmp[64] = {0};
-                            switch (playstate)
+                            switch (Settings.play_state)
                             {
                             case 1:
                                 {
@@ -688,7 +830,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (Settings.RemoveTitle && !wParam)
             {
                 wchar_t tmp[64] = {0};
-                for(int i = IDC_PCB1; i <= IDC_PCB10; i++)
+                for(int i = IDC_PCB1; i <= IDC_PCB15; i++)
                 {
                     if(Settings.Buttons[i-IDC_PCB1])
                     {
@@ -716,7 +858,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         SetupJumpList();
-        taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl);
+        taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
     }
 
     LRESULT ret = CallWindowProc(lpWndProcOld,hwnd,message,wParam,lParam);	 
@@ -772,7 +914,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
                 static int (*export_sa_get)(int channel) = (int(__cdecl *)(int)) SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETVUDATAFUNC);
                 int audiodata = export_sa_get(0);
 
-                if (playstate != PLAYSTATE_PLAYING || audiodata == -1)
+                if (Settings.play_state != PLAYSTATE_PLAYING || audiodata == -1)
                 {
                     taskbar->SetProgressState(TBPF_NOPROGRESS);
                 }
@@ -811,7 +953,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
                              WASABI_API_LNGSTRINGW(IDS_ERROR_SETTING_THUMBNAIL),
                              BuildPluginNameW(), MB_ICONERROR, 0);
                 Settings.Thumbnailenabled = false;
-                taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl);
+                taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
             }
 
 //             HDC dest = GetDC(FindWindow(L"Winamp PE", NULL));
@@ -843,7 +985,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
                 CheckThumbShowing();
             }
         
-            if (playstate == -1)
+            if (Settings.play_state == -1)
             {
                 WndProc(plugin.hwndParent, WM_WA_IPC, (WPARAM)L"", IPC_PLAYING_FILEW);
                 WndProc(plugin.hwndParent, WM_WA_IPC, IPC_CB_MISC_STATUS, IPC_CB_MISC);
@@ -852,7 +994,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
             if (!(Settings.Progressbar || Settings.VuMeter))
                 taskbar->SetProgressState(TBPF_NOPROGRESS);	
         
-            if (playstate == PLAYSTATE_PLAYING || Settings.Thumbnailpb)
+            if (Settings.play_state == PLAYSTATE_PLAYING || Settings.Thumbnailpb)
                 if (Settings.play_total <= 0)
                     Settings.play_total = SendMessage(plugin.hwndParent,WM_WA_IPC,1,IPC_GETOUTPUTTIME) * 1000;
         
@@ -863,7 +1005,7 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
             }
             Settings.play_current = cp;
         
-            switch (playstate)
+            switch (Settings.play_state)
             {
                 case 1: 
         
@@ -1154,6 +1296,8 @@ LRESULT CALLBACK TabHandler1(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                                 Settings.Text.replace(pos, 2, __T("‡"));
                         }
                         while (pos != std::wstring::npos);
+
+                        thumbnaildrawer->ThumbnailPopup();
                     }
                 }
             return 0;
@@ -1374,6 +1518,7 @@ LRESULT CALLBACK TabHandler2(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         SettingsManager::WriteSettings_ToForm(hwnd, plugin.hwndParent, Settings);
         SendMessage(GetDlgItem(hwnd, IDC_EDIT2), EM_SETREADONLY, TRUE, NULL);
         SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETRANGE, FALSE, MAKELPARAM(30, 100));
+        SendMessage(GetDlgItem(hwnd, IDC_SLIDER_TRANSPARENCY), TBM_SETRANGE, FALSE, MAKELPARAM(0, 100));
 
         switch (Settings.IconPosition)
         {
@@ -1397,9 +1542,16 @@ LRESULT CALLBACK TabHandler2(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     case WM_HSCROLL:
         {
             wstringstream size;
-            size << "Icon size (" << SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_GETPOS, NULL, NULL) << "%)";
+            int value = SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_GETPOS, NULL, NULL);
+            size << "Icon size (" << value << "%)";
             SetWindowTextW(GetDlgItem(hwnd, IDC_ICONSIZE), size.str().c_str());
-            Settings.IconSize = SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_GETPOS, NULL, NULL);
+            Settings.IconSize = value;
+
+            size.str(L"");
+            value = SendMessage(GetDlgItem(hwnd, IDC_SLIDER_TRANSPARENCY), TBM_GETPOS, NULL, NULL);
+            size << value << "%";
+            SetWindowTextW(GetDlgItem(hwnd, IDC_TRANSPARENCY_PERCENT), size.str().c_str());
+            Settings.BG_Transparency = value;
 
             thumbnaildrawer->ClearCustomBackground();
             thumbnaildrawer->ClearBackground();
@@ -1526,18 +1678,24 @@ LRESULT CALLBACK TabHandler3(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
     {
     case WM_INITDIALOG:
         {
-	        SettingsManager::WriteSettings_ToForm(hwnd, plugin.hwndParent, Settings);           
+            // Reset buttons
+            for(int i = IDC_PCB1; i <= IDC_PCB15; i++)
+            {
+                SendMessage(GetDlgItem(hwnd, i), BM_SETCHECK, BST_UNCHECKED, NULL);
+            }
+
+	        SettingsManager::WriteSettings_ToForm(hwnd, plugin.hwndParent, Settings);      
 
             HWND list = GetDlgItem(hwnd, IDC_LIST1);
             for (int i = 0; i < TButtons.size(); ++i)
             {
-                int index = SendMessage(list, LB_ADDSTRING, NULL, (LPARAM)tools::getToolTip(TButtons[i]).c_str());
+                int index = SendMessage(list, LB_ADDSTRING, NULL, (LPARAM)tools::getToolTip(TButtons[i], -1).c_str());
                 SendMessage(list, LB_SETITEMDATA, index, TButtons[i]);
                 SendMessage(GetDlgItem(hwnd, TButtons[i]), BM_SETCHECK, BST_CHECKED, NULL);
             }
 	        
 	        // Set button icons
-	        for (int i=0; i<10; i++)
+	        for (int i = 0; i < NR_BUTTONS; i++)
 	        {
 	            HICON icon = ImageList_GetIcon(theicons, i+1, 0);
 	            SendMessage(GetDlgItem(hwnd, IDC_PCB1+i), BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);                
@@ -1576,6 +1734,11 @@ LRESULT CALLBACK TabHandler3(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             case IDC_PCB8:
             case IDC_PCB9:
             case IDC_PCB10:
+            case IDC_PCB11:
+            case IDC_PCB12:
+            case IDC_PCB13:
+            case IDC_PCB14:
+            case IDC_PCB15:
                 if ((((LPNMHDR)lParam)->code) == BCN_HOTITEMCHANGE)
                     SetWindowText(GetDlgItem(hwnd, IDC_STATIC29), tools::getToolTip(wParam).c_str());
                 break;
@@ -1667,7 +1830,7 @@ LRESULT CALLBACK TabHandler3(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 
             case IDC_CHECK7:
                 Settings.Thumbnailenabled = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK7)) == BST_CHECKED);
-                taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl);
+                taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
             return 0;
             break;
 
@@ -1690,31 +1853,11 @@ LRESULT CALLBACK TabHandler3(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             case IDC_CHECK29:
                 Settings.Thumbnailpb = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK29)) == BST_CHECKED);
             return 0;
-            break;
+            break;        
 
-            case IDC_CHECK35:
-                Settings.VolumeControl = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK35)) == BST_CHECKED);
-
-                if (Settings.VolumeControl)
-                {
-                    if (!hMouseHook)
-                    {
-                        hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC) KeyboardEvent, plugin.hDllInstance, NULL);
-                        if (hMouseHook == NULL)
-                            MessageBoxEx(plugin.hwndParent,
-                                            WASABI_API_LNGSTRINGW(IDS_ERROR_REGISTERING_MOUSE_HOOK),
-                                            BuildPluginNameW(),
-                                            MB_ICONWARNING, 0);
-                    }
-                }
-                else
-                {
-                    if (hMouseHook)
-                    {
-                        UnhookWindowsHookEx(hMouseHook);
-                        hMouseHook = NULL;
-                    }
-                }
+            case IDC_CHECK_AEROPEEK:
+                Settings.disallow_peek = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK_AEROPEEK)) == BST_CHECKED);
+                taskbar->SetWindowAttr(true, Settings.VolumeControl, Settings.disallow_peek);
             return 0;
             break;
 
@@ -1728,6 +1871,11 @@ LRESULT CALLBACK TabHandler3(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             case IDC_PCB8:
             case IDC_PCB9:
             case IDC_PCB10:
+            case IDC_PCB11:
+            case IDC_PCB12:
+            case IDC_PCB13:
+            case IDC_PCB14:
+            case IDC_PCB15:
                 {
                     AddStringtoList(hwnd, LOWORD(wParam));
                 }
@@ -1813,6 +1961,32 @@ LRESULT CALLBACK TabHandler4(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
             return 0;
             break;
             }
+
+            case IDC_CHECK35:
+                Settings.VolumeControl = (Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK35)) == BST_CHECKED);
+
+                if (Settings.VolumeControl)
+                {
+                    if (!hMouseHook)
+                    {
+                        hMouseHook = SetWindowsHookEx(WH_MOUSE_LL, (HOOKPROC) KeyboardEvent, plugin.hDllInstance, NULL);
+                        if (hMouseHook == NULL)
+                            MessageBoxEx(plugin.hwndParent,
+                            WASABI_API_LNGSTRINGW(IDS_ERROR_REGISTERING_MOUSE_HOOK),
+                            BuildPluginNameW(),
+                            MB_ICONWARNING, 0);
+                    }
+                }
+                else
+                {
+                    if (hMouseHook)
+                    {
+                        UnhookWindowsHookEx(hMouseHook);
+                        hMouseHook = NULL;
+                    }
+                }
+                return 0;
+                break;
         }
         break;
     }
@@ -1833,6 +2007,25 @@ LRESULT CALLBACK TabHandler5(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
         {
             switch (LOWORD(wParam))
             {
+            case IDC_CLEARALL:
+                {
+	                wchar_t path[MAX_PATH];
+	                SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, path);
+	                std::wstring filepath(path);
+	                filepath += L"\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\879d567ffa1f5b9f.automaticDestinations-ms";
+	                if (DeleteFile(filepath.c_str()) != 0)
+	                {
+	                    EnableWindow(GetDlgItem(hwnd, IDC_CLEARALL), false);
+	                }
+                }
+                return 0;
+                break;
+
+            case IDC_CHECK_A2R:
+                Settings.Add2RecentDocs = !(Button_GetCheck(GetDlgItem(hwnd, IDC_CHECK_A2R)) == BST_CHECKED);
+                return 0;
+                break;
+
             case IDC_CHECK30:
             case IDC_CHECK31:
             case IDC_CHECK32:
@@ -1850,6 +2043,12 @@ LRESULT CALLBACK TabHandler5(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
                      Settings.JLfrequent ||
                      Settings.JLrecent )
                 {
+                    SetupJumpList();
+                }
+                else
+                {
+                    Settings.JLrecent = true;
+                    Button_SetCheck(GetDlgItem(hwnd, IDC_CHECK30), BST_CHECKED);
                     SetupJumpList();
                 }
             return 0;
@@ -2021,25 +2220,35 @@ void AddStringtoList(HWND window, int control_ID)
 
 void SetupJumpList()
 {
-    JumpList jl;
+    JumpList jl(AppID);
+
+    jl.CleanJumpList();
+
     if (jl.DeleteJumpList())
     {
         std::wstring bms = tools::getBMS(plugin.hwndParent);
-        static wchar_t tmp1[128], tmp2[128], tmp3[128], tmp4[128], tmp5[128], tmp6[128];
-        JumpList jl;
-        if (!jl.CreateJumpList(tools::getShortPluginDllPath(plugin.hDllInstance),
-            WASABI_API_LNGSTRINGW_BUF(IDS_WINAMP_PREFERENCES,tmp1,128),
-            WASABI_API_LNGSTRINGW_BUF(IDS_PLAY_FROM_BEGINNING,tmp2,128),
-            WASABI_API_LNGSTRINGW_BUF(IDS_RESUME_PLAYBACK,tmp3,128),
-            WASABI_API_LNGSTRINGW_BUF(IDS_OPEN_FILE,tmp4,128),
-            WASABI_API_LNGSTRINGW_BUF(IDS_BOOKMARKS,tmp5,128),
-            WASABI_API_LNGSTRINGW_BUF(IDS_PLAYLISTS,tmp6,128),
-            Settings.JLrecent, Settings.JLfrequent,
-            Settings.JLtasks, Settings.JLbms, Settings.JLpl, bms))
-        {
-            MessageBoxEx(plugin.hwndParent,
-                         WASABI_API_LNGSTRINGW(IDS_ERROR_CREATING_JUMP_LIST),
-                         0, MB_ICONWARNING | MB_OK, 0);
+
+        if (Settings.JLbms      || 
+            Settings.JLfrequent ||
+            Settings.JLpl       ||
+            Settings.JLrecent   || 
+            Settings.JLtasks)
+        {            
+            static wchar_t tmp1[128], tmp2[128], tmp3[128], tmp4[128], tmp5[128], tmp6[128];
+            if (!jl.CreateJumpList(tools::getShortPluginDllPath(plugin.hDllInstance),
+                WASABI_API_LNGSTRINGW_BUF(IDS_WINAMP_PREFERENCES,tmp1,128),
+                WASABI_API_LNGSTRINGW_BUF(IDS_PLAY_FROM_BEGINNING,tmp2,128),
+                WASABI_API_LNGSTRINGW_BUF(IDS_RESUME_PLAYBACK,tmp3,128),
+                WASABI_API_LNGSTRINGW_BUF(IDS_OPEN_FILE,tmp4,128),
+                WASABI_API_LNGSTRINGW_BUF(IDS_BOOKMARKS,tmp5,128),
+                WASABI_API_LNGSTRINGW_BUF(IDS_PLAYLISTS,tmp6,128),
+                Settings.JLrecent, Settings.JLfrequent,
+                Settings.JLtasks, Settings.JLbms, Settings.JLpl, bms))
+            {
+                MessageBoxEx(plugin.hwndParent,
+                    WASABI_API_LNGSTRINGW(IDS_ERROR_CREATING_JUMP_LIST),
+                    0, MB_ICONWARNING | MB_OK, 0);
+            }
         }
     }	
 }
@@ -2086,7 +2295,7 @@ extern "C" {
         {
             std::wstring ini_path = tools::getWinampINIPath(plugin.hwndParent) + L"\\Plugins\\" + INIFILE_NAME;
             DeleteFile(ini_path.c_str());
-            JumpList jl;
+            JumpList jl(AppID);
             jl.DeleteJumpList();
         }
         return GEN_PLUGIN_UNINSTALL_REBOOT;

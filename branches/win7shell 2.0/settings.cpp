@@ -88,7 +88,10 @@ bool SettingsManager::ReadSettings(sSettings &Destination_struct)
     Destination_struct.LastUpdateCheck = GetInt(L"LastUpdateCheck", 0);
     Destination_struct.IconSize = GetInt(L"IconSize", 50);
     Destination_struct.IconPosition = GetInt(L"IconPosition", IP_UPPERLEFT);
-    
+    Destination_struct.disallow_peek = GetBool(L"disallow_peek", true);
+    Destination_struct.BG_Transparency = GetInt(L"BG_Transparency", 0);
+    Destination_struct.LastMessage = GetInt(L"last_message", -1);
+  
     // Decoding bool[16] Buttons
     wstring Buttons = GetString(L"Buttons", L"1111100000000000");
     for (int i = 0; i!= 16; ++i)
@@ -157,6 +160,9 @@ bool SettingsManager::WriteSettings(const sSettings &Source_struct)
     result = result & (int)WriteInt(L"LastUpdateCheck", Source_struct.LastUpdateCheck);
     result = result & (int)WriteInt(L"IconSize", Source_struct.IconSize);
     result = result & (int)WriteInt(L"IconPosition", Source_struct.IconPosition);
+    result = result & (int)WriteBool(L"disallow_peek", Source_struct.disallow_peek);
+    result = result & (int)WriteInt(L"BG_Transparency", Source_struct.BG_Transparency);
+    result = result & (int)WriteInt(L"last_message", Source_struct.LastMessage);
 
     // Encoding bool[16] Buttons
     wstringstream s;
@@ -273,6 +279,12 @@ void SettingsManager::WriteSettings_ToForm(HWND hwnd, HWND WinampWnd, const sSet
     //Thumbnail pb
     SendMessage(GetDlgItem(hwnd, IDC_CHECK29), (UINT) BM_SETCHECK, Settings.Thumbnailpb, 0);
 
+    //Disallow aero peek
+    SendMessage(GetDlgItem(hwnd, IDC_CHECK_AEROPEEK), (UINT) BM_SETCHECK, Settings.disallow_peek, 0);    
+
+    //Add 2 recent
+    SendMessage(GetDlgItem(hwnd, IDC_CHECK_A2R), (UINT) BM_SETCHECK, !Settings.Add2RecentDocs, 0);    
+
     SendMessage(GetDlgItem(hwnd, IDC_CHECK30), (UINT) BM_SETCHECK, Settings.JLrecent, 0);
     SendMessage(GetDlgItem(hwnd, IDC_CHECK31), (UINT) BM_SETCHECK, Settings.JLfrequent, 0);
     SendMessage(GetDlgItem(hwnd, IDC_CHECK32), (UINT) BM_SETCHECK, Settings.JLtasks, 0);
@@ -283,13 +295,16 @@ void SettingsManager::WriteSettings_ToForm(HWND hwnd, HWND WinampWnd, const sSet
     SendMessage(GetDlgItem(hwnd, IDC_CHECK36), (UINT) BM_SETCHECK, static_cast<WPARAM>(Settings.LowFrameRate), 0);
 
     //Trackbar
-    SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETRANGEMAX, TRUE, 100);
-    SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETRANGEMIN, TRUE, 1);
     SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_SETPOS, TRUE, Settings.IconSize);
+    SendMessage(GetDlgItem(hwnd, IDC_SLIDER_TRANSPARENCY), TBM_SETPOS, TRUE, Settings.BG_Transparency);
     
     wstringstream size;
     size << "Icon size (" << SendMessage(GetDlgItem(hwnd, IDC_SLIDER1), TBM_GETPOS, NULL, NULL) << "%)";
     SetWindowTextW(GetDlgItem(hwnd, IDC_ICONSIZE), size.str().c_str());
+
+    size.str(L"");
+    size << SendMessage(GetDlgItem(hwnd, IDC_SLIDER_TRANSPARENCY), TBM_GETPOS, NULL, NULL) << "%";
+    SetWindowTextW(GetDlgItem(hwnd, IDC_TRANSPARENCY_PERCENT), size.str().c_str());
 
     SetWindowText(GetDlgItem(hwnd, IDC_EDIT2), Settings.BGPath.c_str());
 
@@ -397,7 +412,7 @@ bool SettingsManager::ReadButtons( std::vector<int> &tba )
 {
     std::wstring text;
     text.resize(100);
-    if (!GetPrivateProfileString(SECTION_NAME_GENERAL, L"ThumbButtons", L"1076,1077,1078,1079,1084", &text[0], 99, mPath.c_str()))
+    if (!GetPrivateProfileString(SECTION_NAME_GENERAL, L"ThumbButtons", L"1300,1301,1302,1303,1308", &text[0], 99, mPath.c_str()))
     {
         return false;
     }
@@ -412,14 +427,24 @@ bool SettingsManager::ReadButtons( std::vector<int> &tba )
         buffer << text.substr(0, pos);
         int code;
         buffer >> code;
-        if (code == -1)
+        if (code < 1300)
         {
+            text.erase(0, pos+1);
             continue;
         }
         tba.push_back(code);
         text.erase(0, pos+1);
     } 
     while (pos != std::wstring::npos);
+
+    if (tba.size() == 0)
+    {
+        tba.push_back(1300);
+        tba.push_back(1301);
+        tba.push_back(1302);
+        tba.push_back(1303);
+        tba.push_back(1308);
+    }
 
     return true;
 }

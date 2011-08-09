@@ -15,14 +15,15 @@
 //using namespace TagLib;
 using namespace Gdiplus;
 
-AlbumArt::AlbumArt( api_memmgr* WASABI_API_MEMMGR, api_albumart* AGAVE_API_ALBUMART ) :
+AlbumArt::AlbumArt( api_memmgr* WASABI_API_MEMMGR, api_albumart* AGAVE_API_ALBUMART, const sSettings &settings ) :
 m_WASABI_API_MEMMGR(WASABI_API_MEMMGR),
-m_AGAVE_API_ALBUMART(AGAVE_API_ALBUMART)
+m_AGAVE_API_ALBUMART(AGAVE_API_ALBUMART),
+m_settings(settings)
 {
 }
 
 bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg, 
-                     int width, int height, int icon, int& iconsize) const
+                     int width, int height, int& iconsize) const
 {
     ARGB32* cur_image = 0;
     int cur_w = 0, cur_h = 0;
@@ -46,6 +47,17 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
         Bitmap tmpbmp(&bmi, cur_image);
         Graphics gfx(retimg);
 
+        //Calculate Alpha blend based on Transparency
+        float fBlend = (100-m_settings.BG_Transparency)/100.0;
+
+        ColorMatrix BitmapMatrix =	{     
+            1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, fBlend, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+        };
+
         gfx.SetSmoothingMode(SmoothingModeNone);
         gfx.SetInterpolationMode(InterpolationModeHighQuality);
         gfx.SetPixelOffsetMode(PixelOffsetModeNone);
@@ -53,7 +65,7 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
        
         int iconleft = 0, icontop = 0;
 
-        switch (icon)
+        switch (m_settings.IconPosition)
         {
         case IP_LOWERLEFT:
             icontop = height - iconsize - 2;
@@ -71,7 +83,7 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
         float new_width = 0;
         float anchor = height;
 
-        if (icon < 0)
+        if (!m_settings.AsIcon)
         {
             if (width < height)
             {
@@ -113,23 +125,40 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
         iconsize = new_width;
 
         // Draw icon shadow
-        if (icon < 0)
+        if (!m_settings.AsIcon)
         {
             iconleft = (width / 2) - (new_width / 2);            
         }        
         else
         {
             gfx.SetSmoothingMode(SmoothingModeAntiAlias);
-            gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110, 0, 0, 0)),
+            gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110 - m_settings.BG_Transparency, 0, 0, 0)),
                 static_cast<REAL>(iconleft + 1), static_cast<REAL>(icontop + 1), 
                 static_cast<REAL>(new_width + 1), static_cast<REAL>(new_height + 1));
         }
 
         // Draw icon
         gfx.SetSmoothingMode(SmoothingModeNone);
-        gfx.DrawImage(&tmpbmp, 
-            RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
-            static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
+
+        if (m_settings.BG_Transparency == 0)
+        {
+            gfx.DrawImage(&tmpbmp, 
+                RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
+                static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
+        }
+        else
+        {
+            ImageAttributes ImgAttr;
+            ImgAttr.SetColorMatrix(&BitmapMatrix, 
+                ColorMatrixFlagsDefault, 
+                ColorAdjustTypeBitmap);
+
+            gfx.DrawImage(&tmpbmp, 
+                RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
+                static_cast<REAL>(new_width), static_cast<REAL>(new_height)),
+                0, 0, cur_w, cur_h,
+                UnitPixel, &ImgAttr);
+        }
 
         if (cur_image) 
             WASABI_API_MEMMGR->sysFree(cur_image);
