@@ -11,9 +11,12 @@
 #include "jumplist.h"
 #include "api.h"
 
-JumpList::JumpList()
+JumpList::JumpList(const std::wstring AppID) :
+m_AppID(AppID),
+max_items_jumplist(100)
 {
-    hr = CoCreateInstance(CLSID_DestinationList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pcdl));
+    m_hr = CoCreateInstance(CLSID_DestinationList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pcdl));
+    pcdl->SetAppID(m_AppID.c_str());
 }
 
 JumpList::~JumpList()
@@ -98,9 +101,9 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::w
 
     UINT cMinSlots;
     IObjectArray *poaRemoved;
-    hr = pcdl->BeginList(&cMinSlots, IID_PPV_ARGS(&poaRemoved));
+    HRESULT hr = pcdl->BeginList(&cMinSlots, IID_PPV_ARGS(&poaRemoved));
 
-    HRESULT hr = CoCreateInstance(CLSID_EnumerableObjectCollection, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&poc));
+    CoCreateInstance(CLSID_EnumerableObjectCollection, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&poc));
 
     if (!bms.empty() && addbm && hr == S_OK)
     {
@@ -142,7 +145,7 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::w
         if (frequent)
             pcdl->AppendKnownCategory(KDC_FREQUENT);
         
-        if (addbm)
+        if (addbm && !bms.empty())
             _AddCategoryToList();	
 
         if (playlist)
@@ -286,7 +289,7 @@ HRESULT JumpList::_AddCategoryToList()
 HRESULT JumpList::_AddCategoryToList2()
 {
     IObjectCollection *poc;
-    HRESULT hr = CoCreateInstance(CLSID_EnumerableObjectCollection, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&poc));
+    HRESULT hr = CoCreateInstance(CLSID_EnumerableObjectCollection, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&poc));    
 
     // enumerate through playlists (need to see if can use api_playlists.h via sdk)
     if(AGAVE_API_PLAYLISTS && AGAVE_API_PLAYLISTS->GetCount()){
@@ -325,4 +328,73 @@ HRESULT JumpList::_AddCategoryToList2()
     }
 
     return S_OK;
+}
+
+bool JumpList::CleanJumpList()
+{
+    IApplicationDocumentLists *padl;
+    HRESULT hr = CoCreateInstance(CLSID_ApplicationDocumentLists, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&padl));
+
+    if (SUCCEEDED(hr))
+    {
+        CleanJL(padl, ADLT_RECENT);
+        CleanJL(padl, ADLT_FREQUENT);
+    }
+
+    padl->Release();
+
+    return true;
+}
+
+bool JumpList::CleanJL(IApplicationDocumentLists *padl, APPDOCLISTTYPE type)
+{
+    IObjectArray *poa;
+    padl->SetAppID(m_AppID.c_str());
+    HRESULT hr = padl->GetList(type, 0, IID_PPV_ARGS(&poa));
+
+    if (SUCCEEDED(hr))
+    {
+        UINT *count = new UINT;
+        hr = poa->GetCount(count);
+        if (SUCCEEDED(hr) && (*count) > max_items_jumplist)
+        {   
+            IApplicationDestinations *pad;
+            HRESULT hr = CoCreateInstance(CLSID_ApplicationDestinations, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pad));
+            pad->SetAppID(m_AppID.c_str());
+
+            if (SUCCEEDED(hr))
+            {
+                for (int i = (*count)-1; i > max_items_jumplist; --i)
+                {
+                    IShellLink *psi;
+                    hr = poa->GetAt(i, IID_PPV_ARGS(&psi));
+
+                    if (SUCCEEDED(hr))
+                    {
+                        try
+                        {
+                            pad->RemoveDestination(psi);
+                        }
+                        catch (...)
+                        {
+                            continue;
+                        }                            
+                    }
+                }
+            }                
+        }
+    }
+    else
+    {
+        wchar_t path[MAX_PATH];
+        SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, path);
+        std::wstring filepath(path);
+        filepath += L"\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\879d567ffa1f5b9f.automaticDestinations-ms";
+        if (DeleteFile(filepath.c_str()) == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

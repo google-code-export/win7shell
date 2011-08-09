@@ -4,9 +4,13 @@
 #include <windows.h>
 #include <GdiPlus.h>
 #include <vector>
+#include <string>
 #include "gen_win7shell.h"
 #include "metadata.h"
 #include "albumart.h"
+#include "lines.h"
+
+using namespace Gdiplus;
 
 class renderer
 {
@@ -15,15 +19,10 @@ public:
     ~renderer();
 
     HBITMAP GetThumbnail();
-    inline void ClearBackground();
+    void ClearBackground();
     void ClearCustomBackground();
     void ThumbnailPopup();
-
-    inline void SetDimensions(int new_w, int new_h) 
-    {
-        width = new_w;
-        height = new_h;
-    }
+    void SetDimensions(int new_w, int new_h);
 
 private:
     ULONG_PTR gdiplusToken;
@@ -42,5 +41,37 @@ private:
     bool fail;
     bool scroll_block;
 };
+
+// INLINE
+
+inline void renderer::SetDimensions(int new_w, int new_h) 
+{
+    width = new_w;
+    height = new_h;
+}
+
+inline void renderer::ClearBackground()
+{
+    if (background)
+    {
+        delete background;
+        background = NULL;
+    }
+}
+
+inline void renderer::ThumbnailPopup()
+{ 
+    m_textpositions.clear();
+    m_textpause = 60;
+}
+
+inline void renderer::ClearCustomBackground()
+{
+    if (custom_img)
+    {
+        delete custom_img;
+        custom_img = NULL;
+    }
+}
 
 #endif // renderer_h__

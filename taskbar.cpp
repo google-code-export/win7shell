@@ -41,15 +41,6 @@ bool iTaskBar::Reset(HWND WinampWnd)
     return true;
 }
 
-void iTaskBar::SetProgressState( TBPFLAG newstate )
-{
-    if (newstate != progressbarstate)
-    {
-        pTBL->SetProgressState(mWinampWnd, newstate);
-        progressbarstate = newstate;
-    }
-}
-
 HRESULT iTaskBar::SetImageList(HIMAGELIST ImageList)
 {
     return pTBL->ThumbBarSetImageList(mWinampWnd, ImageList);
@@ -68,18 +59,15 @@ void iTaskBar::SetIconOverlay( HICON icon, std::wstring text )
    pTBL->SetOverlayIcon(mWinampWnd, icon, text.c_str());
 }
 
-void iTaskBar::SetProgressValue( ULONGLONG completed, ULONGLONG total )
+void iTaskBar::SetWindowAttr(bool enable, bool flip, bool peek)
 {
-    pTBL->SetProgressValue(mWinampWnd, completed, total);
-}
-
-void iTaskBar::SetWindowAttr(bool enable, bool flip)
-{
-    bool enabled = enable;    
+    bool enabled = true;
     DwmInvalidateIconicBitmaps(mWinampWnd);
     DwmSetWindowAttribute(mWinampWnd, DWMWA_HAS_ICONIC_BITMAP, &enabled, sizeof(int));
     DwmSetWindowAttribute(mWinampWnd, DWMWA_FORCE_ICONIC_REPRESENTATION, &enabled, sizeof(int));
-    DwmSetWindowAttribute(mWinampWnd, DWMWA_DISALLOW_PEEK, &enabled, sizeof(int));
+
+    enabled = peek;
+    DwmSetWindowAttribute(mWinampWnd, DWMWA_DISALLOW_PEEK, &peek, sizeof(int));
     
     if (flip)
     {

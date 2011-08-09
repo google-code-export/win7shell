@@ -38,6 +38,7 @@ struct sSettings
     int Revertto;
     std::wstring BGPath;
     std::wstring Text;
+    bool disallow_peek;
     
 	bool Add2RecentDocs;
 	bool Antialias;
@@ -53,6 +54,7 @@ struct sSettings
 	bool AsIcon;
     int IconSize;
     int IconPosition;
+    int BG_Transparency;
 
     // jumplist
 	bool JLrecent;
@@ -66,18 +68,24 @@ struct sSettings
     bool LowFrameRate;
     int LastTab;
     int LastUpdateCheck;
+    int LastMessage;
 
     // playback info
     int play_current;
     int play_total;
     int play_playlistpos;
     int play_volume;
-
-
+    int play_state;
+    int state_repeat;
+    int state_shuffle;
+    
     // font settings
     LOGFONT font;
     DWORD text_color;
     DWORD bgcolor;
+
+    // messages
+
 };
 
 struct linesettings
@@ -107,7 +115,7 @@ enum IconPosition
 
 enum ThumbButtonID
 {
-    TB_PREVIOUS = 1076,
+    TB_PREVIOUS = 1300,
     TB_PLAYPAUSE,
     TB_STOP,
     TB_NEXT,
@@ -116,12 +124,18 @@ enum ThumbButtonID
     TB_VOLUP,
     TB_OPENFILE,
     TB_MUTE,
-    TB_STOPAFTER
+    TB_STOPAFTER,
+    TB_REPEAT,
+    TB_SHUFFLE,
+    TB_JTFE,
+    TB_DELETE,
+    TB_OPENEXPLORER
 };
 
 #define SECTION_NAME_GENERAL L"general"
 #define SECTION_NAME_FONT L"font"
 #define SECTION_NAME_RESUME L"resume"
+#define SECTION_NAME_MESSAGES L"messages"
 
 #define PLAYSTATE_PLAYING 1
 #define PLAYSTATE_PAUSED 3

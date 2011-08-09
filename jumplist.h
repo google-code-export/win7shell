@@ -13,7 +13,7 @@
 class JumpList
 {
 public:
-	JumpList();
+	JumpList(std::wstring AppID);
 	~JumpList();
 
 	HRESULT _CreateShellLink(PCWSTR pszArguments, PCWSTR pszTitle, IShellLink **ppsl, int iconindex, bool WA);
@@ -25,12 +25,24 @@ public:
 		std::wstring resume, std::wstring openfile, std::wstring bookmarks, std::wstring pltext, bool recent, 
 		bool frequent, bool tasks, bool addbm, bool playlist, const std::wstring bms);
 	bool DeleteJumpList();
+    bool CleanJumpList();
 
 private:
+    bool CleanJL(IApplicationDocumentLists *padl, APPDOCLISTTYPE type);
+
 	ICustomDestinationList *pcdl;
 	IObjectCollection *poc;
-	HRESULT hr;
-	std::wstring path, s1, s2, s3, s4, s5, s6;
+	HRESULT m_hr;
+	std::wstring path;
+    std::wstring m_AppID;
+    std::wstring s1;
+    std::wstring s2;
+    std::wstring s3;
+    std::wstring s4;
+    std::wstring s5;
+    std::wstring s6;
+
+    const int max_items_jumplist;
 };
 
 #endif // jumplist_h__

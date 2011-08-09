@@ -9,33 +9,6 @@
 
 using namespace Gdiplus;
 
-renderer::renderer(const sSettings& m_Settings, MetaData &metadata, const AlbumArt &AA, HWND WinampWnd) : 
-m_Settings(m_Settings),
-m_metadata(metadata),
-m_albumart(AA),
-background(NULL),
-fail(false),
-no_icon(false),
-scroll_block(false),
-m_hwnd(WinampWnd),
-width(200), //thumbnail width
-height(120), //thumbnail height
-m_iconwidth(0),
-m_iconheight(0),
-custom_img(NULL),
-m_textpause(60) //number of frames for minimum text pause
-{
-    GdiplusStartupInput gdiplusStartupInput;   
-    GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-}
-
-renderer::~renderer()
-{
-    ClearBackground();
-    ClearCustomBackground();
-    GdiplusShutdown(gdiplusToken);
-}
-
 HBITMAP renderer::GetThumbnail()
 {
     //Calculate icon size
@@ -48,6 +21,17 @@ HBITMAP renderer::GetThumbnail()
         iconsize = (m_Settings.IconSize * iconsize) / 100;
         iconsize -= 2;
     }
+
+    //Calculate Alpha blend based on Transparency
+    float fBlend = (100-m_Settings.BG_Transparency)/100.0;
+
+    ColorMatrix BitmapMatrix =	{     
+        1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, fBlend, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+    };
 
     bool tempfail = fail;
     int iconposition = m_Settings.IconPosition;
@@ -76,24 +60,24 @@ HBITMAP renderer::GetThumbnail()
         case BG_TRANSPARENT:
             no_icon = true;
             break;
-    
+
         case BG_ALBUMART:
             {
-               // get album art
-               if (!m_albumart.getAA(m_metadata.getFileName(), background, 
-                   width, height, m_Settings.AsIcon ? iconposition : -1, iconsize) &&
-                        m_Settings.Revertto != BG_ALBUMART)
-               {
-                   // fallback
-                   fail = true;
-                   ClearBackground();                            
-                   GetThumbnail();
-               }
-               else
-               {
-                   m_iconwidth = iconsize;
-                   m_iconheight = iconsize;
-               }
+                // get album art
+                if (!m_albumart.getAA(m_metadata.getFileName(), background, 
+                    width, height, iconsize) &&
+                    m_Settings.Revertto != BG_ALBUMART)
+                {
+                    // fallback
+                    fail = true;
+                    ClearBackground();                            
+                    GetThumbnail();
+                }
+                else
+                {
+                    m_iconwidth = iconsize;
+                    m_iconheight = iconsize;
+                }
             }
             break;
 
@@ -110,21 +94,23 @@ HBITMAP renderer::GetThumbnail()
                     {
                         Graphics gfx(custom_img);
                         gfx.SetInterpolationMode(InterpolationModeBicubic);
+                        float img_width = img.GetWidth();
+                        float img_height = img.GetHeight();
 
                         if (m_Settings.AsIcon)
                         {
                             float new_height = 0;
                             float new_width = 0;
 
-                            if (img.GetWidth() > img.GetHeight())
+                            if (img_width > img_height)
                             {
-                                new_height = (float)img.GetHeight() / (float)img.GetWidth() * (float)iconsize;
+                                new_height = img_height / img_width * (float)iconsize;
                                 new_height -= 2;
                                 new_width = iconsize;
                             }
                             else
                             {
-                                new_width = (float)img.GetWidth() / (float)img.GetHeight() * (float)iconsize;
+                                new_width = img_width / img_height * (float)iconsize;
                                 new_width -= 2;
                                 new_height = iconsize;
                             }
@@ -143,19 +129,43 @@ HBITMAP renderer::GetThumbnail()
                                 iconleft = width - iconsize - 2;
                                 icontop = height - iconsize - 2;
                                 break;
-                            }                            
+                            }            
 
-                            // Draw icon shadow
-                            gfx.SetSmoothingMode(SmoothingModeAntiAlias);
-                            gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110, 0, 0, 0)),
-                                static_cast<REAL>(iconleft + 1), static_cast<REAL>(icontop + 1), 
-                                static_cast<REAL>(new_width + 1), static_cast<REAL>(new_height + 1));
+                            if (m_Settings.BG_Transparency == 0)
+                            {
+                                // Draw icon shadow
+                                gfx.SetSmoothingMode(SmoothingModeAntiAlias);
+                                gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110, 0, 0, 0)),
+                                    static_cast<REAL>(iconleft + 1), static_cast<REAL>(icontop + 1), 
+                                    static_cast<REAL>(new_width + 1), static_cast<REAL>(new_height + 1));
 
-                            // Draw icon
-                            gfx.SetSmoothingMode(SmoothingModeNone);
-                            gfx.DrawImage(&img,
-                                RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
-                                static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
+                                // Draw icon
+                                gfx.SetSmoothingMode(SmoothingModeNone);
+                                gfx.DrawImage(&img,
+                                    RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
+                                    static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
+                            }
+                            else
+                            {
+                                ImageAttributes ImgAttr;
+                                ImgAttr.SetColorMatrix(&BitmapMatrix, 
+                                    ColorMatrixFlagsDefault, 
+                                    ColorAdjustTypeBitmap);
+
+                                // Draw icon shadow
+                                gfx.SetSmoothingMode(SmoothingModeAntiAlias);
+                                gfx.FillRectangle(&SolidBrush(Color::MakeARGB(110 - m_Settings.BG_Transparency, 0, 0, 0)),
+                                    static_cast<REAL>(iconleft + 1), static_cast<REAL>(icontop + 1), 
+                                    static_cast<REAL>(new_width + 1), static_cast<REAL>(new_height + 1));
+
+                                // Draw icon
+                                gfx.SetSmoothingMode(SmoothingModeNone);
+                                gfx.DrawImage(&img,
+                                    RectF(static_cast<REAL>(iconleft), static_cast<REAL>(icontop), 
+                                    static_cast<REAL>(new_width), static_cast<REAL>(new_height)),
+                                    0, 0, img_width, img_height,
+                                    UnitPixel, &ImgAttr);
+                            }
 
                             m_iconwidth = new_width;
                             m_iconheight = new_height;
@@ -164,34 +174,50 @@ HBITMAP renderer::GetThumbnail()
                         {
                             float new_height = 0;
                             float new_width = 0;
-                            
+
                             if (width > height)
                             {
-                                new_height = (float)img.GetHeight() / (float)img.GetWidth() * (float)width;                            
+                                new_height = img_height / img_width * (float)width;                            
                                 new_width = width;
 
                                 if (new_height > height)
                                 {
-                                    new_width = (float)img.GetWidth() / (float)img.GetHeight() * (float)height;                         
+                                    new_width = img_width / img_height * (float)height;                         
                                     new_height = height;
                                 }
 
                             }
                             else
                             {
-                                new_width = (float)img.GetWidth() / (float)img.GetHeight() * (float)height;                         
+                                new_width = img_width / img_height * (float)height;                         
                                 new_height = height;
 
                                 if (new_width > width)
                                 {
-                                    new_height = (float)img.GetHeight() / (float)img.GetWidth() * (float)width;                            
+                                    new_height = img_height / img_width * (float)width;                            
                                     new_width = width;
                                 }
                             }
 
                             gfx.SetSmoothingMode(SmoothingModeNone);
-                            gfx.DrawImage(&img, RectF((width / 2) - (new_width/2), 0, 
-                                static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
+
+                            if (m_Settings.BG_Transparency == 0)
+                            {
+                                gfx.DrawImage(&img, RectF((width / 2) - (new_width/2), 0, 
+                                    static_cast<REAL>(new_width), static_cast<REAL>(new_height)));
+                            }
+                            else
+                            {
+                                ImageAttributes ImgAttr;
+                                ImgAttr.SetColorMatrix(&BitmapMatrix, 
+                                    ColorMatrixFlagsDefault, 
+                                    ColorAdjustTypeBitmap);
+
+                                gfx.SetSmoothingMode(SmoothingModeNone);
+                                gfx.DrawImage(&img, RectF((width / 2) - (new_width/2), 0, static_cast<REAL>(new_width), static_cast<REAL>(new_height)),
+                                    0, 0, img_width, img_height,
+                                    UnitPixel, &ImgAttr);
+                            }
                         }
                     }
                     else if (m_Settings.Revertto != BG_CUSTOM)
@@ -227,7 +253,7 @@ HBITMAP renderer::GetThumbnail()
     {
         return NULL;
     }
-    
+
     REAL textheight = 0;
     Bitmap *canvas = background->Clone(0, 0, background->GetWidth(), background->GetHeight(), PixelFormat32bppPARGB);
     Graphics gfx(canvas);
@@ -282,40 +308,40 @@ HBITMAP renderer::GetThumbnail()
                 }
             }
         }
-    
+
         // Setup fonts	    
         HDC h_gfx = gfx.GetHDC();	    
         Font font(h_gfx, &m_Settings.font);
-    
+
         LOGFONT large_font = {};
         large_font = m_Settings.font;	    
-    
+
         LONG large_size = -((m_Settings.font.lfHeight * 72) / GetDeviceCaps(h_gfx, LOGPIXELSY));
         large_size += 4;
         large_font.lfHeight = -MulDiv(large_size, GetDeviceCaps(h_gfx, LOGPIXELSY), 72);
         Font largefont(h_gfx, &large_font);
-    
+
         gfx.ReleaseHDC(h_gfx);
-    
+
         SolidBrush bgcolor(Color(GetRValue(m_Settings.bgcolor), GetGValue(m_Settings.bgcolor), GetBValue(m_Settings.bgcolor)));
         SolidBrush fgcolor(Color(GetRValue(m_Settings.text_color), GetGValue(m_Settings.text_color), GetBValue(m_Settings.text_color)));
-        
+
         StringFormat sf(StringFormatFlagsNoWrap);
         const int text_space = 28;
-    
+
         for (std::size_t text_index = 0; text_index != text_parser.GetNumberOfLines(); ++text_index)
         {
             RectF ret_rect;
             std::wstring current_text = text_parser.GetLineText(text_index);
             linesettings current_settings = text_parser.GetLineSettings(text_index);
-         
+
             // Measure size
             gfx.SetTextRenderingHint(TextRenderingHintAntiAlias);
             if (current_settings.largefont)
                 gfx.MeasureString(current_text.c_str(), -1, &largefont, RectF(0, 0, 2000, 1000), &sf, &ret_rect);
             else
                 gfx.MeasureString(current_text.c_str(), -1, &font, RectF(0, 0, 2000, 1000), &sf, &ret_rect);
-    
+
             if (ret_rect.GetBottom() == 0)
             {
                 if (current_text.empty())
@@ -327,10 +353,10 @@ HBITMAP renderer::GetThumbnail()
                     gfx.MeasureString(L"QWEXCyjM", -1, &Font(L"Segoe UI", 14), RectF(0, 0, static_cast<REAL>(width), static_cast<REAL>(height)), &sf, &ret_rect);			
                 }
             }
-    
+
             Bitmap text_bitmap(ret_rect.GetRight(), ret_rect.GetBottom() - 1, PixelFormat32bppPARGB);
             Graphics text_gfx(&text_bitmap);
-    
+
             // Graphics setup
             text_gfx.SetSmoothingMode(SmoothingModeNone);
             text_gfx.SetInterpolationMode(InterpolationModeNearestNeighbor);
@@ -341,11 +367,11 @@ HBITMAP renderer::GetThumbnail()
                 text_gfx.SetTextRenderingHint(TextRenderingHintSingleBitPerPixelGridFit);
 
             // Draw box if needed
-            if (current_settings.darkbox)
+            if (current_settings.darkbox && !current_text.empty())
             {
                 SolidBrush boxbrush(Color::MakeARGB(120, GetRValue(m_Settings.bgcolor),
                     GetGValue(m_Settings.bgcolor), GetBValue(m_Settings.bgcolor)));
-    
+
                 ret_rect.Height += 2;
                 text_gfx.FillRectangle(&boxbrush, ret_rect);
             }
@@ -353,12 +379,15 @@ HBITMAP renderer::GetThumbnail()
             text_gfx.SetTextContrast(120);
 
             // Draw text to offscreen surface
-            
+
             //shadow
-            text_gfx.DrawString(current_text.c_str(), -1, 
-                current_settings.largefont ? &largefont : &font, 
-                PointF(1, -1), &bgcolor);
-            
+            if (current_settings.shadow)
+            {
+                text_gfx.DrawString(current_text.c_str(), -1, 
+                    current_settings.largefont ? &largefont : &font, 
+                    PointF(1, -1), &bgcolor);
+            }
+
             //text
             text_gfx.DrawString(current_text.c_str(), -1, 
                 current_settings.largefont ? &largefont : &font, 
@@ -377,7 +406,7 @@ HBITMAP renderer::GetThumbnail()
                 m_iconheight = iconsize;
             }
 
-            if (m_Settings.AsIcon && !no_icon)
+            if (m_Settings.AsIcon && !no_icon && !current_settings.forceleft)
             {
                 if ( (iconposition == IP_UPPERLEFT || 
                     iconposition == IP_LOWERLEFT) &&
@@ -423,7 +452,7 @@ HBITMAP renderer::GetThumbnail()
                 else
                 {
                     gfx.DrawImage(&text_bitmap, X, (int)textheight, -left, 0, bmp_width + left,
-                                  bmp_height, UnitPixel);
+                        bmp_height, UnitPixel);
 
                     gfx.DrawImage(&text_bitmap, X + text_space + 2 + bmp_width + left, (int)textheight, 0, 0,
                         -left, bmp_height, UnitPixel);
@@ -458,10 +487,10 @@ HBITMAP renderer::GetThumbnail()
 
         if (!m_Settings.Shrinkframe)	
             textheight = height-2;
-    
+
         if (m_Settings.Thumbnailpb)
             textheight += 25;
-    
+
         if (textheight > height-2)
             textheight = height-2;
     }
@@ -470,15 +499,15 @@ HBITMAP renderer::GetThumbnail()
     if (m_Settings.Thumbnailpb && m_Settings.play_total > 0)// && m_Settings.play_current >0)
     {
         gfx.SetSmoothingMode(SmoothingModeAntiAlias);		
-        int Y = canvas->GetHeight()-15;
+        int Y = canvas->GetHeight()-10;
         if (m_Settings.Shrinkframe)
         {
-            Y = textheight - 15;
+            Y = textheight - 10;
         }
         Pen p1(Color::White, 1);
         Pen p2(Color::MakeARGB(80, 0, 0, 0), 1);
 
-        SolidBrush b1(Color::MakeARGB(150, 0, 0, 0));	
+        SolidBrush b1(Color::MakeARGB(50, 0, 0, 0));	
         SolidBrush b2(Color::MakeARGB(220, 255, 255, 255));
 
         RectF R1(44, (REAL)Y, 10, 9);
@@ -517,27 +546,29 @@ HBITMAP renderer::GetThumbnail()
     return retbmp;
 }
 
-void renderer::ClearBackground()
+renderer::renderer(const sSettings& m_Settings, MetaData &metadata, const AlbumArt &AA, HWND WinampWnd) : 
+m_Settings(m_Settings),
+    m_metadata(metadata),
+    m_albumart(AA),
+    background(NULL),
+    fail(false),
+    no_icon(false),
+    scroll_block(false),
+    m_hwnd(WinampWnd),
+    width(200), //thumbnail width
+    height(120), //thumbnail height
+    m_iconwidth(0),
+    m_iconheight(0),
+    custom_img(NULL),
+    m_textpause(60) //number of frames for minimum text pause
 {
-    if (background)
-    {
-        delete background;
-        background = NULL;
-    }
+    GdiplusStartupInput gdiplusStartupInput;   
+    GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 }
 
-void renderer::ThumbnailPopup()
-{ 
-    m_textpositions.clear();
-    m_textpause = 60;
-}
-
-void renderer::ClearCustomBackground()
+renderer::~renderer()
 {
-    if (custom_img)
-    {
-        delete custom_img;
-        custom_img = NULL;
-    }
+    ClearBackground();
+    ClearCustomBackground();
+    GdiplusShutdown(gdiplusToken);
 }
-

@@ -7,6 +7,13 @@
 
 using namespace std;
 
+MetaData::MetaData() : 
+isFile(false), 
+mfilename(L""), 
+m_play_count(0)
+{
+}
+
 void MetaData::setWinampWindow(HWND winampwindow)
 {
     mhwnd = winampwindow;
@@ -101,4 +108,20 @@ std::wstring MetaData::getMetadata(std::wstring tag)
 std::wstring MetaData::getFileName() const
 {
     return mfilename;
+}
+
+bool MetaData::CheckPlayCount()
+{
+    if (m_play_count > 50)
+    {
+        m_play_count = 0;
+        return true;
+    }
+    else
+    {
+        ++m_play_count;
+        return false;
+    }
+
+    return false;
 }
