@@ -1,3 +1,1 @@
 #labels Deprecated
-#4 Usage: #n text #n url \n#n+1 text 2
-#4 http://www.google.com
