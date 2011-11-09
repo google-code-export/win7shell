@@ -12,6 +12,7 @@
 namespace tools
 {
     // Namespace variables
+    const int NR_THUMB_BUTTONS = 19;
     std::wstring BM_path = L"";
     std::wstring INI_DIR_path = L"";
     std::wstring PLUG_DIR_path = L"";
@@ -411,9 +412,9 @@ namespace tools
         HIMAGELIST himlIcons;  
         HICON hicon;  
 
-        himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 19, 0); 	
+        himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, NR_THUMB_BUTTONS, 0); 	
 
-        for (int i = 0; i < 19; ++i)
+        for (int i = 0; i < NR_THUMB_BUTTONS; ++i)
         {
             hicon = LoadIcon(DllInstance, MAKEINTRESOURCE(IDI_TBICON0+i)); 
 

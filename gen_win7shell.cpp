@@ -980,36 +980,36 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
         {
             HBITMAP thumbnail = thumbnaildrawer->GetThumbnail();
 
-//             HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
-//             if (FAILED(hr))
-//             {
-//                 KillTimer(plugin.hwndParent, 6670);
-//                 MessageBoxEx(plugin.hwndParent,
-//                              WASABI_API_LNGSTRINGW(IDS_ERROR_SETTING_THUMBNAIL),
-//                              BuildPluginNameW(), MB_ICONERROR, 0);
-//                 Settings.Thumbnailenabled = false;
-//                 taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
-//             }
-
-            static HDC dest = GetDC(0);//FindWindow(L"calc", NULL));
-            HDC hdcMem = CreateCompatibleDC(dest);
-            SelectObject(hdcMem, thumbnail);
-
-            Beep(3000, 30);
-
-            if (BitBlt( 
-                dest, //destination device context
-                50, 50, //x,y location on destination
-                200, 120, //width,height of source bitmap
-                hdcMem, //source bitmap device context
-                0, 0, //start x,y on source bitmap
-                SRCCOPY) == 0) //blit method
-            {                
-                std::wstringstream s;
-                s << "\nBitBlt error: " << GetLastError() << "\n";
-                OutputDebugString(s.str().c_str());
-                Beep(1000, 100);
+            HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
+            if (FAILED(hr))
+            {
+                KillTimer(plugin.hwndParent, 6670);
+                MessageBoxEx(plugin.hwndParent,
+                             WASABI_API_LNGSTRINGW(IDS_ERROR_SETTING_THUMBNAIL),
+                             BuildPluginNameW(), MB_ICONERROR, 0);
+                Settings.Thumbnailenabled = false;
+                taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
             }
+
+//             static HDC dest = GetDC(0);//FindWindow(L"calc", NULL));
+//             HDC hdcMem = CreateCompatibleDC(dest);
+//             SelectObject(hdcMem, thumbnail);
+// 
+//             Beep(3000, 30);
+// 
+//             if (BitBlt( 
+//                 dest, //destination device context
+//                 50, 50, //x,y location on destination
+//                 200, 120, //width,height of source bitmap
+//                 hdcMem, //source bitmap device context
+//                 0, 0, //start x,y on source bitmap
+//                 SRCCOPY) == 0) //blit method
+//             {                
+//                 std::wstringstream s;
+//                 s << "\nBitBlt error: " << GetLastError() << "\n";
+//                 OutputDebugString(s.str().c_str());
+//                 Beep(1000, 100);
+//             }
 
             DeleteObject(thumbnail);
             break;

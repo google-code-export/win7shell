@@ -158,8 +158,6 @@ bool AlbumArt::getAA(std::wstring fname, Gdiplus::Bitmap *retimg,
                 static_cast<REAL>(new_width), static_cast<REAL>(new_height)),
                 0, 0, cur_w, cur_h,
                 UnitPixel, &ImgAttr);
-
-            gfx.DrawLine(new Pen(Color::Red, 1), 1, 0, 1, (int)new_height);
         }
 
         if (cur_image) 
