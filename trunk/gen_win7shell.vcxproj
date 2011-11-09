@@ -338,15 +338,14 @@ copy "$(OutDir)$(ProjectName).dll" "$(ProgramFiles)\Winamp\Plugins" /y
     <ResourceCompile Include="app.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\applybut.ico" />
     <None Include="Resources\bookmark.ico" />
-    <None Include="Resources\cancelbut.ico" />
+    <None Include="Resources\delete.ico" />
     <None Include="Resources\down.ico" />
     <None Include="Resources\fav.ico" />
+    <None Include="Resources\Folder.ico" />
     <None Include="Resources\minus.ico" />
     <None Include="Resources\mute1.ico" />
     <None Include="Resources\next.ico" />
-    <None Include="Resources\okbut.ico" />
     <None Include="Resources\open (2).ico" />
     <None Include="Resources\open.ico" />
     <None Include="Resources\pause.ico" />
@@ -356,10 +355,15 @@ copy "$(OutDir)$(ProjectName).dll" "$(ProgramFiles)\Winamp\Plugins" /y
     <None Include="Resources\playstop.ico" />
     <None Include="Resources\plus.ico" />
     <None Include="Resources\previous.ico" />
+    <None Include="Resources\Repeat_All.ico" />
+    <None Include="Resources\Repeat_Off.ico" />
+    <None Include="Resources\Repeat_One.ico" />
     <None Include="Resources\Resume (2).ico" />
-    <None Include="Resources\settings (2.ico" />
+    <None Include="Resources\Search.ico" />
+    <None Include="Resources\settings (2).ico" />
+    <None Include="Resources\Shuffle_off.ico" />
+    <None Include="Resources\Shuffle_on.ico" />
     <None Include="Resources\stop.ico" />
-    <None Include="Resources\try.bmp" />
     <None Include="Resources\up.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

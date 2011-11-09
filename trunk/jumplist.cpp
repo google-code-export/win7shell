@@ -115,7 +115,7 @@ bool JumpList::CreateJumpList(std::wstring pluginpath, std::wstring pref, std::w
             if (b)		
             {				
                 IShellLink * psl;
-                hr = _CreateShellLink(line2.c_str(), line1.c_str(), &psl, 15, true);
+                hr = _CreateShellLink(line2.c_str(), line1.c_str(), &psl, 4, true);
 
                 if (!_IsItemInArray(line2, poaRemoved))
                 {
@@ -181,7 +181,7 @@ HRESULT JumpList::_AddTasksToList()
         args = path + L",_pref@0";;
 
         IShellLink * psl;
-        hr = _CreateShellLink(args.c_str(), s1.c_str(), &psl, 11, false);
+        hr = _CreateShellLink(args.c_str(), s1.c_str(), &psl, 0, false);
         if (SUCCEEDED(hr))
         {
             hr = poc->AddObject(psl);
@@ -192,7 +192,7 @@ HRESULT JumpList::_AddTasksToList()
 
         if (SUCCEEDED(hr))
         {
-            hr = _CreateShellLink(args.c_str(), s4.c_str(), &psl, 12, false);
+            hr = _CreateShellLink(args.c_str(), s4.c_str(), &psl, 1, false);
             if (SUCCEEDED(hr))
             {
                 hr = poc->AddObject(psl);
@@ -204,7 +204,7 @@ HRESULT JumpList::_AddTasksToList()
 
         if (SUCCEEDED(hr))
         {
-            hr = _CreateShellLink(args.c_str(), s3.c_str(), &psl, 13, false);
+            hr = _CreateShellLink(args.c_str(), s3.c_str(), &psl, 3, false);
             if (SUCCEEDED(hr))
             {
                 hr = poc->AddObject(psl);
@@ -216,7 +216,7 @@ HRESULT JumpList::_AddTasksToList()
 
         if (SUCCEEDED(hr))
         {
-            hr = _CreateShellLink(args.c_str(), s2.c_str(), &psl, 14, false);
+            hr = _CreateShellLink(args.c_str(), s2.c_str(), &psl, 2, false);
             if (SUCCEEDED(hr))
             {
                 hr = poc->AddObject(psl);
@@ -307,7 +307,7 @@ HRESULT JumpList::_AddCategoryToList2()
             StringCchPrintf((LPWSTR)tmp.c_str(),tmp.size(),L" [%d]",numItems);
             title += tmp;
             
-            hr = _CreateShellLink(AGAVE_API_PLAYLISTS->GetFilename(i), title.c_str(), &psl, 16, true);
+            hr = _CreateShellLink(AGAVE_API_PLAYLISTS->GetFilename(i), title.c_str(), &psl, 5, true);
             if (SUCCEEDED(hr))
             {
                 psl->SetDescription(AGAVE_API_PLAYLISTS->GetFilename(i));
