@@ -411,11 +411,11 @@ namespace tools
         HIMAGELIST himlIcons;  
         HICON hicon;  
 
-        himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 9, 0); 	
+        himlIcons = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32, 19, 0); 	
 
-        for (int i = 0; i < 11; ++i)
+        for (int i = 0; i < 19; ++i)
         {
-            hicon = LoadIcon(DllInstance, MAKEINTRESOURCE(IDI_ICON1+i)); 
+            hicon = LoadIcon(DllInstance, MAKEINTRESOURCE(IDI_TBICON0+i)); 
 
             if (hicon == NULL)
                 return NULL;		
@@ -462,9 +462,9 @@ namespace tools
             case TB_PREVIOUS:
                 return 1;
             case TB_PLAYPAUSE:
-                return (mode == 1) ? 2 : 0;
+                return (mode == 1) ? 2 : 3;
             case TB_STOP:
-                return 3;
+                return 0;
             case TB_NEXT:
                 return 4;
             case TB_RATE:
@@ -503,6 +503,6 @@ namespace tools
         }
 
         return -1;
-    }
+    }    
 }
 #endif // tools_h__

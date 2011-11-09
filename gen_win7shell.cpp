@@ -52,8 +52,8 @@
 #include "renderer.h"
 
 UINT WM_TASKBARBUTTONCREATED;
-const std::wstring cur_version(__T("1.14"));
-const std::string cur_versionA("2.0 RC");
+const std::wstring cur_version(__T("2.0"));
+const std::string cur_versionA("2.0");
 const std::wstring AppID(L"Winamp");
 
 WNDPROC lpWndProcOld = 0;
@@ -199,7 +199,7 @@ int init()
             SetupJumpList();
 
             // Check for updates
-            if (!Settings.DisableUpdates)// && Settings.LastUpdateCheck != tools::GetCurrentDay())
+            if (!Settings.DisableUpdates && Settings.LastUpdateCheck != tools::GetCurrentDay())
                 if (SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_INETAVAILABLE))
                 {
                     _beginthread(CheckVersion, 0, NULL);
@@ -261,11 +261,21 @@ int init()
                SetTimer(plugin.hwndParent, 6668, 50, TimerProc);
 
            SetTimer(plugin.hwndParent, 6667, Settings.LowFrameRate ? 400 : 100, TimerProc);     
+           SetTimer(plugin.hwndParent, 6672, 10000, TimerProc);
 
            Settings.play_volume = IPC_GETVOLUME(plugin.hwndParent);
 
            theicons = tools::prepareIcons(plugin.hDllInstance);   
            metadata.setWinampWindow(plugin.hwndParent);
+
+           // update shuffle and repeat
+           Settings.state_shuffle = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_SHUFFLE);
+
+           Settings.state_repeat = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_REPEAT);
+           if (Settings.state_repeat == 1 && SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_MANUALPLADVANCE) == 1)
+           {
+               Settings.state_repeat = 2;
+           }
 
            // Create the taskbar interface
            taskbar = new iTaskBar();
@@ -344,6 +354,12 @@ void quit()
 
 void CheckVersion(void *dummy)
 {
+    std::wstring current_version = cur_version;
+    if (current_version.length() < 4)
+    {
+        current_version += '0';
+    }
+
     VersionChecker vc;
     std::wstring news = vc.IsNewVersion(cur_version);
     std::wstring vermsg = L"";
@@ -449,8 +465,18 @@ void updateToolbar(bool first)
     }
 }
 
+
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (message == WM_COMMAND && LOWORD(wParam) == 40023 ||
+        message == WM_KEYDOWN && wParam == 's')
+    {
+        Settings.state_shuffle = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_SHUFFLE);
+        Settings.state_shuffle = !Settings.state_shuffle;
+        updateToolbar(false);
+    }
+
     switch (message)
     {
 
@@ -461,11 +487,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 thumbnaildrawer->SetDimensions(HIWORD(lParam), LOWORD(lParam));
                 HBITMAP thumbnail = thumbnaildrawer->GetThumbnail();
-                DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, false);
+                
+                //HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, false);
 
                 thumbnaildrawer->ThumbnailPopup();
-                SetTimer(plugin.hwndParent, 6670, Settings.LowFrameRate ? 41 : 21, TimerProc); 
-                SetTimer(plugin.hwndParent, 6672, 10000, TimerProc);
+                SetTimer(plugin.hwndParent, 6670, Settings.LowFrameRate ? 41 : 21, TimerProc);                 
                 thumbshowing = true;
                 DeleteObject(thumbnail);
             }
@@ -473,7 +499,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
 
-    case WM_COMMAND:		
+    case WM_COMMAND:
         if (HIWORD(wParam) == THBN_CLICKED)
             switch (LOWORD(wParam))
             {
@@ -614,7 +640,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             case TB_REPEAT:
                 // get
                 Settings.state_repeat = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_REPEAT);
-
                 if (Settings.state_repeat == 1 && SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_MANUALPLADVANCE) == 1)
                 {
                     Settings.state_repeat = 2;
@@ -643,6 +668,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             case TB_JTFE:                
                 ShowWindow(plugin.hwndParent, SW_SHOWNORMAL);
+                SetForegroundWindow(plugin.hwndParent);                
                 SendMessage(plugin.hwndParent, WM_COMMAND, 40194, 0);
                 return 0;
                 break;
@@ -678,6 +704,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	                fileop.fAnyOperationsAborted = false;
 	                fileop.lpszProgressTitle = L"";
 
+                    int saved_play_state = Settings.play_state;
                     SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40047,0), 0);
                     Settings.play_state = PLAYSTATE_NOTPLAYING; 
 	
@@ -687,7 +714,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                             WM_WA_IPC, IPC_PE_DELETEINDEX, SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GETLISTPOS));
                     }
 
-                    SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40045,0), 0);
+                    if (saved_play_state == PLAYSTATE_PLAYING)
+                    {
+                        SendMessage(plugin.hwndParent, WM_COMMAND, MAKEWPARAM(40045,0), 0);
+                    }
+                    
                     return 0;
                 }
                 break;
@@ -743,8 +774,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                         thumbnaildrawer->ClearBackground();
                     }
 
-                    DwmInvalidateIconicBitmaps(plugin.hwndParent);                   
-                    thumbnaildrawer->ThumbnailPopup();                    
+                    DwmInvalidateIconicBitmaps(plugin.hwndParent);
+                    thumbnaildrawer->ThumbnailPopup();
 
                     Settings.play_state = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_ISPLAYING);
 
@@ -754,10 +785,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                             metadata.getMetadata(L"artist"));
 
                         if (Settings.play_total > 0)
-                            title += L"  (" + tools::SecToTime(Settings.play_total/1000) + L")";						
+                            title += L"  (" + tools::SecToTime(Settings.play_total/1000) + L")";
 
                         IShellLink * psl;
-                        SHARDAPPIDINFOLINK applink;						
+                        SHARDAPPIDINFOLINK applink;
                         if (/*true_msg  && */
                             tools::__CreateShellLink(filename.c_str(), title.c_str(), &psl) == S_OK &&
                             Settings.play_state == PLAYSTATE_PLAYING &&
@@ -769,7 +800,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                             psl->SetDescription(timestr.c_str());
                             applink.psl = psl;
                             applink.pszAppID = AppID.c_str();
-                            SHAddToRecentDocs(SHARD_LINK, psl); 
+                            SHAddToRecentDocs(SHARD_LINK, psl);
+                            psl->Release();
                         }
                     }
                
@@ -791,21 +823,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                             {
                             case 1:
                                 {
-                                    HICON icon = ImageList_GetIcon(theicons, 0, 0);
+                                    HICON icon = ImageList_GetIcon(theicons, tools::getBitmap(TB_PLAYPAUSE, 0), 0);
                                     taskbar->SetIconOverlay(icon, WASABI_API_LNGSTRINGW_BUF(IDS_PLAYING,tmp,64));
                                     DestroyIcon(icon);
                                 }
                                 break;
                             case 3:
                                 {
-                                    HICON icon = ImageList_GetIcon(theicons, 2, 0);
+                                    HICON icon = ImageList_GetIcon(theicons, tools::getBitmap(TB_PLAYPAUSE, 1), 0);
                                     taskbar->SetIconOverlay(icon, WASABI_API_LNGSTRINGW_BUF(IDS_PAUSED,tmp,64));
                                     DestroyIcon(icon);
                                 }
                                 break;
                             default:
                                 {
-                                    HICON icon = ImageList_GetIcon(theicons, 3, 0);
+                                    HICON icon = ImageList_GetIcon(theicons, tools::getBitmap(TB_STOP, 1), 0);
                                     taskbar->SetIconOverlay(icon, WASABI_API_LNGSTRINGW_BUF(IDS_PAUSED,tmp,64));
                                     DestroyIcon(icon);
                                 }								
@@ -936,7 +968,10 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
     case 6669: //rate wnd
         {
             if (ratewnd != NULL)
+            {
                 DestroyWindow(ratewnd);
+            }
+
             KillTimer(plugin.hwndParent, 6669);
             break;
         }
@@ -945,35 +980,55 @@ VOID CALLBACK TimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
         {
             HBITMAP thumbnail = thumbnaildrawer->GetThumbnail();
 
-            HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
-            if (FAILED(hr))
-            {
-                KillTimer(plugin.hwndParent, 6670);
-                MessageBoxEx(plugin.hwndParent,
-                             WASABI_API_LNGSTRINGW(IDS_ERROR_SETTING_THUMBNAIL),
-                             BuildPluginNameW(), MB_ICONERROR, 0);
-                Settings.Thumbnailenabled = false;
-                taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
-            }
+//             HRESULT hr = DwmSetIconicThumbnail(plugin.hwndParent, thumbnail, 0);
+//             if (FAILED(hr))
+//             {
+//                 KillTimer(plugin.hwndParent, 6670);
+//                 MessageBoxEx(plugin.hwndParent,
+//                              WASABI_API_LNGSTRINGW(IDS_ERROR_SETTING_THUMBNAIL),
+//                              BuildPluginNameW(), MB_ICONERROR, 0);
+//                 Settings.Thumbnailenabled = false;
+//                 taskbar->SetWindowAttr(Settings.Thumbnailenabled, Settings.VolumeControl, Settings.disallow_peek);
+//             }
 
-//             HDC dest = GetDC(FindWindow(L"Winamp PE", NULL));
-//             HDC hdcMem = CreateCompatibleDC(dest);
-//             SelectObject(hdcMem, thumbnail);
-// 
-//             BitBlt( 
-//                 dest, //destination device context
-//                 50, 50, //x,y location on destination
-//                 200, 120, //width,height of source bitmap
-//                 hdcMem, //source bitmap device context
-//                 0, 0, //start x,y on source bitmap
-//                 SRCCOPY); //blit method
+            static HDC dest = GetDC(0);//FindWindow(L"calc", NULL));
+            HDC hdcMem = CreateCompatibleDC(dest);
+            SelectObject(hdcMem, thumbnail);
+
+            Beep(3000, 30);
+
+            if (BitBlt( 
+                dest, //destination device context
+                50, 50, //x,y location on destination
+                200, 120, //width,height of source bitmap
+                hdcMem, //source bitmap device context
+                0, 0, //start x,y on source bitmap
+                SRCCOPY) == 0) //blit method
+            {                
+                std::wstringstream s;
+                s << "\nBitBlt error: " << GetLastError() << "\n";
+                OutputDebugString(s.str().c_str());
+                Beep(1000, 100);
+            }
 
             DeleteObject(thumbnail);
             break;
         }
 
-    case 6672: //check thumbshowing just in case - every 10 sec
+    case 6672: // check thumbshowing just in case - every 10 sec
         {
+            // update repeat state
+            int current_repeat_state = SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_REPEAT);
+            if (current_repeat_state == 1 && SendMessage(plugin.hwndParent,WM_WA_IPC,0,IPC_GET_MANUALPLADVANCE) == 1)
+            {
+                current_repeat_state = 2;
+            }
+            if (current_repeat_state != Settings.state_repeat)
+            {
+                Settings.state_repeat = current_repeat_state;
+                updateToolbar(false);
+            }            
+
             CheckThumbShowing();
             break;
         }
@@ -1697,13 +1752,13 @@ LRESULT CALLBACK TabHandler3(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPar
 	        // Set button icons
 	        for (int i = 0; i < NR_BUTTONS; i++)
 	        {
-	            HICON icon = ImageList_GetIcon(theicons, i+1, 0);
-	            SendMessage(GetDlgItem(hwnd, IDC_PCB1+i), BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);                
+                HICON icon = ImageList_GetIcon(theicons, tools::getBitmap(TB_PREVIOUS+i, i == 10 ? 1 : 0), 0);
+                SendMessage(GetDlgItem(hwnd, IDC_PCB1+i), BM_SETIMAGE, IMAGE_ICON, (LPARAM)icon);           
 	            DestroyIcon(icon);
 	        }
 	
-	        HICON up_icon = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON18), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-	        HICON down_icon = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON19), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	        HICON up_icon = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON7), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	        HICON down_icon = (HICON)LoadImage(plugin.hDllInstance, MAKEINTRESOURCE(IDI_ICON8), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 	
 	        if (up_icon != NULL && down_icon != NULL)
 	        {

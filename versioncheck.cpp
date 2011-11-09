@@ -109,7 +109,7 @@ wstring VersionChecker::IsNewVersion(wstring curvers)
         return L"";
     }
 
-    if (curvers == GET.substr(1, pos-1) || (_wcsicmp(curvers.c_str(), GET.substr(1, pos-1).c_str()) >= 0))
+    if (curvers == GET.substr(1, pos-1))// || (_wcsicmp(curvers.c_str(), GET.substr(1, pos-1).c_str()) >= 0))
     {
         closesocket(sockfd);
         return L"";
@@ -207,46 +207,50 @@ int VersionChecker::GetMessages(std::list<std::pair<std::wstring, std::wstring>>
 
     // Parse messages
     pos = 0;
-    while (pos != std::wstring::npos) 
-    {   
-        if (GET[pos+1] == L'#')
-        {
-            size_t c_pos = GET.find(L" ", pos+1);
-            UINT ID = _wtoi(GET.substr(pos+2, c_pos).c_str());
 
-            if (ID <= last_message)
+    if (GET.length() != 0)
+    {
+        while (pos != std::wstring::npos) 
+        {   
+            if (GET[pos+1] == L'#')
             {
-                pos = GET.find(L"\n#", pos+2);
-                continue;
-            }
+                size_t c_pos = GET.find(L" ", pos+1);
+                int ID = _wtoi(GET.substr(pos+2, c_pos).c_str());
+
+                if (ID <= last_message)
+                {
+                    pos = GET.find(L"\n#", pos+2);
+                    continue;
+                }
             
-            if (ID < first_message)
-            {
-                first_message = ID;
-            }
+                if (ID < first_message)
+                {
+                    first_message = ID;
+                }
             
-            message.second = L"";
-            pos = GET.find(L"\n#", pos+2);
-
-            if (last_ID != ID) // new message
-            {   
-                message.first = GET.substr(c_pos+1, pos-c_pos-1);
-                last_ID = ID;
-            }
-            else // link
-            {
-                message.second = GET.substr(c_pos+1, pos-c_pos-1);
-            }
-
-            if (pos == std::wstring::npos || !message.second.empty())
-            {
-                last_message = ID;
-                message_list.push_back(message);
-                message.first = L"";
                 message.second = L"";
+                pos = GET.find(L"\n#", pos+2);
+
+                if (last_ID != ID) // new message
+                {   
+                    message.first = GET.substr(c_pos+1, pos-c_pos-1);
+                    last_ID = ID;
+                }
+                else // link
+                {
+                    message.second = GET.substr(c_pos+1, pos-c_pos-1);
+                }
+
+                if (pos == std::wstring::npos || !message.second.empty())
+                {
+                    last_message = ID;
+                    message_list.push_back(message);
+                    message.first = L"";
+                    message.second = L"";
+                }
             }
-        }
-    } 
+        } 
+    }    
 
     closesocket(sockfd);
 
