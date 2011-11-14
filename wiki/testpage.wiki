@@ -1,7 +1,0 @@
-2.0
-
--first line (testing)
--second line
--third line :)
-
--bye!
