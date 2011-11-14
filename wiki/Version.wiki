@@ -1,9 +1,10 @@
 #labels Deprecated
-1.13
+2.0
 
-Added option to activate (somewhat) smoother text scrolling, and drawing in general > more CPU usage.
-Improvement: Rating drawing is like on Bento skin, the missing stars till 5 are "padded" with bulbs, ex: ★ ★ ★ ● ●.
-Album art is not forced to square anymore, it keeps aspect ratio.
-Fixed some of the Winamp exit crashes / hangs, and some other minor ones...
+The plug-in is 2 years old!
+New drawing system: smoother scrolling, more customizable settings.
+New settings system: integrated into Winamp, instant visible changes.
+New thumbnail buttons.
+Fixed bugs and memory leaks.
 
-Please notify me in case of any additional bugs or requests. 
+Now accepting donations ;)
