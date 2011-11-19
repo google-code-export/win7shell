@@ -49,6 +49,7 @@ To use your translation you need to be sure your language file has corresponding
   * Winamp-zh-tw.wlz (Chinese)
 
 There are also few unofficial Winamp WLZ translations:
+For example:
   * Winamp-el-GR.wlz (Greek)
   * Winamp-id-ID.wlz (Indonesian)
 
