@@ -4,8 +4,11 @@
 =Translating The Plug-In=
 
 ==Winamp Translation System==
-Windows 7 Taskbar Integration plugin (starting from v2.0) uses the Winamp Translation system. Winamp Translation System uses special language packs, called WLZ. A WLZ file is a packed ZIP archive that contains all necessary language files. Basically, WLZ stores `*`.lng
-files and graphic files for skins (png + xml). WLZ files are located in Winamp Language Pack directory: 'C:\Program Files\Winamp\Lang\'. All Winamp translations .lng files must be stored in WLZ files or be placed in a special subfolder. This subfolder's name is WLZ language ID (_e.g.: For German: C:\Program Files\Winamp\Lang\de-DE\`*`.lng. For Spain:  C:\Program Files\Winamp\Lang\es-US\`*`.lng_). So, if we go to Winamp settings and choose german language (_choose: Winamp-de-de_), Winamp will use translation files from German WLZ file (_C:\Program Files\Winamp\Lang\de-DE\Winamp-de-de.wlz_) and all `*`.lng translation files placed in Winamp Language Pack subfolder (_for German: C:\Program Files\Winamp\Lang\de-DE\`*`.lng_).
+Windows 7 Taskbar Integration plugin (starting from v2.0) uses the Winamp Translation system. Winamp Translation System uses special language packs, called WLZ. 
+A WLZ file is a packed ZIP archive that contains all necessary language files. Basically, WLZ stores `*`.lng files and graphic files for skins (png + xml). WLZ files are located in Winamp Language Pack directory:
+'C:\Program Files\Winamp\Lang\'.
+All Winamp translations .lng files must be stored in WLZ files or be placed in a special subfolder. This subfolder's name is WLZ language ID (_e.g.: For German: C:\Program Files\Winamp\Lang\de-DE\`*`.lng. For Spain:  C:\Program Files\Winamp\Lang\es-US\`*`.lng_).
+So, if we go to Winamp settings and choose german language (_choose: Winamp-de-de_), Winamp will use translation files from German WLZ file (_C:\Program Files\Winamp\Lang\de-DE\Winamp-de-de.wlz_) and all `*`.lng translation files placed in Winamp Language Pack subfolder (_for German: C:\Program Files\Winamp\Lang\de-DE\`*`.lng_).
 
 
 ==Plugin Translation==
@@ -62,6 +65,7 @@ If you just translated gen_win7shell.lng to language that doesn't have correspon
   * Create subdirectory: C:\Program Files\Winamp\Lang\en-US
   * Copy your plugin to this subdirectory: C:\Program Files\Winamp\Lang\en-US\gen_win7shell.lng
   * Run Winamp, change language to en-us English (Winamp-en-us -> NOT default English(US))
-That is all. Your plugin should be displayed in your language now (but Winamp will be displayed in English). You can always translate Winamp to your language. Read: http://xlat.meggamusic.co.uk/winamp/docs/xlat/xlat.html
+That is all. Your plugin should be displayed in your language now (but Winamp will be displayed in English). 
+You can always translate Winamp to your language. Read: http://xlat.meggamusic.co.uk/winamp/docs/xlat/xlat.html
 
 *-Pawel*
