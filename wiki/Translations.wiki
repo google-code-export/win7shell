@@ -28,8 +28,7 @@ This file is a resource file (_http://en.wikipedia.org/wiki/Resource`_`(Windows)
   * Restorator (not free!) (http://www.bome.com/products/restorator) 
  
 Once you have your resource editor, open the .lng file and change
-its resources (Dialogs, Menus, Strings, Accelerators, Version info etc.) to your language.
-You may also change the position of the controls, if it is needed.
+its resources (Dialogs, Menus, Strings, Accelerators, Version info etc.) to your language.<br />You may also change the position of the controls, if it is needed.
 
 ==Using your translation file==
 To use your translation you need to be sure your language file has corresponding WLZ file. For now Winamp supports several official translations:
@@ -70,6 +69,6 @@ If you just translated gen_win7shell.lng to language that doesn't have correspon
   * Copy your plugin to this subdirectory: C:\Program Files\Winamp\Lang\en-US\gen_win7shell.lng
   * Run Winamp, change language to en-us English (Winamp-en-us -> NOT default English(US))
 That is all. Your plugin should be displayed in your language now (but Winamp will be displayed in English).
- 
-You can always translate Winamp to your language.
+
+You can always translate Winamp to your language.<br />
 Read: http://xlat.meggamusic.co.uk/winamp/docs/xlat/xlat.html
